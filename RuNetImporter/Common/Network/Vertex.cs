@@ -5,7 +5,7 @@ using System.Text;
 using Smrf.AppLib;
 using rcsir.net.common.Utilities;
 
-namespace Smrf.NodeXL.GraphDataProviders.Facebook
+namespace rcsir.net.common.Network
 {
     public class Vertex
     {

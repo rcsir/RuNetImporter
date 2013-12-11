@@ -32,11 +32,12 @@
             this.LoadUserInfoButton = new System.Windows.Forms.Button();
             this.LoadFriendsButton = new System.Windows.Forms.Button();
             this.GetMutualButton = new System.Windows.Forms.Button();
+            this.GenerateGraphButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // AuthButton
             // 
-            this.AuthButton.Location = new System.Drawing.Point(71, 54);
+            this.AuthButton.Location = new System.Drawing.Point(71, 53);
             this.AuthButton.Name = "AuthButton";
             this.AuthButton.Size = new System.Drawing.Size(224, 38);
             this.AuthButton.TabIndex = 0;
@@ -46,7 +47,7 @@
             // 
             // LoadUserInfoButton
             // 
-            this.LoadUserInfoButton.Location = new System.Drawing.Point(71, 106);
+            this.LoadUserInfoButton.Location = new System.Drawing.Point(71, 113);
             this.LoadUserInfoButton.Name = "LoadUserInfoButton";
             this.LoadUserInfoButton.Size = new System.Drawing.Size(224, 38);
             this.LoadUserInfoButton.TabIndex = 1;
@@ -56,7 +57,7 @@
             // 
             // LoadFriendsButton
             // 
-            this.LoadFriendsButton.Location = new System.Drawing.Point(71, 159);
+            this.LoadFriendsButton.Location = new System.Drawing.Point(71, 174);
             this.LoadFriendsButton.Name = "LoadFriendsButton";
             this.LoadFriendsButton.Size = new System.Drawing.Size(224, 38);
             this.LoadFriendsButton.TabIndex = 2;
@@ -66,7 +67,7 @@
             // 
             // GetMutualButton
             // 
-            this.GetMutualButton.Location = new System.Drawing.Point(71, 216);
+            this.GetMutualButton.Location = new System.Drawing.Point(71, 235);
             this.GetMutualButton.Name = "GetMutualButton";
             this.GetMutualButton.Size = new System.Drawing.Size(224, 38);
             this.GetMutualButton.TabIndex = 3;
@@ -74,11 +75,22 @@
             this.GetMutualButton.UseVisualStyleBackColor = true;
             this.GetMutualButton.Click += new System.EventHandler(this.GetMutualButton_Click);
             // 
+            // GenerateGraphButton
+            // 
+            this.GenerateGraphButton.Location = new System.Drawing.Point(71, 292);
+            this.GenerateGraphButton.Name = "GenerateGraphButton";
+            this.GenerateGraphButton.Size = new System.Drawing.Size(224, 38);
+            this.GenerateGraphButton.TabIndex = 4;
+            this.GenerateGraphButton.Text = "Generate Graph File";
+            this.GenerateGraphButton.UseVisualStyleBackColor = true;
+            this.GenerateGraphButton.Click += new System.EventHandler(this.GenerateGraphButton_Click);
+            // 
             // TestVKImpotrerForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(366, 328);
+            this.ClientSize = new System.Drawing.Size(365, 400);
+            this.Controls.Add(this.GenerateGraphButton);
             this.Controls.Add(this.GetMutualButton);
             this.Controls.Add(this.LoadFriendsButton);
             this.Controls.Add(this.LoadUserInfoButton);
@@ -95,6 +107,7 @@
         private System.Windows.Forms.Button LoadUserInfoButton;
         private System.Windows.Forms.Button LoadFriendsButton;
         private System.Windows.Forms.Button GetMutualButton;
+        private System.Windows.Forms.Button GenerateGraphButton;
     }
 }
 

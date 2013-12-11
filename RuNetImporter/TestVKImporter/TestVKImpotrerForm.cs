@@ -7,9 +7,10 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Xml;
 using rcsir.net.vk.importer.Dialogs;
 using rcsir.net.vk.importer.GraphDataProvider;
-
+using rcsir.net.vk.importer.NetworkAnalyzer;
 
 namespace TestVKImporter
 {
@@ -62,8 +63,26 @@ namespace TestVKImporter
                 return;
             }
 
-            vkRestClient.getMutual(vkLoginDialog.userId, vkLoginDialog.authToken);
+            vkRestClient.GetMutual(vkLoginDialog.userId, vkLoginDialog.authToken);
 
+        }
+
+        private void GenerateGraphButton_Click(object sender, EventArgs e)
+        {
+            if (vkLoginDialog == null)
+            {
+                Debug.WriteLine("Please authorize first!");
+                return;
+            }
+
+            VKNetworkAnalyzer vkNetworkAnalyzer = new VKNetworkAnalyzer();
+
+            XmlDocument graph = vkNetworkAnalyzer.analyze(vkLoginDialog.userId, vkLoginDialog.authToken);
+
+            if (graph != null)
+            {
+                graph.Save("VKNetwork_" + vkLoginDialog.userId + ".xml");
+            }
         }
     }
 }

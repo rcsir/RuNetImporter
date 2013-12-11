@@ -52,11 +52,10 @@
       <DependentUpon>VKLoginDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="GraphDataProvider\VKRestClient.cs" />
+    <Compile Include="NetworkAnalyzer\VKNetworkAnalyzer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="NetworkAnalyzer\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="Dialogs\VKLoginDialog.resx">
       <DependentUpon>VKLoginDialog.cs</DependentUpon>

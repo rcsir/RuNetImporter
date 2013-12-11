@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Smrf.NodeXL.GraphDataProviders.Facebook
+namespace rcsir.net.common.Network
 {
     public class EdgeCollection : HashSet<Edge>
     {

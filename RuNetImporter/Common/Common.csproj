@@ -46,6 +46,7 @@
     <Compile Include="NetworkAnalyzer\Exceptions\CancellationPendingException.cs" />
     <Compile Include="NetworkAnalyzer\Exceptions\PartialNetworkException.cs" />
     <Compile Include="NetworkAnalyzer\HttpNetworkAnalyzerBase.cs" />
+    <Compile Include="NetworkAnalyzer\NetworkAnalyzerBase.cs" />
     <Compile Include="NetworkAnalyzer\RequestStatistics.cs" />
     <Compile Include="NetworkAnalyzer\UserAttributes.cs" />
     <Compile Include="Network\Edge.cs" />

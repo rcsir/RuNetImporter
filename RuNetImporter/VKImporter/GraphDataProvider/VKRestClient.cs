@@ -8,6 +8,7 @@ using System.Net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Threading;
+using rcsir.net.common.Network;
 
 namespace rcsir.net.vk.importer.GraphDataProvider
 {
@@ -16,12 +17,18 @@ namespace rcsir.net.vk.importer.GraphDataProvider
         // API usrl
         private readonly String api_url = "https://api.vk.com";
 
+        private Ego ego;
         private List<string> friendIds = new List<string>();
 
         public VKRestClient()
         {
         }
 
+
+        public Ego GetEgo()
+        {           
+            return this.ego;
+        }
 
         // VK API
         public void LoadUserInfo(String userId, String authToken)
@@ -63,9 +70,12 @@ namespace rcsir.net.vk.importer.GraphDataProvider
                         Console.WriteLine("Name: " + o["response"][0]["first_name"]);
                         Console.WriteLine("Last Name: " + o["response"][0]["last_name"]);
                         Console.WriteLine("UID: " + o["response"][0]["uid"]);
+
+                        // ok, create the ego object here
+                        this.ego = new Ego(o["response"][0]["uid"].ToString(), 
+                            o["response"][0]["first_name"].ToString());
                     }
                 }
-
             }
             catch (WebException Ex)
             {
@@ -177,7 +187,7 @@ namespace rcsir.net.vk.importer.GraphDataProvider
             }
         }
 
-        public void getMutual(String userId, String authToken)
+        public void GetMutual(String userId, String authToken)
         {
             StringBuilder mainsb = new StringBuilder(api_url);
             mainsb.Append("/method/friends.getMutual");

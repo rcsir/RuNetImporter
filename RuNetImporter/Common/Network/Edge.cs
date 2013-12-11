@@ -5,7 +5,7 @@ using System.Text;
 using Smrf.SocialNetworkLib;
 using Smrf.AppLib;
 
-namespace Smrf.NodeXL.GraphDataProviders.Facebook
+namespace rcsir.net.common.Network
 {
     public class Edge
     {

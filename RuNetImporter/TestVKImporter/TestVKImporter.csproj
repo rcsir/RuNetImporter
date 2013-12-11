@@ -122,6 +122,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Project>{7BAA550D-EA10-462D-9922-1A1E4245FB8D}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
     <ProjectReference Include="..\VKImporter\VKImporter.csproj">
       <Project>{B8C66AD6-57EA-4C74-B47E-DCF4682B7F18}</Project>
       <Name>VKImporter</Name>
