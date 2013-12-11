@@ -1,4 +1,4 @@
-﻿namespace rcsoc.vk.importer.Dialogs
+﻿namespace rcsir.net.vk.importer.Dialogs
 {
     partial class VKLoginDialog
     {

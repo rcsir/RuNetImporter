@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Threading;
 
-namespace rcsoc.vk.importer.GraphDataProvider
+namespace rcsir.net.vk.importer.GraphDataProvider
 {
     public class VKRestClient
     {

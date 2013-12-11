@@ -7,8 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Diagnostics;
-using rcsoc.vk.importer.Dialogs;
-using rcsoc.vk.importer.GraphDataProvider;
+using rcsir.net.vk.importer.Dialogs;
+using rcsir.net.vk.importer.GraphDataProvider;
 
 
 namespace TestVKImporter

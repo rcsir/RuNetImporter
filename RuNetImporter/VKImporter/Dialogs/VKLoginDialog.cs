@@ -9,7 +9,7 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.IO;
 
-namespace rcsoc.vk.importer.Dialogs
+namespace rcsir.net.vk.importer.Dialogs
 {
     public partial class VKLoginDialog : Form
     {

@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VKImporter", "VKImporter\VK
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestVKImporter", "TestVKImporter\TestVKImporter.csproj", "{9A7BCF1F-0432-4073-B7B5-C688273822A3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{7BAA550D-EA10-462D-9922-1A1E4245FB8D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +38,16 @@ Global
 		{9A7BCF1F-0432-4073-B7B5-C688273822A3}.Release|Mixed Platforms.Build.0 = Release|x86
 		{9A7BCF1F-0432-4073-B7B5-C688273822A3}.Release|x86.ActiveCfg = Release|x86
 		{9A7BCF1F-0432-4073-B7B5-C688273822A3}.Release|x86.Build.0 = Release|x86
+		{7BAA550D-EA10-462D-9922-1A1E4245FB8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BAA550D-EA10-462D-9922-1A1E4245FB8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BAA550D-EA10-462D-9922-1A1E4245FB8D}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{7BAA550D-EA10-462D-9922-1A1E4245FB8D}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{7BAA550D-EA10-462D-9922-1A1E4245FB8D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7BAA550D-EA10-462D-9922-1A1E4245FB8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BAA550D-EA10-462D-9922-1A1E4245FB8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BAA550D-EA10-462D-9922-1A1E4245FB8D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{7BAA550D-EA10-462D-9922-1A1E4245FB8D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{7BAA550D-EA10-462D-9922-1A1E4245FB8D}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
