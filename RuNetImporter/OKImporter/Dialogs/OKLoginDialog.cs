@@ -1,25 +1,24 @@
 ﻿using System;
+using System.Net;
 using System.Text;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.IO;
+using rcsir.net.ok.importer.GraphDataProvider;
 
 namespace rcsir.net.ok.importer.Dialogs
 {
     public partial class OKLoginDialog : Form
     {
-        private readonly String auth_url = "https://oauth.vk.com/authorize";
-        private readonly String client_id = "3838634"; // application id
-        private readonly String scope = "friends"; // permissions
-        private readonly String redirect_url = "https://oauth.vk.com/blank.html"; // URL where access token will be passed to
+        private readonly String auth_url = "http://www.odnoklassniki.ru/oauth/authorize";
+        private readonly string token_Url = "http://api.odnoklassniki.ru/oauth/token.do";
+        private readonly String client_id = "201872896"; // application id
+        private readonly String scope = "(SET_STATUS;VALUABLE_ACCESS;)"; // permissions
         private readonly String display = "page"; // authorization windows appearence: page, popup, touch, wap
         // private readonly String v = ""; // API version
-        private readonly String response_type = "token"; // Response type
+        private readonly String response_type = "code"; // Response type
 
-        private String _authToken;
-        public String authToken { get { return this._authToken; } set { this._authToken = value;  } }
-        private String _userId;
-        public String userId { get { return this._userId; } set { this._userId = value; } }
+        
         private long _expiresIn;
         public long expiresIn { get { return this._expiresIn; } set { this._expiresIn = value; } }
 
@@ -37,7 +36,7 @@ namespace rcsir.net.ok.importer.Dialogs
             sb.Append('?');
             sb.Append("client_id=").Append(client_id).Append('&');
             sb.Append("scope=").Append(scope).Append('&');
-            sb.Append("redirect_uri=").Append(redirect_url).Append('&');
+            sb.Append("redirect_uri=").Append(OKRestClient.redirect_url).Append('&');
             sb.Append("display=").Append(display).Append('&');
             sb.Append("response_type=").Append(response_type);
 
@@ -45,7 +44,7 @@ namespace rcsir.net.ok.importer.Dialogs
             Debug.WriteLine("Navigate uri = " + navigateUri);
             webBrowserLogin.Navigate(navigateUri);
 
-            this.ShowDialog();
+            ShowDialog();
         }
 
         private void webBrowserLogin_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
@@ -58,25 +57,18 @@ namespace rcsir.net.ok.importer.Dialogs
             // Good response example
             // https://oauth.vk.com/blank.html#access_token=20660ffedf0d1d48533bee9b0931b2f0649b90c4a6592810de9b4961e30866910fd2cf2c7fb0a67878e7b&expires_in=86400&user_id=2927314
 
-            if (stringUrl.StartsWith(redirect_url))
+            if (stringUrl.StartsWith(OKRestClient.redirect_url))
             {
-
-                String[] tokens = System.Text.RegularExpressions.Regex.Split(stringUrl, "[=&#]");
-                foreach (String s in tokens)
-                {
-                    Debug.WriteLine("Token = " + s);
-                }
-
-                if (tokens.Length == 7)
-                {
-                    this.authToken = tokens[2];
-                    this.expiresIn = Convert.ToInt64(tokens[4]);
-                    this.userId = tokens[6];
-                }
+                String code = GetValue(stringUrl);
+//                DisableComponents(fcbDialog);
+                Close();
+                OKRestClient okRestClient = new OKRestClient();
+                okRestClient.GetAccessToken(code);
             }
+//              String[] tokens = System.Text.RegularExpressions.Regex.Split(stringUrl, "[=&#]");
         }
 
-        // Utils 
+        // Utils
         private void deleteCookies()
         {
             DirectoryInfo folder = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.Cookies));
@@ -86,14 +78,22 @@ namespace rcsir.net.ok.importer.Dialogs
             {
                 try
                 {
-                    System.IO.File.Delete(file.FullName);
+                    File.Delete(file.FullName);
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
                     MessageBox.Show(e.Message);
                 }
 
             }
         }
+
+        private static string GetValue(string stringUrl)
+        {
+            int index = stringUrl.IndexOf("=");
+            int index2 = stringUrl.Length;
+            return stringUrl.Substring(index + 1, index2 - index - 1);
+        }
+
     }
 }

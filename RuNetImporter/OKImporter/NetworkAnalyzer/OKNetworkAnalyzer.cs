@@ -14,14 +14,14 @@ namespace rcsir.net.ok.importer.NetworkAnalyzer
     {
         public XmlDocument analyze(String userId, String authToken)
         {
-            OKRestClient vkRestClient = new OKRestClient();
+            OKRestClient okRestClient = new OKRestClient();
 
-            vkRestClient.LoadUserInfo(userId, authToken);
-            vkRestClient.LoadFriends(userId);
-            vkRestClient.GetMutual(userId, authToken);
+            okRestClient.LoadUserInfo(userId, authToken);
+            okRestClient.LoadFriends(userId);
+            okRestClient.GetMutual(userId, authToken);
 
-            VertexCollection vertices = vkRestClient.GetVertices();
-            EdgeCollection edges = vkRestClient.GetEdges();
+            VertexCollection vertices = okRestClient.GetVertices();
+            EdgeCollection edges = okRestClient.GetEdges();
 
             AttributesDictionary<String> attributes = new AttributesDictionary<String>();
             return GenerateNetworkDocument(vertices, edges, attributes);

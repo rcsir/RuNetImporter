@@ -16,11 +16,25 @@ namespace rcsir.net.ok.importer.GraphDataProvider
     public class OKRestClient
     {
         private readonly String api_url = "https://api.vk.com";
+        public static string redirect_url = "http://rcsoc.spbu.ru/";
+
+        private static string client_secret = "EDDB1A6D680BDFF8E49A179C";
+        private static string client_open = "CBAHFJANABABABABA";
+        private static string apiUrl = "http://api.odnoklassniki.ru/fb.do";
+        private const string token_Url = "http://api.odnoklassniki.ru/oauth/token.do";
+
+        private string postPrefix { get { return "application_key=" + client_open + "&access_token=" + authToken + "&"; } }
+        private string sigSecret { get { return GetMD5Hash(string.Format("{0}{1}", authToken, client_secret)); } }
 
         private Vertex egoVertex;
         private List<string> friendIds = new List<string>();
         private VertexCollection vertices = new VertexCollection();
         private EdgeCollection edges = new EdgeCollection();
+
+        private String _authToken;
+        public String authToken { get { return this._authToken; } set { this._authToken = value; } }
+        private String _userId;
+        public String userId { get { return this._userId; } set { this._userId = value; } }
 
         public OKRestClient()
         {
@@ -42,10 +56,48 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             return this.edges;
         }
 
-        // VK API
+        // OK API
+
+        public void GetAccessToken(string code)
+        {
+            string responseToString;
+            string postedData = "client_id=201872896&grant_type=authorization_code&client_secret=" + client_secret +
+                                "&code=" + code + "&redirect_uri=" + redirect_url + "&type=user_agent";
+            var response = PostMethod(postedData, token_Url);
+            if (response == null)
+                return;
+
+            var strreader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
+            responseToString = strreader.ReadToEnd();
+            JObject o = JObject.Parse(responseToString);
+            authToken = o["access_token"].ToString();
+            Debug.WriteLine(authToken + "responseToString = " + responseToString);
+        }
+
+        private static HttpWebResponse PostMethod(string postedData, string postUrl)
+        {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(postUrl);
+            request.Method = "POST";
+            request.Credentials = CredentialCache.DefaultCredentials;
+
+            UTF8Encoding encoding = new UTF8Encoding();
+            var bytes = encoding.GetBytes(postedData);
+
+            request.ContentType = "application/x-www-form-urlencoded";
+            request.ContentLength = bytes.Length;
+
+            using (var newStream = request.GetRequestStream())
+            {
+                newStream.Write(bytes, 0, bytes.Length);
+                newStream.Close();
+            }
+            return (HttpWebResponse)request.GetResponse();
+        }
+
         public void LoadUserInfo(String userId, String authToken)
         {
-            //https://api.vk.com/method/getProfiles?uid=66748&access_token=533bacf01e11f55b536a565b57531ac114461ae8736d6506a3;
+            JObject dict = MakeRequest("method=users.getCurrentUser");
+            userId = dict["uid"].ToString();
 
             StringBuilder sb = new StringBuilder(api_url);
             sb.Append("/method/getProfiles");
@@ -270,6 +322,33 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             }
 
             return attributes;
+        }
+
+
+        private JObject MakeRequest(string requestString)
+        {
+            var sig = GetMD5Hash(string.Format("{0}{1}", "application_key=" + client_open + requestString.Replace("&", ""), sigSecret));
+            string responseToString;
+            string postedData = postPrefix + requestString + "&sig=" + sig;
+
+            var response = PostMethod(postedData, apiUrl);
+            var strreader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
+            responseToString = strreader.ReadToEnd();
+            return JObject.Parse(responseToString); // JObject.CreateFromString(responseToString);
+        }
+
+
+        private static string GetMD5Hash(string input)
+        {
+            var x = new System.Security.Cryptography.MD5CryptoServiceProvider();
+            var bs = Encoding.UTF8.GetBytes(input);
+            bs = x.ComputeHash(bs);
+            var s = new StringBuilder();
+            foreach (var b in bs)
+            {
+                s.Append(b.ToString("x2").ToLower());
+            }
+            return s.ToString();
         }
 
         private void handleWebException(WebException Ex)
