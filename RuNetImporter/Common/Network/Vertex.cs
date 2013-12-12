@@ -14,17 +14,17 @@ namespace rcsir.net.common.Network
         public string Name {get; set; }
         public string Type { get; set; }
         public string ToolTip { get; set; }
-        public AttributesDictionary<JObject> Attributes { get; set; }
+        public AttributesDictionary<String> Attributes { get; set; }
 
         public Vertex(string ID, string Name, string Type)
         {
             this.ID = ID;
             this.Name = Name;
             this.Type = Type;
-            Attributes = new AttributesDictionary<JObject>();            
+            Attributes = new AttributesDictionary<String>();            
         }
 
-        public Vertex(string ID, string Name, string Type, AttributesDictionary<JObject> Attributes)
+        public Vertex(string ID, string Name, string Type, AttributesDictionary<String> Attributes)
         {
             this.ID = ID;
             this.Name = Name;            

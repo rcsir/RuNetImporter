@@ -89,8 +89,8 @@ namespace rcsir.net.vk.importer.GraphDataProvider
                                 Console.WriteLine("Ego: " + ego.ToString()); 
 
                                 // ok, create the ego object here
-                                AttributesDictionary<JObject> attributes = new AttributesDictionary<JObject>();
-                                attributes.Add(ego);
+                                AttributesDictionary<String> attributes = createAttributes(ego);
+
                                 this.egoVertex = new Vertex(ego["uid"].ToString(),
                                     ego["first_name"].ToString() + " " + ego["last_name"].ToString(),
                                     "Ego", attributes);
@@ -167,8 +167,8 @@ namespace rcsir.net.vk.importer.GraphDataProvider
                                     this.friendIds.Add(uid);
 
                                     // add friend vertex
-                                    AttributesDictionary<JObject> attributes = new AttributesDictionary<JObject>();
-                                    attributes.Add(friend);
+                                    AttributesDictionary<String> attributes = createAttributes(friend);
+
                                     this.vertices.Add(new Vertex(uid,
                                         friend["first_name"].ToString() + " " + friend["last_name"].ToString(),
                                         "Friend", attributes));
@@ -250,6 +250,27 @@ namespace rcsir.net.vk.importer.GraphDataProvider
             {
                 handleWebException(Ex);
             }
+        }
+
+
+
+        private AttributesDictionary<String> createAttributes(JObject obj) 
+        {
+            AttributesDictionary<String> attributes = new AttributesDictionary<String>();
+            List<AttributeUtils.Attribute> keys = new List<AttributeUtils.Attribute>(attributes.Keys);
+            foreach (AttributeUtils.Attribute key in keys)
+            {
+                String name = key.value;
+
+                if (obj[name] != null)
+                {
+                    // assert it is null?
+                    String value = obj[name].ToString(); 
+                    attributes[key] =  value;
+                }
+            }
+
+            return attributes;
         }
 
         private void handleWebException(WebException Ex)

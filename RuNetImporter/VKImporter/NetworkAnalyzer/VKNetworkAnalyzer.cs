@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
+using Smrf.AppLib;
 using rcsir.net.common.NetworkAnalyzer;
 using rcsir.net.common.Network;
 using rcsir.net.vk.importer.GraphDataProvider;
@@ -22,7 +23,10 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
             VertexCollection vertices = vkRestClient.GetVertices();
             EdgeCollection edges = vkRestClient.GetEdges();
 
-            return GenerateNetworkDocument(vertices, edges);
+            // create default attributes (values will be empty)
+            AttributesDictionary<String> attributes = new AttributesDictionary<String>();
+
+            return GenerateNetworkDocument(vertices, edges, attributes);
         }
     }
 }

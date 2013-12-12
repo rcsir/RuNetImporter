@@ -31,6 +31,8 @@ namespace rcsir.net.vk.importer.Dialogs
         public VKLoginDialog()
         {
             InitializeComponent();
+            // TODO: enable when not testing
+            // deleteCookies();
         }
 
         public void Login()

@@ -47,7 +47,7 @@ namespace rcsir.net.common.NetworkAnalyzer
         protected const String TooltipID = "Tooltip";
 
 
-        public XmlDocument GenerateNetworkDocument(VertexCollection vertices, EdgeCollection edges)
+        public XmlDocument GenerateNetworkDocument(VertexCollection vertices, EdgeCollection edges, AttributesDictionary<String> attributes)
         {
             GraphMLXmlDocument graphMLXmlDocument = new GraphMLXmlDocument(false); // directed = falce
             
@@ -77,41 +77,12 @@ namespace rcsir.net.common.NetworkAnalyzer
                 RelationshipID,
                 "Relationship", "string", null);
 
-            /*
-            foreach (KeyValuePair<AttributeUtils.Attribute, bool> kvp in attributes)
+            foreach (KeyValuePair<AttributeUtils.Attribute, String> kvp in attributes)
             {
-                if (kvp.Value)
-                {
-                    if (kvp.Key.value.Equals("hometown_location"))
-                    {
-                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "hometown",
-                        "Hometown", "string", null);
-                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "hometown_city",
-                        "Hometown City", "string", null);
-                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "hometown_state",
-                        "Hometown State", "string", null);
-                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "hometown_country",
-                        "Hometown Country", "string", null);
-                    }
-                    else if (kvp.Key.value.Equals("current_location"))
-                    {
-                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "location",
-                        "Current Location", "string", null);
-                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "location_city",
-                        "Current Location City", "string", null);
-                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "location_state",
-                        "Current Location State", "string", null);
-                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "location_country",
-                        "Current Location Country", "string", null);
-                    }
-                    else
-                    {
-                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, kvp.Key.value,
-                        kvp.Key.name, "string", null);
-                    }
-                }
+                graphMLXmlDocument.DefineGraphMLAttribute(
+                    false, kvp.Key.value, kvp.Key.name, "string", null);
+                
             }            
-            */
 
             // add vertices
             XmlNode oVertexXmlNode;
@@ -144,29 +115,15 @@ namespace rcsir.net.common.NetworkAnalyzer
         private void AddVertexAttributes(XmlNode oVertexXmlNode, Vertex oVertex, GraphMLXmlDocument oGraphMLXmlDocument)
         {
             string sAttribtueValue;
-            foreach (KeyValuePair<AttributeUtils.Attribute, JObject> kvp in oVertex.Attributes)
+            foreach (KeyValuePair<AttributeUtils.Attribute, String> kvp in oVertex.Attributes)
             {
                 if (kvp.Value == null)
                 {
                     sAttribtueValue = "";
                 }
-                else if (kvp.Key.value.Equals("hometown_location"))
-                {
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown", kvp.Value["name"] != null ? kvp.Value["name"].ToString() : "");
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown_city", kvp.Value["city"] != null ? kvp.Value["city"].ToString() : "");
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown_state", kvp.Value["state"] != null ? kvp.Value["state"].ToString() : "");
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown_country", kvp.Value["country"] != null ? kvp.Value["country"].ToString() : "");
-                }
-                else if (kvp.Key.value.Equals("current_location"))
-                {
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location", kvp.Value["name"] != null ? kvp.Value["name"].ToString() : "");
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location_city", kvp.Value["city"] != null ? kvp.Value["city"].ToString() : "");
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location_state", kvp.Value["state"] != null ? kvp.Value["state"].ToString() : "");
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location_country", kvp.Value["country"] != null ? kvp.Value["country"].ToString() : "");
-                }
                 else
                 {
-                    sAttribtueValue = kvp.Value.ToString();
+                    sAttribtueValue = kvp.Value;
                     if (sAttribtueValue.Length > 8000)
                     {
                         sAttribtueValue = sAttribtueValue.Remove(8000);
@@ -189,6 +146,52 @@ namespace rcsir.net.common.NetworkAnalyzer
             }
 
         }
+
+        /*
+         * 
+                            if (kvp.Key.value.Equals("hometown_location"))
+                    {
+                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "hometown",
+                        "Hometown", "string", null);
+                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "hometown_city",
+                        "Hometown City", "string", null);
+                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "hometown_state",
+                        "Hometown State", "string", null);
+                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "hometown_country",
+                        "Hometown Country", "string", null);
+                    }
+                    else if (kvp.Key.value.Equals("current_location"))
+                    {
+                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "location",
+                        "Current Location", "string", null);
+                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "location_city",
+                        "Current Location City", "string", null);
+                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "location_state",
+                        "Current Location State", "string", null);
+                        oGraphMLXmlDocument.DefineGraphMLAttribute(false, "location_country",
+                        "Current Location Country", "string", null);
+                    }
+                    else
+
+         * 
+         * 
+         * else if (kvp.Key.value.Equals("hometown_location"))
+                {
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown", kvp.Value["name"] != null ? kvp.Value["name"].ToString() : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown_city", kvp.Value["city"] != null ? kvp.Value["city"].ToString() : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown_state", kvp.Value["state"] != null ? kvp.Value["state"].ToString() : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown_country", kvp.Value["country"] != null ? kvp.Value["country"].ToString() : "");
+                }
+                else if (kvp.Key.value.Equals("current_location"))
+                {
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location", kvp.Value["name"] != null ? kvp.Value["name"].ToString() : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location_city", kvp.Value["city"] != null ? kvp.Value["city"].ToString() : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location_state", kvp.Value["state"] != null ? kvp.Value["state"].ToString() : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location_country", kvp.Value["country"] != null ? kvp.Value["country"].ToString() : "");
+                }
+         * 
+         * 
+         * */
 
         private void AddEdgeAttributes ( XmlNode oEdgeXmlNode, Edge oEdge,GraphMLXmlDocument oGraphMLXmlDocument)
         {
