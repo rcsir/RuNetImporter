@@ -8,6 +8,7 @@ using System.Net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Threading;
+using Smrf.AppLib;
 using rcsir.net.common.Network;
 
 namespace rcsir.net.vk.importer.GraphDataProvider
@@ -17,17 +18,29 @@ namespace rcsir.net.vk.importer.GraphDataProvider
         // API usrl
         private readonly String api_url = "https://api.vk.com";
 
-        private Ego ego;
+        private Vertex egoVertex;
         private List<string> friendIds = new List<string>();
+        private VertexCollection vertices = new VertexCollection();
+        private EdgeCollection edges = new EdgeCollection();
 
         public VKRestClient()
         {
         }
 
 
-        public Ego GetEgo()
-        {           
-            return this.ego;
+        public Vertex GetEgo()
+        {
+            return this.egoVertex;
+        }
+
+        public VertexCollection GetVertices()
+        {
+            return this.vertices;
+        }
+
+        public EdgeCollection GetEdges()
+        {
+            return this.edges;
         }
 
         // VK API
@@ -67,38 +80,39 @@ namespace rcsir.net.vk.importer.GraphDataProvider
                         string responseBody = ((new StreamReader(ResponseStream)).ReadToEnd());
                         string contentType = response.ContentType;
                         JObject o = JObject.Parse(responseBody);
-                        Console.WriteLine("Name: " + o["response"][0]["first_name"]);
-                        Console.WriteLine("Last Name: " + o["response"][0]["last_name"]);
-                        Console.WriteLine("UID: " + o["response"][0]["uid"]);
 
-                        // ok, create the ego object here
-                        this.ego = new Ego(o["response"][0]["uid"].ToString(), 
-                            o["response"][0]["first_name"].ToString());
+                        if (o["response"] != null)
+                        {
+                            if (o["response"].Count() > 0)
+                            {
+                                JObject ego = o["response"][0].ToObject<JObject>();
+                                Console.WriteLine("Ego: " + ego.ToString()); 
+
+                                // ok, create the ego object here
+                                AttributesDictionary<JObject> attributes = new AttributesDictionary<JObject>();
+                                attributes.Add(ego);
+                                this.egoVertex = new Vertex(ego["uid"].ToString(),
+                                    ego["first_name"].ToString() + " " + ego["last_name"].ToString(),
+                                    "Ego", attributes);
+
+                                // add ego to the vertices
+                                this.vertices.Add(this.egoVertex);
+                            }
+                        }
+                        else if(o["error"] != null)
+                        {
+                            Debug.WriteLine("Error " + o["error"].ToString());
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Error " + ((new StreamReader(ResponseStream)).ReadToEnd()));
                     }
                 }
             }
             catch (WebException Ex)
             {
-                if (Ex.Status == WebExceptionStatus.ProtocolError)
-                {
-                    int StatusCode = (int)((HttpWebResponse)Ex.Response).StatusCode;
-                    Stream ResponseStream = null;
-                    ResponseStream = ((HttpWebResponse)Ex.Response).GetResponseStream();
-                    string responseText = (new StreamReader(ResponseStream)).ReadToEnd();
-                    if (StatusCode == 500)
-                    {
-                        Debug.WriteLine("Error 500 - " + responseText);
-                    }
-                    else
-                    {
-                        // Do Something for other status codes
-                        Debug.WriteLine("Error " + StatusCode);
-                    }
-                }
-                else
-                {
-                    throw (Ex); // Or check for other WebExceptionStatus
-                }
+                handleWebException(Ex);
             }
         }
 
@@ -136,27 +150,34 @@ namespace rcsir.net.vk.importer.GraphDataProvider
                         string responseBody = ((new StreamReader(ResponseStream)).ReadToEnd());
                         string contentType = response.ContentType;
                         JObject o = JObject.Parse(responseBody);
-                        if (o["response"].Count() > 0)
+
+                        if (o["response"] != null)
                         {
-
-                            for (int i = 0; i < o["response"].Count(); ++i)
+                            if (o["response"].Count() > 0)
                             {
-                                // uid, first_name, last_name, nickname, sex, bdate, city, country, timezone
-                                string uid = o["response"][i]["uid"].ToString();
-                                Console.WriteLine(i.ToString() + ") UID: " + uid);
-                                Console.WriteLine(" Name: " + o["response"][i]["first_name"]);
-                                Console.WriteLine(" Last Name: " + o["response"][i]["last_name"]);
-                                Console.WriteLine(" nick: " + o["response"][i]["nickname"]);
-                                Console.WriteLine(" b. date: " + o["response"][i]["bdate"]);
-                                Console.WriteLine(" sex: " + o["response"][i]["sex"]);
-                                Console.WriteLine(" city: " + o["response"][i]["city"]);
-                                Console.WriteLine(" country: " + o["response"][i]["country"]);
-                                Console.WriteLine(" timezone: " + o["response"][i]["timezone"]);
-                                Console.WriteLine(" education: " + o["response"][i]["education"]);
 
-                                // add user id to the friends list
-                                this.friendIds.Add(uid);
+                                for (int i = 0; i < o["response"].Count(); ++i)
+                                {
+                                    JObject friend = o["response"][i].ToObject<JObject>();
+                                    // uid, first_name, last_name, nickname, sex, bdate, city, country, timezone
+                                    Console.WriteLine(i.ToString() + ") friend: " + friend.ToString());
+
+                                    string uid = friend["uid"].ToString();
+                                    // add user id to the friends list
+                                    this.friendIds.Add(uid);
+
+                                    // add friend vertex
+                                    AttributesDictionary<JObject> attributes = new AttributesDictionary<JObject>();
+                                    attributes.Add(friend);
+                                    this.vertices.Add(new Vertex(uid,
+                                        friend["first_name"].ToString() + " " + friend["last_name"].ToString(),
+                                        "Friend", attributes));
+                                }
                             }
+                        }
+                        else if (o["error"] != null)
+                        {
+                            Debug.WriteLine("Error " + o["error"].ToString());
                         }
                     }
                 }
@@ -164,26 +185,7 @@ namespace rcsir.net.vk.importer.GraphDataProvider
             }
             catch (WebException Ex)
             {
-                if (Ex.Status == WebExceptionStatus.ProtocolError)
-                {
-                    int StatusCode = (int)((HttpWebResponse)Ex.Response).StatusCode;
-                    Stream ResponseStream = null;
-                    ResponseStream = ((HttpWebResponse)Ex.Response).GetResponseStream();
-                    string responseText = (new StreamReader(ResponseStream)).ReadToEnd();
-                    if (StatusCode == 500)
-                    {
-                        Debug.WriteLine("Error 500 - " + responseText);
-                    }
-                    else
-                    {
-                        // Do Something for other status codes
-                        Debug.WriteLine("Error " + StatusCode);
-                    }
-                }
-                else
-                {
-                    throw (Ex); // Or check for other WebExceptionStatus
-                }
+                handleWebException(Ex);
             }
         }
 
@@ -229,7 +231,14 @@ namespace rcsir.net.vk.importer.GraphDataProvider
                             string responseBody = ((new StreamReader(ResponseStream)).ReadToEnd());
                             string contentType = response.ContentType;
                             JObject o = JObject.Parse(responseBody);
-                            Debug.WriteLine("Mutual: " + o.ToString());
+                            if (o["response"] != null)
+                            {
+                                Debug.WriteLine("Mutual: " + o.ToString());
+                            }
+                            else if (o["error"] != null)
+                            {
+                                Debug.WriteLine("Error " + o["error"].ToString());
+                            }
                         }
                     }
 
@@ -239,26 +248,31 @@ namespace rcsir.net.vk.importer.GraphDataProvider
             }
             catch (WebException Ex)
             {
-                if (Ex.Status == WebExceptionStatus.ProtocolError)
+                handleWebException(Ex);
+            }
+        }
+
+        private void handleWebException(WebException Ex)
+        {
+            if (Ex.Status == WebExceptionStatus.ProtocolError)
+            {
+                int StatusCode = (int)((HttpWebResponse)Ex.Response).StatusCode;
+                Stream ResponseStream = null;
+                ResponseStream = ((HttpWebResponse)Ex.Response).GetResponseStream();
+                string responseText = (new StreamReader(ResponseStream)).ReadToEnd();
+                if (StatusCode == 500)
                 {
-                    int StatusCode = (int)((HttpWebResponse)Ex.Response).StatusCode;
-                    Stream ResponseStream = null;
-                    ResponseStream = ((HttpWebResponse)Ex.Response).GetResponseStream();
-                    string responseText = (new StreamReader(ResponseStream)).ReadToEnd();
-                    if (StatusCode == 500)
-                    {
-                        Debug.WriteLine("Error 500 - " + responseText);
-                    }
-                    else
-                    {
-                        // Do Something for other status codes
-                        Debug.WriteLine("Error " + StatusCode);
-                    }
+                    Debug.WriteLine("Error 500 - " + responseText);
                 }
                 else
                 {
-                    throw (Ex); // Or check for other WebExceptionStatus
+                    // Do Something for other status codes
+                    Debug.WriteLine("Error " + StatusCode);
                 }
+            }
+            else
+            {
+                throw (Ex); // Or check for other WebExceptionStatus
             }
         }
     }

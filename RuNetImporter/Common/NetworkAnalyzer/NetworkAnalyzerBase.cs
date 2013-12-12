@@ -7,7 +7,8 @@ using System.Xml;
 using Smrf.XmlLib;
 using Smrf.AppLib;
 using rcsir.net.common.Network;
-using rcsir.net.common.Utilities;
+using Newtonsoft.Json.Linq;
+
 
 namespace rcsir.net.common.NetworkAnalyzer
 {
@@ -46,7 +47,7 @@ namespace rcsir.net.common.NetworkAnalyzer
         protected const String TooltipID = "Tooltip";
 
 
-        public XmlDocument GenerateNetworkDocument(List<Vertex> vertices, List<Edge> edges)
+        public XmlDocument GenerateNetworkDocument(VertexCollection vertices, EdgeCollection edges)
         {
             GraphMLXmlDocument graphMLXmlDocument = new GraphMLXmlDocument(false); // directed = falce
             
@@ -70,9 +71,6 @@ namespace rcsir.net.common.NetworkAnalyzer
 
             graphMLXmlDocument.DefineGraphMLAttribute(false, "type", "Type", "string", null);
             graphMLXmlDocument.DefineGraphMLAttribute(true, "e_type", "Edge Type", "string", null);
-            graphMLXmlDocument.DefineGraphMLAttribute(true, "e_comment", "Tweet", "string", null);
-            graphMLXmlDocument.DefineGraphMLAttribute(true, "e_origin", "Feed of Origin", "string", null);
-            graphMLXmlDocument.DefineGraphMLAttribute(true, "e_timestamp", "Timestamp", "string", null);
 
             // Relationship attribute
             graphMLXmlDocument.DefineGraphMLAttribute(true, 
@@ -119,7 +117,7 @@ namespace rcsir.net.common.NetworkAnalyzer
             XmlNode oVertexXmlNode;
             foreach (Vertex oVertex in vertices)
             {
-                oVertexXmlNode = graphMLXmlDocument.AppendVertexXmlNode(oVertex.Name);
+                oVertexXmlNode = graphMLXmlDocument.AppendVertexXmlNode(oVertex.ID);
                 AddVertexAttributes(oVertexXmlNode, oVertex, graphMLXmlDocument);
             }
 
@@ -129,11 +127,11 @@ namespace rcsir.net.common.NetworkAnalyzer
             {
                 try
                 {
-                    oEdgeXmlNode =graphMLXmlDocument.AppendEdgeXmlNode(oEdge.Vertex1.Name,
-                            oEdge.Vertex2.Name);
+                    oEdgeXmlNode =graphMLXmlDocument.AppendEdgeXmlNode(oEdge.Vertex1.ID,
+                            oEdge.Vertex2.ID);
                     AddEdgeAttributes(oEdgeXmlNode, oEdge, graphMLXmlDocument);
                 }
-                catch (KeyNotFoundException ex)
+                catch (KeyNotFoundException)
                 {
                     //Do Nothing.
                 }
@@ -146,42 +144,36 @@ namespace rcsir.net.common.NetworkAnalyzer
         private void AddVertexAttributes(XmlNode oVertexXmlNode, Vertex oVertex, GraphMLXmlDocument oGraphMLXmlDocument)
         {
             string sAttribtueValue;
-            foreach (KeyValuePair<AttributeUtils.Attribute, JSONObject> kvp in oVertex.Attributes)
+            foreach (KeyValuePair<AttributeUtils.Attribute, JObject> kvp in oVertex.Attributes)
             {
-                /*
-                if (kvp.Value == null || (kvp.Value.String == null && !kvp.Value.IsDictionary))
+                if (kvp.Value == null)
                 {
                     sAttribtueValue = "";
                 }
                 else if (kvp.Key.value.Equals("hometown_location"))
                 {
-
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown", kvp.Value.Dictionary.ContainsKey("name") ? kvp.Value.Dictionary["name"].String : "");
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown_city", kvp.Value.Dictionary.ContainsKey("city") ? kvp.Value.Dictionary["city"].String : "");
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown_state", kvp.Value.Dictionary.ContainsKey("state") ? kvp.Value.Dictionary["state"].String : "");
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown_country", kvp.Value.Dictionary.ContainsKey("country") ? kvp.Value.Dictionary["country"].String : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown", kvp.Value["name"] != null ? kvp.Value["name"].ToString() : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown_city", kvp.Value["city"] != null ? kvp.Value["city"].ToString() : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown_state", kvp.Value["state"] != null ? kvp.Value["state"].ToString() : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "hometown_country", kvp.Value["country"] != null ? kvp.Value["country"].ToString() : "");
                 }
                 else if (kvp.Key.value.Equals("current_location"))
                 {
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location", kvp.Value.Dictionary.ContainsKey("name") ? kvp.Value.Dictionary["name"].String : "");
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location_city", kvp.Value.Dictionary.ContainsKey("city") ? kvp.Value.Dictionary["city"].String : "");
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location_state", kvp.Value.Dictionary.ContainsKey("state") ? kvp.Value.Dictionary["state"].String : "");
-                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location_country", kvp.Value.Dictionary.ContainsKey("country") ? kvp.Value.Dictionary["country"].String : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location", kvp.Value["name"] != null ? kvp.Value["name"].ToString() : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location_city", kvp.Value["city"] != null ? kvp.Value["city"].ToString() : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location_state", kvp.Value["state"] != null ? kvp.Value["state"].ToString() : "");
+                    oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "location_country", kvp.Value["country"] != null ? kvp.Value["country"].ToString() : "");
                 }
                 else
                 {
-                    if (kvp.Value.String.Length > 8000)
+                    sAttribtueValue = kvp.Value.ToString();
+                    if (sAttribtueValue.Length > 8000)
                     {
-                        sAttribtueValue = kvp.Value.String.Remove(8000);
-                    }
-                    else
-                    {
-                        sAttribtueValue = kvp.Value.String;
+                        sAttribtueValue = sAttribtueValue.Remove(8000);
                     }
 
                     oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, kvp.Key.value, sAttribtueValue);
                 }
-                */
 
             }
 
@@ -189,10 +181,11 @@ namespace rcsir.net.common.NetworkAnalyzer
 
             AppendVertexTooltipXmlNodes(oGraphMLXmlDocument, oVertexXmlNode, oVertex.Name, oVertex.ToolTip == null ? "" : oVertex.ToolTip);
 
+            // add picture
             if (oVertex.Attributes.ContainsKey("pic_small") &&
                 oVertex.Attributes["pic_small"] != null)
             {
-                //oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "Image", oVertex.Attributes["pic_small"].String);
+                oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "Image", oVertex.Attributes["pic_small"].ToString());
             }
 
         }
@@ -200,11 +193,7 @@ namespace rcsir.net.common.NetworkAnalyzer
         private void AddEdgeAttributes ( XmlNode oEdgeXmlNode, Edge oEdge,GraphMLXmlDocument oGraphMLXmlDocument)
         {
             oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, "e_type", oEdge.Type);
-            oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, "e_origin", oEdge.FeedOfOrigin);
             oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, RelationshipID, oEdge.Relationship);
-            oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, "e_comment", oEdge.Comment);
-            oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, "e_timestamp", oEdge.Timestamp == DateTime.MinValue ? "" : oEdge.Timestamp.ToString());
-
         }
 
         protected void AppendVertexTooltipXmlNodes (

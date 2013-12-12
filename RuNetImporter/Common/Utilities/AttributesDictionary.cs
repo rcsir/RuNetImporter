@@ -57,7 +57,7 @@ namespace Smrf.AppLib
                 this.Keys.First(x => x.value.Equals(sKey));
                 return true;
             }
-            catch(Exception e)
+            catch(Exception)
             {
                 return false;
             }            

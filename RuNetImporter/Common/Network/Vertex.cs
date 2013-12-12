@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Smrf.AppLib;
-using rcsir.net.common.Utilities;
+using Newtonsoft.Json.Linq;
+
 
 namespace rcsir.net.common.Network
 {
@@ -13,17 +14,17 @@ namespace rcsir.net.common.Network
         public string Name {get; set; }
         public string Type { get; set; }
         public string ToolTip { get; set; }
-        public AttributesDictionary<JSONObject> Attributes { get; set; }
+        public AttributesDictionary<JObject> Attributes { get; set; }
 
         public Vertex(string ID, string Name, string Type)
         {
             this.ID = ID;
             this.Name = Name;
             this.Type = Type;
-            Attributes = new AttributesDictionary<JSONObject>();            
+            Attributes = new AttributesDictionary<JObject>();            
         }
 
-        public Vertex(string ID, string Name, string Type, AttributesDictionary<JSONObject> Attributes)
+        public Vertex(string ID, string Name, string Type, AttributesDictionary<JObject> Attributes)
         {
             this.ID = ID;
             this.Name = Name;            

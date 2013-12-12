@@ -14,12 +14,13 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         public XmlDocument analyze(String userId, String authToken)
         {
             VKRestClient vkRestClient = new VKRestClient();
-            List<Vertex> vertices = new List<Vertex>();
-            List<Edge> edges = new List<Edge>();
 
             vkRestClient.LoadUserInfo(userId, authToken);
             vkRestClient.LoadFriends(userId);
             vkRestClient.GetMutual(userId, authToken);
+
+            VertexCollection vertices = vkRestClient.GetVertices();
+            EdgeCollection edges = vkRestClient.GetEdges();
 
             return GenerateNetworkDocument(vertices, edges);
         }
