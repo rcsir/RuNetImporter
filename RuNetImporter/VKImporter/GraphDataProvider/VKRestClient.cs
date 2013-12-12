@@ -234,6 +234,22 @@ namespace rcsir.net.vk.importer.GraphDataProvider
                             if (o["response"] != null)
                             {
                                 Debug.WriteLine("Mutual: " + o.ToString());
+
+                                if(o["response"].Count() > 0) 
+                                {
+                                    List<String> friendFriendsIds = new List<string>();
+
+                                    for (int i = 0; i < o["response"].Count(); ++i)
+                                    {
+                                        String friendFriendsId = o["response"][i].ToString();
+
+                                        CreateFriendsMutualEdge(targetId,
+                                                                friendFriendsId,
+                                                                this.edges,
+                                                                this.vertices);
+                                    }
+
+                                }
                             }
                             else if (o["error"] != null)
                             {
@@ -252,6 +268,16 @@ namespace rcsir.net.vk.importer.GraphDataProvider
             }
         }
 
+        private void CreateFriendsMutualEdge(String friendId, String friendFriendsId, EdgeCollection edges, VertexCollection vertices)
+        {
+            Vertex friend = vertices.FirstOrDefault(x => x.ID == friendId);
+            Vertex friendsFriend = vertices.FirstOrDefault(x => x.ID == friendFriendsId);
+
+            if (friend != null && friendsFriend != null)
+            {
+                 edges.Add(new Edge(friend, friendsFriend, "", "Friend", "", 1));
+            }
+        }
 
 
         private AttributesDictionary<String> createAttributes(JObject obj) 
