@@ -32,7 +32,7 @@ namespace rcsir.net.vk.importer.Dialogs
         {
             InitializeComponent();
             // TODO: enable when not testing
-            // deleteCookies();
+            deleteCookies();
         }
 
         public void Login()
@@ -52,6 +52,13 @@ namespace rcsir.net.vk.importer.Dialogs
             webBrowserLogin.Navigate(navigateUri);
 
             this.ShowDialog();
+        }
+
+        public void Logout()
+        {
+            webBrowserLogin.Navigate("http://vk.com/");
+            this.ShowDialog();
+
         }
 
         private void webBrowserLogin_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)

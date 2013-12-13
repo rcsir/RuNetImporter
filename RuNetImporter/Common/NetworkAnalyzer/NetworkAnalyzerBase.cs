@@ -199,6 +199,31 @@ namespace rcsir.net.common.NetworkAnalyzer
             oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, RelationshipID, oEdge.Relationship);
         }
 
+
+        //*************************************************************************
+        //  Method: AppendVertexTooltipXmlNodes()
+        //
+        /// <summary>
+        /// Appends a vertex tooltip XML node for each person in the network.
+        /// </summary>
+        ///
+        /// <param name="oGraphMLXmlDocument">
+        /// The GraphMLXmlDocument being populated.
+        /// </param>
+        ///
+        /// <param name="oVertexXmlNode">
+        /// The XmlNode representing the vertex.
+        /// </param>
+        /// 
+        /// <param name="sVertex">
+        /// The screening name of the vertex. 
+        /// </param>
+        /// 
+        /// <param name="sDisplayString">
+        /// The string to be attached after the screening name.
+        /// </param>
+        //*************************************************************************
+
         protected void AppendVertexTooltipXmlNodes (
             GraphMLXmlDocument oGraphMLXmlDocument,
             XmlNode oVertexXmlNode,

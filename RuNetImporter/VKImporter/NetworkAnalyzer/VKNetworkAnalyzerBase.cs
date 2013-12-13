@@ -9,29 +9,30 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Smrf.AppLib;
 using Smrf.XmlLib;
+using Smrf.NodeXL.GraphDataProviders;
 
-namespace Smrf.NodeXL.GraphDataProviders.Facebook
+namespace rcsir.net.vk.importer.NetworkAnalyzer
 {
     //*****************************************************************************
-    //  Class: FacebookNetworkAnalyzerBase
+    //  Class: VKNetworkAnalyzerBase
     //
     /// <summary>
-    /// Base class for classes that analyze a Facebook network.
+    /// Base class for classes that analyze a VK network.
     /// </summary>
     //*****************************************************************************
 
-    public abstract class FacebookNetworkAnalyzerBase : HttpNetworkAnalyzerBase
+    public abstract class VKNetworkAnalyzerBase : HttpNetworkAnalyzerBase
     {
         //*************************************************************************
-        //  Constructor: FacebookNetworkAnalyzerBase()
+        //  Constructor: VKNetworkAnalyzerBase()
         //
         /// <summary>
         /// Initializes a new instance of the <see
-        /// cref="FacebookNetworkAnalyzerBase" /> class.
+        /// cref="VKNetworkAnalyzerBase" /> class.
         /// </summary>
         //*************************************************************************
 
-        public FacebookNetworkAnalyzerBase()
+        public VKNetworkAnalyzerBase()
         {
             // (Do nothing.)
 
@@ -67,7 +68,7 @@ namespace Smrf.NodeXL.GraphDataProviders.Facebook
             String sMessage = null;
 
             const String TimeoutMessage =
-                "The Facebook Web service didn't respond.";
+                "The VK Web service didn't respond.";
 
             
             if (oException is WebException)
@@ -114,57 +115,6 @@ namespace Smrf.NodeXL.GraphDataProviders.Facebook
 
             return (sMessage);
         }
-
-        //*************************************************************************
-        //  Method: AppendVertexTooltipXmlNodes()
-        //
-        /// <summary>
-        /// Appends a vertex tooltip XML node for each person in the network.
-        /// </summary>
-        ///
-        /// <param name="oGraphMLXmlDocument">
-        /// The GraphMLXmlDocument being populated.
-        /// </param>
-        ///
-        /// <param name="oVertexXmlNode">
-        /// The XmlNode representing the vertex.
-        /// </param>
-        /// 
-        /// <param name="sVertex">
-        /// The screening name of the vertex. 
-        /// </param>
-        /// 
-        /// <param name="sDisplayString">
-        /// The string to be attached after the screening name.
-        /// </param>
-        //*************************************************************************
-
-        protected void
-        AppendVertexTooltipXmlNodes
-        (
-            GraphMLXmlDocument oGraphMLXmlDocument,
-            XmlNode oVertexXmlNode,
-            String sVertex,
-            String sDisplayString
-        )
-        {
-            // The NodeXL template doesn't wrap long tooltip text.  Break the
-            // status into lines so the entire tooltip will show in the graph
-            // pane.
-
-            sDisplayString = StringUtil.BreakIntoLines(sDisplayString, 30);
-
-            String sTooltip = String.Format(
-                "{0}\n\n{1}"
-                ,
-                sVertex,
-                sDisplayString
-                );
-
-            oGraphMLXmlDocument.AppendGraphMLAttributeValue(
-                oVertexXmlNode, TooltipID, sTooltip);           
-
-        }              
       
 
         //*************************************************************************
@@ -190,7 +140,7 @@ namespace Smrf.NodeXL.GraphDataProviders.Facebook
         //  Protected constants
         //*************************************************************************
 
-        /// HTTP status codes that have special meaning with Facebook.  When they
+        /// HTTP status codes that have special meaning with VK.  When they
         /// occur, the requests are not retried.
 
         protected static readonly HttpStatusCode[]
@@ -204,17 +154,16 @@ namespace Smrf.NodeXL.GraphDataProviders.Facebook
         //*************************************************************************
 
         ///
-        protected const String FacebookURL = "http://www.facebook.com/";
+        protected const String VKURL = "http://www.vk.com/";
         /// GraphML-attribute IDs.
 
-        protected const String TooltipID = "Tooltip";
 
         //*************************************************************************
         //  Embedded class: GetNetworkAsyncArgsBase()
         //
         /// <summary>
         /// Base class for classes that contain the arguments needed to
-        /// asynchronously get a Facebook network.
+        /// asynchronously get a VK network.
         /// </summary>
         //*************************************************************************
 

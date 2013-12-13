@@ -37,7 +37,7 @@
             this.webBrowserLogin.Location = new System.Drawing.Point(0, 0);
             this.webBrowserLogin.MinimumSize = new System.Drawing.Size(20, 20);
             this.webBrowserLogin.Name = "webBrowserLogin";
-            this.webBrowserLogin.Size = new System.Drawing.Size(484, 262);
+            this.webBrowserLogin.Size = new System.Drawing.Size(584, 262);
             this.webBrowserLogin.TabIndex = 0;
             this.webBrowserLogin.DocumentCompleted += new System.Windows.Forms.WebBrowserDocumentCompletedEventHandler(this.webBrowserLogin_DocumentCompleted);
             // 
@@ -45,8 +45,9 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(484, 262);
+            this.ClientSize = new System.Drawing.Size(584, 262);
             this.Controls.Add(this.webBrowserLogin);
+            this.MinimumSize = new System.Drawing.Size(600, 300);
             this.Name = "VKLoginDialog";
             this.Text = "VKLoginDialog";
             this.ResumeLayout(false);

@@ -8,6 +8,7 @@ using System.Diagnostics;
 using Smrf.SocialNetworkLib;
 using Smrf.AppLib;
 using Smrf.XmlLib;
+using rcsir.net.common.NetworkAnalyzer;
 
 namespace Smrf.NodeXL.GraphDataProviders
 {
@@ -28,7 +29,7 @@ namespace Smrf.NodeXL.GraphDataProviders
 /// </remarks>
 //*****************************************************************************
 
-public abstract class HttpNetworkAnalyzerBase : Object
+public abstract class HttpNetworkAnalyzerBase : NetworkAnalyzerBase
 {
     //*************************************************************************
     //  Constructor: HttpNetworkAnalyzerBase()
@@ -1427,30 +1428,6 @@ public abstract class HttpNetworkAnalyzerBase : Object
     //*************************************************************************
     //  Protected constants
     //*************************************************************************
-
-    /// GraphML-attribute IDs for vertices.
-
-    protected const String ImageFileID = "Image";
-    ///
-    protected const String LabelID = "Label";
-    ///
-    protected const String MenuTextID = "MenuText";
-    ///
-    protected const String MenuActionID = "MenuAction";
-
-    /// GraphML-attribute IDs for edges.
-
-    protected const String RelationshipID = "Relationship";
-
-    /// NodeXL Excel template column names.
-
-    protected const String ImageColumnName = "Image File";
-    ///
-    protected const String LabelColumnName = "Label";
-    ///
-    protected const String MenuTextColumnName = "Custom Menu Item Text";
-    ///
-    protected const String MenuActionColumnName = "Custom Menu Item Action";
 
     /// URI of the Atom namespace.
 
