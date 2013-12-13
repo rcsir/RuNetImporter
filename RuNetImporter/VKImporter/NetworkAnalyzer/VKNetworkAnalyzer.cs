@@ -26,7 +26,13 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
 
             VertexCollection vertices = vkRestClient.GetVertices();
             EdgeCollection edges = vkRestClient.GetEdges();
-            CreateIncludeMeEdges(edges, vertices);
+            
+            // TODO: make is optional, should be controlled by a UI flag 
+            // let's disable it for now
+            if (false)
+            {
+                CreateIncludeMeEdges(edges, vertices);
+            }
 
             // create default attributes (values will be empty)
             AttributesDictionary<String> attributes = new AttributesDictionary<String>();

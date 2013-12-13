@@ -81,7 +81,7 @@ namespace TestVKImporter
 
             if (graph != null)
             {
-                graph.Save("VKNetwork_" + vkLoginDialog.userId + ".xml");
+                graph.Save("VKNetwork_" + vkLoginDialog.userId + ".graphml");
             }
         }
     }

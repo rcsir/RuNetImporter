@@ -190,7 +190,6 @@ namespace rcsir.net.vk.importer.Dialogs
             // 
             // btnOK
             // 
-            this.btnOK.Enabled = false;
             this.btnOK.Location = new System.Drawing.Point(129, 443);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(105, 41);
