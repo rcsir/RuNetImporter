@@ -15,12 +15,14 @@ namespace rcsir.net.ok.importer.NetworkAnalyzer
         private OKRestClient _okRestClient;
         public OKRestClient okRestClient { set { _okRestClient = value; }}
 
-        public XmlDocument analyze(String userId, String authToken)
+        public XmlDocument analyze(bool isMutual = true)
         {
-            _okRestClient.LoadUserInfo(userId, authToken);
-            _okRestClient.LoadFriends(userId);
-//            _okRestClient.GetMutual(userId, authToken);
-            _okRestClient.GetAreFriends();
+//            _okRestClient.LoadUserInfo(userId, authToken);
+            _okRestClient.LoadFriends();
+            if (isMutual)
+                _okRestClient.GetMutualFriends();
+            else
+                _okRestClient.GetAreFriends();
 
             VertexCollection vertices = _okRestClient.GetVertices();
             EdgeCollection edges = _okRestClient.GetEdges();

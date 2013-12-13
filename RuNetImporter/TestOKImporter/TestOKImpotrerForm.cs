@@ -41,7 +41,7 @@ namespace TestOKImporter
                 return;
             }
 
-            okRestClient.LoadUserInfo(okRestClient.userId, okRestClient.authToken);
+            okRestClient.GetAreFriends();
         }
 
         private void LoadFriendsButton_Click(object sender, EventArgs e)
@@ -52,7 +52,7 @@ namespace TestOKImporter
                 return;
             }
 
-            okRestClient.LoadFriends(okRestClient.userId);
+            okRestClient.LoadFriends();
 
         }
 
@@ -64,7 +64,7 @@ namespace TestOKImporter
                 return;
             }
 
-            okRestClient.GetMutualFriends(okRestClient.userId, okRestClient.authToken);
+            okRestClient.GetMutualFriends();
 
         }
 
@@ -78,7 +78,25 @@ namespace TestOKImporter
 
             OKNetworkAnalyzer okNetworkAnalyzer = new OKNetworkAnalyzer();
             okNetworkAnalyzer.okRestClient = okRestClient;
-            XmlDocument graph = okNetworkAnalyzer.analyze(okRestClient.userId, okRestClient.authToken);
+            XmlDocument graph = okNetworkAnalyzer.analyze(false);
+
+            if (graph != null)
+            {
+                graph.Save("OKNetwork_" + okRestClient.userId + ".xml");
+            }
+        }
+
+        private void GenerateGraphAreButton_Click(object sender, EventArgs e)
+        {
+            if (okLoginDialog == null)
+            {
+                Debug.WriteLine("Please authorize first!");
+                return;
+            }
+
+            OKNetworkAnalyzer okNetworkAnalyzer = new OKNetworkAnalyzer();
+            okNetworkAnalyzer.okRestClient = okRestClient;
+            XmlDocument graph = okNetworkAnalyzer.analyze();
 
             if (graph != null)
             {

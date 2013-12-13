@@ -66,6 +66,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             JObject o = JObject.Parse(responseToString);
             authToken = o["access_token"].ToString();
             Debug.WriteLine("authToken = " + authToken);
+            LoadEgoInfo();
         }
 
         private static HttpWebResponse PostMethod(string postedData, string postUrl)
@@ -88,18 +89,18 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             return (HttpWebResponse)request.GetResponse();
         }
 
-        public void LoadUserInfo(String userId, String authToken)
+        private void LoadEgoInfo()
         {
             JObject ego = JObject.Parse(MakeRequest("method=users.getCurrentUser"));
-            Console.WriteLine("Ego: " + ego.ToString());
-            this.userId = ego["uid"].ToString();
+            Console.WriteLine("Ego: " + ego);
+            userId = ego["uid"].ToString();
 
             AttributesDictionary<String> attributes = createAttributes(ego);
             egoVertex = new Vertex(ego["uid"].ToString(),
-                ego["first_name"].ToString() + " " + ego["last_name"].ToString(),
+                ego["first_name"] + " " + ego["last_name"],
                 "Ego", attributes);
             // add ego to the vertices
-            vertices.Add(this.egoVertex);
+            vertices.Add(egoVertex);
         }
 /*
         private void GetMutualFriends()
@@ -123,7 +124,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             GetUserInfo(friendUids);
         }
 */
-        public void LoadFriends(String userId)
+        public void LoadFriends()
         {
             JArray friends = JArray.Parse(MakeRequest("method=friends.get")); // fid=160539089447&fid=561967133371&fid=561692396161&
             string friendUids = userId;
@@ -168,7 +169,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             }
         }
 
-        public void GetMutualFriends(String userId, String authToken)
+        public void GetMutualFriends()
         {
 /*          vertexCollection.Clear();
             edgeCollection.Clear();*/
