@@ -11,16 +11,17 @@ namespace rcsir.net.ok.importer.Dialogs
     public partial class OKLoginDialog : Form
     {
         private readonly String auth_url = "http://www.odnoklassniki.ru/oauth/authorize";
-        private readonly string token_Url = "http://api.odnoklassniki.ru/oauth/token.do";
         private readonly String client_id = "201872896"; // application id
         private readonly String scope = "(SET_STATUS;VALUABLE_ACCESS;)"; // permissions
         private readonly String display = "page"; // authorization windows appearence: page, popup, touch, wap
         // private readonly String v = ""; // API version
         private readonly String response_type = "code"; // Response type
 
-        
         private long _expiresIn;
-        public long expiresIn { get { return this._expiresIn; } set { this._expiresIn = value; } }
+        public long expiresIn { get { return _expiresIn; } set { _expiresIn = value; } }
+
+        private OKRestClient _okRestClient = new OKRestClient();
+        public OKRestClient okRestClient { get { return _okRestClient; } }
 
         public OKLoginDialog()
         {
@@ -62,7 +63,6 @@ namespace rcsir.net.ok.importer.Dialogs
                 String code = GetValue(stringUrl);
 //                DisableComponents(fcbDialog);
                 Close();
-                OKRestClient okRestClient = new OKRestClient();
                 okRestClient.GetAccessToken(code);
             }
 //              String[] tokens = System.Text.RegularExpressions.Regex.Split(stringUrl, "[=&#]");

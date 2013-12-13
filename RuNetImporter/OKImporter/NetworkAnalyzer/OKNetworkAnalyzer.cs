@@ -12,16 +12,18 @@ namespace rcsir.net.ok.importer.NetworkAnalyzer
 {
     public class OKNetworkAnalyzer : NetworkAnalyzerBase
     {
+        private OKRestClient _okRestClient;
+        public OKRestClient okRestClient { set { _okRestClient = value; }}
+
         public XmlDocument analyze(String userId, String authToken)
         {
-            OKRestClient okRestClient = new OKRestClient();
+            _okRestClient.LoadUserInfo(userId, authToken);
+            _okRestClient.LoadFriends(userId);
+//            _okRestClient.GetMutual(userId, authToken);
+            _okRestClient.GetAreFriends();
 
-            okRestClient.LoadUserInfo(userId, authToken);
-            okRestClient.LoadFriends(userId);
-            okRestClient.GetMutual(userId, authToken);
-
-            VertexCollection vertices = okRestClient.GetVertices();
-            EdgeCollection edges = okRestClient.GetEdges();
+            VertexCollection vertices = _okRestClient.GetVertices();
+            EdgeCollection edges = _okRestClient.GetEdges();
 
             AttributesDictionary<String> attributes = new AttributesDictionary<String>();
             return GenerateNetworkDocument(vertices, edges, attributes);

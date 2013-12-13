@@ -15,7 +15,6 @@ namespace rcsir.net.ok.importer.GraphDataProvider
 {
     public class OKRestClient
     {
-        private readonly String api_url = "https://api.vk.com";
         public static string redirect_url = "http://rcsoc.spbu.ru/";
 
         private static string client_secret = "EDDB1A6D680BDFF8E49A179C";
@@ -35,11 +34,6 @@ namespace rcsir.net.ok.importer.GraphDataProvider
         public String authToken { get { return this._authToken; } set { this._authToken = value; } }
         private String _userId;
         public String userId { get { return this._userId; } set { this._userId = value; } }
-
-        public OKRestClient()
-        {
-        }
-
 
         public Vertex GetEgo()
         {
@@ -71,7 +65,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             responseToString = strreader.ReadToEnd();
             JObject o = JObject.Parse(responseToString);
             authToken = o["access_token"].ToString();
-            Debug.WriteLine(authToken + "responseToString = " + responseToString);
+            Debug.WriteLine("authToken = " + authToken);
         }
 
         private static HttpWebResponse PostMethod(string postedData, string postUrl)
@@ -96,225 +90,137 @@ namespace rcsir.net.ok.importer.GraphDataProvider
 
         public void LoadUserInfo(String userId, String authToken)
         {
-            JObject dict = MakeRequest("method=users.getCurrentUser");
-            userId = dict["uid"].ToString();
+            JObject ego = JObject.Parse(MakeRequest("method=users.getCurrentUser"));
+            Console.WriteLine("Ego: " + ego.ToString());
+            this.userId = ego["uid"].ToString();
 
-            StringBuilder sb = new StringBuilder(api_url);
-            sb.Append("/method/getProfiles");
-            sb.Append('?');
-            sb.Append("uid=").Append(userId).Append('&');
-            sb.Append("access_token=").Append(authToken);
-
-            try
-            {
-                // Create URI 
-                Uri address = new Uri(sb.ToString());
-
-                Debug.WriteLine("getProfiles: " + address.ToString());
-
-                // Create the web request 
-                HttpWebRequest request = WebRequest.Create(address) as HttpWebRequest;
-
-                // Set type to Get 
-                request.Method = "Get";
-                request.ContentType = "application/json; charset=utf-8";
-                request.Accept = "application/json"; // Determines the response type as XML or JSON etc
-
-                // Get response 
-                using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
-                {
-                    Stream ResponseStream = null;
-                    ResponseStream = response.GetResponseStream();
-                    int responseCode = (int)response.StatusCode;
-                    if (responseCode < 300)
-                    {
-                        string responseBody = ((new StreamReader(ResponseStream)).ReadToEnd());
-                        string contentType = response.ContentType;
-                        JObject o = JObject.Parse(responseBody);
-
-                        if (o["response"] != null)
-                        {
-                            if (o["response"].Count() > 0)
-                            {
-                                JObject ego = o["response"][0].ToObject<JObject>();
-                                Console.WriteLine("Ego: " + ego.ToString()); 
-
-                                // ok, create the ego object here
-                                AttributesDictionary<String> attributes = createAttributes(ego);
-
-                                this.egoVertex = new Vertex(ego["uid"].ToString(),
-                                    ego["first_name"].ToString() + " " + ego["last_name"].ToString(),
-                                    "Ego", attributes);
-
-                                // add ego to the vertices
-                                this.vertices.Add(this.egoVertex);
-                            }
-                        }
-                        else if(o["error"] != null)
-                        {
-                            Debug.WriteLine("Error " + o["error"].ToString());
-                        }
-                    }
-                    else
-                    {
-                        Debug.WriteLine("Error " + ((new StreamReader(ResponseStream)).ReadToEnd()));
-                    }
-                }
-            }
-            catch (WebException Ex)
-            {
-                handleWebException(Ex);
-            }
+            AttributesDictionary<String> attributes = createAttributes(ego);
+            egoVertex = new Vertex(ego["uid"].ToString(),
+                ego["first_name"].ToString() + " " + ego["last_name"].ToString(),
+                "Ego", attributes);
+            // add ego to the vertices
+            vertices.Add(this.egoVertex);
         }
+/*
+        private void GetMutualFriends()
+        {
+            JObject dict = MakeRequest("method=friends.get"); // fid=160539089447&fid=561967133371&fid=561692396161&
+            JObject[] friends = dict.Array;
+            string friendUids = staticUid;
+            vertexCollection.Clear();
+            edgeCollection.Clear();
+            foreach (var friend in friends)
+            {
+                JObject friendDict = MakeRequest("method=friends.getMutualFriends&target_id=" + friend.String);
+                    //  &source_id=160539089447
+                friendUids += "," + friend.String;
+                addVertex(friend.String);
+                foreach (var subFriend in friendDict.Array)
+                    if (friend.Integer > subFriend.Integer)
+                        addEdge(friend.String, subFriend.String);
+            }
 
+            GetUserInfo(friendUids);
+        }
+*/
         public void LoadFriends(String userId)
         {
-            StringBuilder sb = new StringBuilder(api_url);
-            sb.Append("/method/friends.get");
-            sb.Append('?');
-            sb.Append("user_id=").Append(userId).Append('&');
-            sb.Append("fields=").Append("uid,first_name,last_name,nickname,sex,bdate,city,country,education");
-
-            try
-            {
-                // Create URI 
-                Uri address = new Uri(sb.ToString());
-
-                Debug.WriteLine("getFriends: " + address.ToString());
-
-                // Create the web request 
-                HttpWebRequest request = WebRequest.Create(address) as HttpWebRequest;
-
-                // Set type to Get 
-                request.Method = "Get";
-                request.ContentType = "application/json; charset=utf-8";
-                request.Accept = "application/json"; // Determines the response type as XML or JSON etc
-
-                // Get response 
-                using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
-                {
-                    Stream ResponseStream = null;
-                    ResponseStream = response.GetResponseStream();
-                    int responseCode = (int)response.StatusCode;
-                    if (responseCode < 300)
-                    {
-                        string responseBody = ((new StreamReader(ResponseStream)).ReadToEnd());
-                        string contentType = response.ContentType;
-                        JObject o = JObject.Parse(responseBody);
-
-                        if (o["response"] != null)
-                        {
-                            if (o["response"].Count() > 0)
-                            {
-
-                                for (int i = 0; i < o["response"].Count(); ++i)
-                                {
-                                    JObject friend = o["response"][i].ToObject<JObject>();
-                                    // uid, first_name, last_name, nickname, sex, bdate, city, country, timezone
-                                    Console.WriteLine(i.ToString() + ") friend: " + friend.ToString());
-
-                                    string uid = friend["uid"].ToString();
-                                    // add user id to the friends list
-                                    this.friendIds.Add(uid);
-
-                                    // add friend vertex
-                                    AttributesDictionary<String> attributes = createAttributes(friend);
-
-                                    this.vertices.Add(new Vertex(uid,
-                                        friend["first_name"].ToString() + " " + friend["last_name"].ToString(),
-                                        "Friend", attributes));
-                                }
-                            }
-                        }
-                        else if (o["error"] != null)
-                        {
-                            Debug.WriteLine("Error " + o["error"].ToString());
-                        }
-                    }
-                }
-
+            JArray friends = JArray.Parse(MakeRequest("method=friends.get")); // fid=160539089447&fid=561967133371&fid=561692396161&
+            string friendUids = userId;
+            foreach (var friend in friends) {
+//                JObject friendDict = JObject.Parse(MakeRequest("method=friends.getMutualFriends&target_id=" + friend));  //  &source_id=160539089447
+                friendUids += "," + friend;
+                friendIds.Add(friend.ToString());
             }
-            catch (WebException Ex)
-            {
-                handleWebException(Ex);
+
+/*            vertexCollection.Clear();
+            edgeCollection.Clear();
+            foreach (var friend in friends) {
+                JObject friendDict = JObject.Parse(MakeRequest("method=friends.getMutualFriends&target_id=" + friend));  //  &source_id=160539089447
+                friendUids += "," + friend;
+                addVertex(friend.String);
+                foreach (var subFriend in friendDict.Array)
+                    if (friend.Integer > subFriend.Integer)
+                        addEdge(friend.String, subFriend.String);
             }
+*/
+            GetUserInfo(friendUids);
         }
 
-        public void GetMutual(String userId, String authToken)
+        public void GetAreFriends()
         {
-            StringBuilder mainsb = new StringBuilder(api_url);
-            mainsb.Append("/method/friends.getMutual");
-            mainsb.Append('?');
-            mainsb.Append("source_uid=").Append(userId).Append('&');
-            mainsb.Append("access_token=").Append(authToken).Append('&');
+            var pares = GeneratePares(friendIds.ToArray());
+            string[] uidsArr1 = pares[0].Split(',');
+            string[] uidsArr2 = pares[1].Split(',');
+            JArray friendsDict;
 
-            try
-            {
-
-                foreach (string targetId in this.friendIds)
-                {
-                    StringBuilder sb = new StringBuilder(mainsb.ToString());
-
-                    // Append target friend ids
-                    sb.Append("target_uid=").Append(targetId);
-
-                    // Create URI 
-                    Uri address = new Uri(sb.ToString());
-
-                    Debug.WriteLine("getMutual: " + address.ToString());
-
-                    // Create the web request 
-                    HttpWebRequest request = WebRequest.Create(address) as HttpWebRequest;
-
-                    // Set type to Get 
-                    request.Method = "Get";
-                    request.ContentType = "application/json; charset=utf-8";
-                    request.Accept = "application/json"; // Determines the response type as XML or JSON etc
-
-                    // Get response 
-                    using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
-                    {
-                        Stream ResponseStream = null;
-                        ResponseStream = response.GetResponseStream();
-                        int responseCode = (int)response.StatusCode;
-                        if (responseCode < 300)
-                        {
-                            string responseBody = ((new StreamReader(ResponseStream)).ReadToEnd());
-                            string contentType = response.ContentType;
-                            JObject o = JObject.Parse(responseBody);
-                            if (o["response"] != null)
-                            {
-                                Debug.WriteLine("Mutual: " + o.ToString());
-                            }
-                            else if (o["error"] != null)
-                            {
-                                Debug.WriteLine("Error " + o["error"].ToString());
-                            }
-                        }
+            for (var i = 0; i < uidsArr1.Length; i += 100) {
+                string uids1 = string.Join(",", uidsArr1.Skip(i).Take(100).ToArray());
+                string uids2 = string.Join(",", uidsArr2.Skip(i).Take(100).ToArray());
+                friendsDict = JArray.Parse(MakeRequest("method=friends.areFriends&uids1=" + uids1 + "&uids2=" + uids2));
+                foreach (var friend in friendsDict) {
+                    if (friend["are_friends"].ToString().ToLower() == "true") {
+                        CreateEdge(friend["uid1"].ToString(), friend["uid2"].ToString(), edges, vertices);
+                        Debug.WriteLine("AreFriends: " + friend["uid1"].ToString(), friend["uid2"].ToString());
                     }
-
-                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limit
-                    Thread.Sleep(333);
                 }
+                Thread.Sleep(100);
             }
-            catch (WebException Ex)
+        }
+
+        public void GetMutualFriends(String userId, String authToken)
+        {
+/*          vertexCollection.Clear();
+            edgeCollection.Clear();*/
+            string friendUids = userId;
+
+            foreach (var friendId in friendIds)
             {
-                handleWebException(Ex);
+                JArray friendDict = JArray.Parse(MakeRequest("method=friends.getMutualFriends&target_id=" + friendId));  //  &source_id=160539089447
+                friendUids += "," + friendId;
+//                addVertex(friend.String);
+                foreach (var subFriend in friendDict) {
+                    Debug.WriteLine("Mutual: " + subFriend.ToString()); // Debug.WriteLine(subFriend);
+                    CreateEdge(friendId, subFriend.ToString(), edges, vertices);
+                }
+/*
+                    if (friend.Integer > subFriend.Integer)
+                        addEdge(friend.String, subFriend.String);*/
+            }
+        }
+
+        private void GetUserInfo(string uids)
+        {
+            JArray dict = JArray.Parse(MakeRequest("fields=uid,name,first_name, last_name,age,gender,locale&method=users.getInfo&uids=" + uids));
+            Console.WriteLine("_________________________________________________");
+            foreach (var friend in dict) {
+                AttributesDictionary<String> attributes = createAttributes(friend.ToObject<JObject>());
+
+                vertices.Add(new Vertex(friend["uid"].ToString(),
+                    friend["first_name"].ToString() + " " + friend["last_name"].ToString(),
+                    "Friend", attributes));
             }
         }
 
 
+        private void CreateEdge(String friendId, String friendFriendsId, EdgeCollection edges, VertexCollection vertices)
+        {
+            Vertex friend = vertices.FirstOrDefault(x => x.ID == friendId);
+            Vertex friendsFriend = vertices.FirstOrDefault(x => x.ID == friendFriendsId);
+
+            if (friend != null && friendsFriend != null)
+            {
+                edges.Add(new Edge(friend, friendsFriend, "", "Friend", "", 1));
+            }
+        }
 
         private AttributesDictionary<String> createAttributes(JObject obj) 
         {
             AttributesDictionary<String> attributes = new AttributesDictionary<String>();
             List<AttributeUtils.Attribute> keys = new List<AttributeUtils.Attribute>(attributes.Keys);
-            foreach (AttributeUtils.Attribute key in keys)
-            {
+            foreach (AttributeUtils.Attribute key in keys) {
                 String name = key.value;
-
-                if (obj[name] != null)
-                {
+                if (obj[name] != null) {
                     // assert it is null?
                     String value = obj[name].ToString(); 
                     attributes[key] =  value;
@@ -324,17 +230,14 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             return attributes;
         }
 
-
-        private JObject MakeRequest(string requestString)
+        private string MakeRequest(string requestString)
         {
             var sig = GetMD5Hash(string.Format("{0}{1}", "application_key=" + client_open + requestString.Replace("&", ""), sigSecret));
-            string responseToString;
             string postedData = postPrefix + requestString + "&sig=" + sig;
-
             var response = PostMethod(postedData, apiUrl);
             var strreader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
-            responseToString = strreader.ReadToEnd();
-            return JObject.Parse(responseToString); // JObject.CreateFromString(responseToString);
+            string responseToString = strreader.ReadToEnd();
+            return responseToString; //JObject.Parse(responseToString); // JObject.CreateFromString(responseToString);
         }
 
 
@@ -345,34 +248,53 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             bs = x.ComputeHash(bs);
             var s = new StringBuilder();
             foreach (var b in bs)
-            {
                 s.Append(b.ToString("x2").ToLower());
-            }
+
             return s.ToString();
         }
 
         private void handleWebException(WebException Ex)
         {
-            if (Ex.Status == WebExceptionStatus.ProtocolError)
-            {
+            if (Ex.Status == WebExceptionStatus.ProtocolError) {
                 int StatusCode = (int)((HttpWebResponse)Ex.Response).StatusCode;
                 Stream ResponseStream = null;
                 ResponseStream = ((HttpWebResponse)Ex.Response).GetResponseStream();
                 string responseText = (new StreamReader(ResponseStream)).ReadToEnd();
-                if (StatusCode == 500)
-                {
+                if (StatusCode == 500) {
                     Debug.WriteLine("Error 500 - " + responseText);
-                }
-                else
-                {
+                } else {
                     // Do Something for other status codes
                     Debug.WriteLine("Error " + StatusCode);
                 }
-            }
-            else
-            {
+            } else {
                 throw (Ex); // Or check for other WebExceptionStatus
             }
+        }
+
+        private static string[] GeneratePares(string[] friendUids)
+        {
+            int n = friendUids.Length - 1;
+            int k = 2;
+            string[] result = new string[k];
+            int[] a = new int[k];
+            for (int i = 0; i < k; i++) {
+                a[i] = i + 1;
+                result[i] = friendUids[a[i]];
+            }
+            int p = k - 1;
+            while (p >= 0) {
+                if (a[k - 1] == n)
+                    p--;
+                else p = k - 1;
+                if (p >= 0) {
+                    for (int i = k - 1; i >= p; i--)
+                        a[i] = a[p] + i - p + 1;
+
+                    result[0] += "," + friendUids[a[0]];
+                    result[1] += "," + friendUids[a[1]];
+                }
+            }
+            return result;
         }
     }
 }

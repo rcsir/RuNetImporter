@@ -17,7 +17,7 @@ namespace TestOKImporter
     public partial class TestOKImpotrerForm : Form
     {
         private OKLoginDialog okLoginDialog;
-        private OKRestClient okRestClient = new OKRestClient();
+        private OKRestClient okRestClient;
 
         public TestOKImpotrerForm()
         {
@@ -26,9 +26,10 @@ namespace TestOKImporter
 
         private void AuthButton_Click(object sender, EventArgs e)
         {
-            if (okLoginDialog == null)
+            if (okLoginDialog == null) {
                 okLoginDialog = new OKLoginDialog();
-
+                okRestClient = okLoginDialog.okRestClient;
+            }
             okLoginDialog.Login();
         }
 
@@ -63,7 +64,7 @@ namespace TestOKImporter
                 return;
             }
 
-            okRestClient.GetMutual(okRestClient.userId, okRestClient.authToken);
+            okRestClient.GetMutualFriends(okRestClient.userId, okRestClient.authToken);
 
         }
 
@@ -75,9 +76,9 @@ namespace TestOKImporter
                 return;
             }
 
-            OKNetworkAnalyzer vkNetworkAnalyzer = new OKNetworkAnalyzer();
-
-            XmlDocument graph = vkNetworkAnalyzer.analyze(okRestClient.userId, okRestClient.authToken);
+            OKNetworkAnalyzer okNetworkAnalyzer = new OKNetworkAnalyzer();
+            okNetworkAnalyzer.okRestClient = okRestClient;
+            XmlDocument graph = okNetworkAnalyzer.analyze(okRestClient.userId, okRestClient.authToken);
 
             if (graph != null)
             {
