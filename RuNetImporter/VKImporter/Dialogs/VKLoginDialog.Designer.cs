@@ -34,22 +34,33 @@
             // webBrowserLogin
             // 
             this.webBrowserLogin.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.webBrowserLogin.IsWebBrowserContextMenuEnabled = false;
             this.webBrowserLogin.Location = new System.Drawing.Point(0, 0);
             this.webBrowserLogin.MinimumSize = new System.Drawing.Size(20, 20);
             this.webBrowserLogin.Name = "webBrowserLogin";
-            this.webBrowserLogin.Size = new System.Drawing.Size(690, 328);
+            this.webBrowserLogin.ScriptErrorsSuppressed = true;
+            this.webBrowserLogin.ScrollBarsEnabled = false;
+            this.webBrowserLogin.Size = new System.Drawing.Size(688, 366);
             this.webBrowserLogin.TabIndex = 0;
             this.webBrowserLogin.DocumentCompleted += new System.Windows.Forms.WebBrowserDocumentCompletedEventHandler(this.webBrowserLogin_DocumentCompleted);
+            this.webBrowserLogin.Navigated += new System.Windows.Forms.WebBrowserNavigatedEventHandler(this.webBrowserLogin_Navigated);
             // 
             // VKLoginDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(690, 328);
+            this.AutoSize = true;
+            this.ClientSize = new System.Drawing.Size(688, 366);
             this.Controls.Add(this.webBrowserLogin);
-            this.MinimumSize = new System.Drawing.Size(600, 300);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.MinimumSize = new System.Drawing.Size(100, 100);
             this.Name = "VKLoginDialog";
-            this.Text = "VKLoginDialog";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
+            this.Text = "VK Authorization Dialog";
             this.ResumeLayout(false);
 
         }

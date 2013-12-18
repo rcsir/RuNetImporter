@@ -68,6 +68,11 @@
     <Compile Include="NetworkAnalyzer\VKNetworkAnalyzerBase.cs" />
     <Compile Include="NetworkAnalyzer\VKNetworkAnalyzer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Secret.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Secret.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
@@ -76,6 +81,10 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\VKLoginDialog.resx">
       <DependentUpon>VKLoginDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Secret.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Secret.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

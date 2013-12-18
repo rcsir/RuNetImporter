@@ -27,9 +27,18 @@ namespace TestVKImporter
         private void AuthButton_Click(object sender, EventArgs e)
         {
             if (vkLoginDialog == null)
+            {
                 vkLoginDialog = new VKLoginDialog();
+                // subscribe for login events
+                vkLoginDialog.OnUserLogin += new VKLoginDialog.UserLoginHandler(UserLogin);
+            }
 
             vkLoginDialog.Login();
+        }
+
+        public void UserLogin(object loginDialog, UserLoginEventArgs loginArgs)
+        {
+            Debug.WriteLine("User Logged In: " + loginArgs.ToString());
         }
 
         private void LoadUserInfoButton_Click(object sender, EventArgs e)

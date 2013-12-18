@@ -43,17 +43,6 @@ namespace rcsir.net.vk.importer.GraphDataProvider
             AssertValid();
         }
 
-        public VKDialog VKDialog
-        {
-            get
-            {
-                throw new System.NotImplementedException();
-            }
-            set
-            {
-            }
-        }
-
         //*************************************************************************
         //  Method: CreateDialog()
         //

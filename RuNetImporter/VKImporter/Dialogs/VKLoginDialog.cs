@@ -11,13 +11,28 @@ using System.IO;
 
 namespace rcsir.net.vk.importer.Dialogs
 {
+    // Login event arguments
+    public class UserLoginEventArgs : EventArgs
+    {
+        public UserLoginEventArgs(String authToken, String userId, long expiersIn)
+        {
+            this.authToken = authToken;
+            this.userId = userId;
+            this.expiersIn = expiersIn;
+        }
+
+        public readonly String authToken;
+        public readonly String userId;
+        public readonly long expiersIn;
+    }
+
     public partial class VKLoginDialog : Form
     {
-        private readonly String auth_url = "https://oauth.vk.com/authorize";
-        private readonly String client_id = "3838634"; // application id
+        private readonly String auth_url = Secret.auth_url;
+        private readonly String client_id = Secret.client_id; // application id
         private readonly String scope = "friends"; // permissions
-        private readonly String redirect_url = "https://oauth.vk.com/blank.html"; // URL where access token will be passed to
-        private readonly String display = "page"; // authorization windows appearence: page, popup, touch, wap
+        private readonly String redirect_url = Secret.redirect_url; // URL where access token will be passed to
+        private readonly String display = "popup"; // authorization windows appearence: page, popup, touch, wap
         // private readonly String v = ""; // API version
         private readonly String response_type = "token"; // Response type
 
@@ -27,6 +42,15 @@ namespace rcsir.net.vk.importer.Dialogs
         public String userId { get { return this._userId; } set { this._userId = value; } }
         private long _expiresIn;
         public long expiresIn { get { return this._expiresIn; } set { this._expiresIn = value; } }
+
+        // define OnLogin delegate
+        public delegate void UserLoginHandler 
+        (
+            object VKLoginDialog,
+            UserLoginEventArgs userLogin
+        );
+
+        public UserLoginHandler OnUserLogin;
 
         public VKLoginDialog()
         {
@@ -48,7 +72,7 @@ namespace rcsir.net.vk.importer.Dialogs
             sb.Append("response_type=").Append(response_type);
 
             String navigateUri = sb.ToString();
-            Debug.WriteLine("Navigate uri = " + navigateUri);
+            Debug.WriteLine("Navigate uri: " + navigateUri);
             webBrowserLogin.Navigate(navigateUri);
 
             this.ShowDialog();
@@ -64,6 +88,8 @@ namespace rcsir.net.vk.importer.Dialogs
         private void webBrowserLogin_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
             Debug.WriteLine("DocumentCompleted");
+            Size webSize = webBrowserLogin.Document.Window.Size;
+            this.Size = webSize;
 
             String stringUrl = webBrowserLogin.Url.ToString();
             Debug.WriteLine(stringUrl);
@@ -73,19 +99,41 @@ namespace rcsir.net.vk.importer.Dialogs
 
             if (stringUrl.StartsWith(redirect_url))
             {
-
                 String[] tokens = System.Text.RegularExpressions.Regex.Split(stringUrl, "[=&#]");
-                foreach (String s in tokens)
+                for(int i = 0; i < tokens.Length; ++i)
                 {
-                    Debug.WriteLine("Token = " + s);
+                    Debug.WriteLine("Token = " + tokens[i]);
+                    switch (tokens[i])
+                    {
+                        case "access_token":
+                            if (i < tokens.Length)
+                            {
+                                this.authToken = tokens[++i];
+                            }
+                        break;
+                        case "expires_in":
+                            if (i < tokens.Length)
+                            {
+                                this.expiresIn = Convert.ToInt64(tokens[++i]);
+                            }
+                        break;
+                        case "user_id":
+                            if (i < tokens.Length)
+                            {
+                                this.userId = tokens[++i];
+                            }
+                        break;
+                    }
                 }
 
-                if (tokens.Length == 7)
+                // notify listeners
+                if (OnUserLogin != null)
                 {
-                    this.authToken = tokens[2];
-                    this.expiresIn = Convert.ToInt64(tokens[4]);
-                    this.userId = tokens[6];
+                    UserLoginEventArgs args = new UserLoginEventArgs(this.authToken, this.userId, this.expiresIn);
+                    OnUserLogin(this, args);
                 }
+
+                this.Close(); // close the dialog
             }
         }
 
@@ -107,6 +155,10 @@ namespace rcsir.net.vk.importer.Dialogs
                 }
 
             }
+        }
+
+        private void webBrowserLogin_Navigated(object sender, WebBrowserNavigatedEventArgs e)
+        {
         }
     }
 }
