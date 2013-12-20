@@ -23,7 +23,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
         private const string token_Url = "http://api.odnoklassniki.ru/oauth/token.do";
 
         private string postPrefix { get { return "application_key=" + client_open + "&access_token=" + authToken + "&"; } }
-        private string sigSecret { get { return GetMD5Hash(string.Format("{0}{1}", authToken, client_secret)); } }
+        private string sigSecret { get { return StringUtil.GetMd5Hash(string.Format("{0}{1}", authToken, client_secret)); } }
 
         private Vertex egoVertex;
         private List<string> friendIds = new List<string>();
@@ -31,9 +31,9 @@ namespace rcsir.net.ok.importer.GraphDataProvider
         private EdgeCollection edges = new EdgeCollection();
 
         private String _authToken;
-        public String authToken { get { return this._authToken; } set { this._authToken = value; } }
+        public String authToken { get { return _authToken; } set { _authToken = value; } }
         private String _userId;
-        public String userId { get { return this._userId; } set { this._userId = value; } }
+        public String userId { get { return _userId; } set { _userId = value; } }
 
         public Vertex GetEgo()
         {
@@ -66,7 +66,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             JObject o = JObject.Parse(responseToString);
             authToken = o["access_token"].ToString();
             Debug.WriteLine("authToken = " + authToken);
-            LoadEgoInfo();
+            CreateEgoVertex();
         }
 
         private static HttpWebResponse PostMethod(string postedData, string postUrl)
@@ -89,17 +89,12 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             return (HttpWebResponse)request.GetResponse();
         }
 
-        private void LoadEgoInfo()
+        private void CreateEgoVertex()
         {
             JObject ego = JObject.Parse(MakeRequest("method=users.getCurrentUser"));
-            Console.WriteLine("Ego: " + ego);
             userId = ego["uid"].ToString();
-
             AttributesDictionary<String> attributes = createAttributes(ego);
-            egoVertex = new Vertex(ego["uid"].ToString(),
-                ego["first_name"] + " " + ego["last_name"],
-                "Ego", attributes);
-            // add ego to the vertices
+            egoVertex = new Vertex(ego["uid"].ToString(), ego["name"].ToString(), "Ego", attributes);
             vertices.Add(egoVertex);
         }
 /*
@@ -127,7 +122,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
         public void LoadFriends()
         {
             JArray friends = JArray.Parse(MakeRequest("method=friends.get")); // fid=160539089447&fid=561967133371&fid=561692396161&
-            string friendUids = userId;
+            string friendUids = ""; // userId;
             foreach (var friend in friends) {
 //                JObject friendDict = JObject.Parse(MakeRequest("method=friends.getMutualFriends&target_id=" + friend));  //  &source_id=160539089447
                 friendUids += "," + friend;
@@ -145,23 +140,21 @@ namespace rcsir.net.ok.importer.GraphDataProvider
                         addEdge(friend.String, subFriend.String);
             }
 */
-            GetUserInfo(friendUids);
+            CreateFriendsVertices(friendUids);
         }
 
         public void GetAreFriends()
         {
-            var pares = GeneratePares(friendIds.ToArray());
+            var pares = MathUtil.GeneratePares(friendIds.ToArray());
             string[] uidsArr1 = pares[0].Split(',');
             string[] uidsArr2 = pares[1].Split(',');
-            JArray friendsDict;
-
             for (var i = 0; i < uidsArr1.Length; i += 100) {
                 string uids1 = string.Join(",", uidsArr1.Skip(i).Take(100).ToArray());
                 string uids2 = string.Join(",", uidsArr2.Skip(i).Take(100).ToArray());
-                friendsDict = JArray.Parse(MakeRequest("method=friends.areFriends&uids1=" + uids1 + "&uids2=" + uids2));
+                JArray friendsDict = JArray.Parse(MakeRequest("method=friends.areFriends&uids1=" + uids1 + "&uids2=" + uids2));
                 foreach (var friend in friendsDict) {
                     if (friend["are_friends"].ToString().ToLower() == "true") {
-                        CreateEdge(friend["uid1"].ToString(), friend["uid2"].ToString(), edges, vertices);
+                        CreateEdge(friend["uid1"].ToString(), friend["uid2"].ToString());
                         Debug.WriteLine("AreFriends: " + friend["uid1"].ToString(), friend["uid2"].ToString());
                     }
                 }
@@ -175,14 +168,13 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             edgeCollection.Clear();*/
             string friendUids = userId;
 
-            foreach (var friendId in friendIds)
-            {
+            foreach (var friendId in friendIds) {
                 JArray friendDict = JArray.Parse(MakeRequest("method=friends.getMutualFriends&target_id=" + friendId));  //  &source_id=160539089447
                 friendUids += "," + friendId;
 //                addVertex(friend.String);
                 foreach (var subFriend in friendDict) {
                     Debug.WriteLine("Mutual: " + subFriend.ToString()); // Debug.WriteLine(subFriend);
-                    CreateEdge(friendId, subFriend.ToString(), edges, vertices);
+                    CreateEdge(friendId, subFriend.ToString());
                 }
 /*
                     if (friend.Integer > subFriend.Integer)
@@ -190,21 +182,19 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             }
         }
 
-        private void GetUserInfo(string uids)
+        private void CreateFriendsVertices(string uids)
         {
-            JArray dict = JArray.Parse(MakeRequest("fields=uid,name,first_name, last_name,age,gender,locale&method=users.getInfo&uids=" + uids));
-            Console.WriteLine("_________________________________________________");
+            string response = MakeRequest("fields=uid,name,first_name,last_name,age,gender,locale&method=users.getInfo&uids=" + uids);
+            if (response == null)
+                return;
+            JArray dict = JArray.Parse(response);
             foreach (var friend in dict) {
                 AttributesDictionary<String> attributes = createAttributes(friend.ToObject<JObject>());
-
-                vertices.Add(new Vertex(friend["uid"].ToString(),
-                    friend["first_name"].ToString() + " " + friend["last_name"].ToString(),
-                    "Friend", attributes));
+                vertices.Add(new Vertex(friend["uid"].ToString(), friend["name"].ToString(), "Friend", attributes));
             }
         }
 
-
-        private void CreateEdge(String friendId, String friendFriendsId, EdgeCollection edges, VertexCollection vertices)
+        private void CreateEdge(String friendId, String friendFriendsId)
         {
             Vertex friend = vertices.FirstOrDefault(x => x.ID == friendId);
             Vertex friendsFriend = vertices.FirstOrDefault(x => x.ID == friendFriendsId);
@@ -215,7 +205,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             }
         }
 
-        private AttributesDictionary<String> createAttributes(JObject obj) 
+        private static AttributesDictionary<String> createAttributes(JObject obj) 
         {
             AttributesDictionary<String> attributes = new AttributesDictionary<String>();
             List<AttributeUtils.Attribute> keys = new List<AttributeUtils.Attribute>(attributes.Keys);
@@ -233,25 +223,12 @@ namespace rcsir.net.ok.importer.GraphDataProvider
 
         private string MakeRequest(string requestString)
         {
-            var sig = GetMD5Hash(string.Format("{0}{1}", "application_key=" + client_open + requestString.Replace("&", ""), sigSecret));
+            var sig = StringUtil.GetMd5Hash(string.Format("{0}{1}", "application_key=" + client_open + requestString.Replace("&", ""), sigSecret));
             string postedData = postPrefix + requestString + "&sig=" + sig;
             var response = PostMethod(postedData, apiUrl);
             var strreader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
             string responseToString = strreader.ReadToEnd();
             return responseToString; //JObject.Parse(responseToString); // JObject.CreateFromString(responseToString);
-        }
-
-
-        private static string GetMD5Hash(string input)
-        {
-            var x = new System.Security.Cryptography.MD5CryptoServiceProvider();
-            var bs = Encoding.UTF8.GetBytes(input);
-            bs = x.ComputeHash(bs);
-            var s = new StringBuilder();
-            foreach (var b in bs)
-                s.Append(b.ToString("x2").ToLower());
-
-            return s.ToString();
         }
 
         private void handleWebException(WebException Ex)
@@ -270,32 +247,6 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             } else {
                 throw (Ex); // Or check for other WebExceptionStatus
             }
-        }
-
-        private static string[] GeneratePares(string[] friendUids)
-        {
-            int n = friendUids.Length - 1;
-            int k = 2;
-            string[] result = new string[k];
-            int[] a = new int[k];
-            for (int i = 0; i < k; i++) {
-                a[i] = i + 1;
-                result[i] = friendUids[a[i]];
-            }
-            int p = k - 1;
-            while (p >= 0) {
-                if (a[k - 1] == n)
-                    p--;
-                else p = k - 1;
-                if (p >= 0) {
-                    for (int i = k - 1; i >= p; i--)
-                        a[i] = a[p] + i - p + 1;
-
-                    result[0] += "," + friendUids[a[0]];
-                    result[1] += "," + friendUids[a[1]];
-                }
-            }
-            return result;
         }
     }
 }
