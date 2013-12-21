@@ -12,6 +12,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
 {
     public class OKRestClient
     {
+        private OkProxy proxy = new OkProxy();
         private Vertex egoVertex;
         private List<string> friendIds = new List<string>();
         private VertexCollection vertices = new VertexCollection();
@@ -35,11 +36,9 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             return edges;
         }
 
-        // OK API
-
         public void GetAccessToken(string code)
         {
-            string responseString = PostRequests.MakeTokenRequest(code);
+            string responseString = proxy.GetToken(code);
             JObject o = JObject.Parse(responseString);
             PostRequests.AuthToken = o["access_token"].ToString();
             CreateEgoVertex();
@@ -68,7 +67,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
 */
         public void LoadFriends()
         {
-            JArray friends = JArray.Parse(PostRequests.MakeApiRequest("method=friends.get")); // fid=160539089447&fid=561967133371&fid=561692396161&
+            JArray friends = JArray.Parse(proxy.GetFriends()); // fid=160539089447&fid=561967133371&fid=561692396161&
             string friendUids = ""; // userId;
             foreach (var friend in friends) {
 //                JObject friendDict = JObject.Parse(MakeRequest("method=friends.getMutualFriends&target_id=" + friend));  //  &source_id=160539089447
@@ -98,11 +97,11 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             for (var i = 0; i < uidsArr1.Length; i += 100) {
                 string uids1 = string.Join(",", uidsArr1.Skip(i).Take(100).ToArray());
                 string uids2 = string.Join(",", uidsArr2.Skip(i).Take(100).ToArray());
-                JArray friendsDict = JArray.Parse(PostRequests.MakeApiRequest("method=friends.areFriends&uids1=" + uids1 + "&uids2=" + uids2));
+                JArray friendsDict = JArray.Parse(proxy.GetAreFriends(uids1, uids2));
                 foreach (var friend in friendsDict) {
                     if (friend["are_friends"].ToString().ToLower() == "true") {
                         CreateEdge(friend["uid1"].ToString(), friend["uid2"].ToString());
-                        Debug.WriteLine("AreFriends: " + friend["uid1"].ToString(), friend["uid2"].ToString());
+                        Debug.WriteLine("AreFriends: " + friend["uid1"], friend["uid2"]);
                     }
                 }
                 Thread.Sleep(100);
@@ -113,10 +112,10 @@ namespace rcsir.net.ok.importer.GraphDataProvider
         {
             string friendUids = userId;
             foreach (var friendId in friendIds) {
-                JArray friendDict = JArray.Parse(PostRequests.MakeApiRequest("method=friends.getMutualFriends&target_id=" + friendId));  //  &source_id=160539089447
+                JArray friendDict = JArray.Parse(proxy.GetMutualFriends(friendId));  //  &source_id=160539089447
                 friendUids += "," + friendId;
                 foreach (var subFriend in friendDict) {
-                    Debug.WriteLine("Mutual: " + subFriend.ToString());
+                    Debug.WriteLine("Mutual: " + subFriend);
                     CreateEdge(friendId, subFriend.ToString());
                 }
 /*
@@ -127,7 +126,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
 
         private void CreateEgoVertex()
         {
-            JObject ego = JObject.Parse(PostRequests.MakeApiRequest("method=users.getCurrentUser"));
+            JObject ego = JObject.Parse(proxy.GetEgoInfo());
             userId = ego["uid"].ToString();
             AttributesDictionary<String> attributes = createAttributes(ego);
             egoVertex = new Vertex(ego["uid"].ToString(), ego["name"].ToString(), "Ego", attributes);
@@ -136,7 +135,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
 
         private void CreateFriendsVertices(string uids)
         {
-            string response = PostRequests.MakeApiRequest("fields=uid,name,first_name,last_name,age,gender,locale&method=users.getInfo&uids=" + uids);
+            string response = proxy.GetUsersInfo(uids);
             if (response == null)
                 return;
             JArray dict = JArray.Parse(response);

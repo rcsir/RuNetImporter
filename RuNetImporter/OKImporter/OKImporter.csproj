@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api\Authorization.cs" />
+    <Compile Include="Api\OkProxy.cs" />
     <Compile Include="Dialogs\OKLoginDialog.cs">
       <SubType>Form</SubType>
     </Compile>

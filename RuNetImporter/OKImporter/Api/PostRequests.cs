@@ -6,16 +6,16 @@ using Smrf.AppLib;
 
 namespace rcsir.net.ok.importer.Api
 {
-    public static class PostRequests
+    public class PostRequests
     {
-        private static string authToken;
-        public static string AuthToken { set { authToken = value; } }
+        public const string client_secret = "EDDB1A6D680BDFF8E49A179C";
+        private const string client_open = "CBAHFJANABABABABA";
 
         private const string token_Url = "http://api.odnoklassniki.ru/oauth/token.do";
-        private static string apiUrl = "http://api.odnoklassniki.ru/fb.do";
+        private const string apiUrl = "http://api.odnoklassniki.ru/fb.do";
 
-        private static string client_secret = "EDDB1A6D680BDFF8E49A179C";
-        private static string client_open = "CBAHFJANABABABABA";
+        private static string authToken;
+        public static string AuthToken { set { authToken = value; } }
 
         private static string postPrefix { get { return "application_key=" + client_open + "&access_token=" + authToken + "&"; } }
         private static string sigSecret { get { return StringUtil.GetMd5Hash(string.Format("{0}{1}", authToken, client_secret)); } }
@@ -27,14 +27,7 @@ namespace rcsir.net.ok.importer.Api
             return MakeRequest(postedData);
         }
 
-        public static string MakeTokenRequest(string code)
-        {
-            string postedData = "client_id=" + Authorization.ClientId + "&grant_type=authorization_code&client_secret=" + client_secret +
-                                "&code=" + code + "&redirect_uri=" + Authorization.RedirectUrl + "&type=user_agent";
-            return MakeRequest(postedData, false);
-        }
-
-        private static string MakeRequest(string postedData, bool isApiRequest = true)
+        public static string MakeRequest(string postedData, bool isApiRequest = true)
         {
             var response = PostMethod(postedData, isApiRequest ? apiUrl : token_Url);
             if (response == null)
@@ -47,13 +40,12 @@ namespace rcsir.net.ok.importer.Api
 
         private static HttpWebResponse PostMethod(string postedData, string postUrl)
         {
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(postUrl);
-            request.Method = "POST";
-            request.Credentials = CredentialCache.DefaultCredentials;
-
             UTF8Encoding encoding = new UTF8Encoding();
             var bytes = encoding.GetBytes(postedData);
 
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(postUrl);
+            request.Method = "POST";
+            request.Credentials = CredentialCache.DefaultCredentials;
             request.ContentType = "application/x-www-form-urlencoded";
             request.ContentLength = bytes.Length;
 

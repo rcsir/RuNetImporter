@@ -7,13 +7,13 @@ namespace rcsir.net.ok.importer.Api
 {
     class Authorization
     {
+        private const string auth_url = "http://www.odnoklassniki.ru/oauth/authorize";
+        private const string scope = "(SET_STATUS;VALUABLE_ACCESS;)"; // permissions
+        private const string display = "page"; // authorization windows appearence: page, popup, touch, wap
+        private const string response_type = "code"; // Response type
+        
         internal static string ClientId { get { return "201872896"; } } // application id
         internal static string RedirectUrl { get { return "http://rcsoc.spbu.ru/"; } }
-
-        private readonly String auth_url = "http://www.odnoklassniki.ru/oauth/authorize";
-        private readonly String scope = "(SET_STATUS;VALUABLE_ACCESS;)"; // permissions
-        private readonly String display = "page"; // authorization windows appearence: page, popup, touch, wap
-        private readonly String response_type = "code"; // Response type
 
         public string AuthUri
         {
