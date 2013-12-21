@@ -64,7 +64,7 @@
       <DependentUpon>VKLoginDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="GraphDataProvider\VKGraphDataProvider.cs" />
-    <Compile Include="GraphDataProvider\VKRestClient.cs" />
+    <Compile Include="Api\VKRestApi.cs" />
     <Compile Include="NetworkAnalyzer\VKNetworkAnalyzerBase.cs" />
     <Compile Include="NetworkAnalyzer\VKNetworkAnalyzer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
