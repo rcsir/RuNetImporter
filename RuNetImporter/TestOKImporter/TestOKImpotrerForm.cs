@@ -28,7 +28,7 @@ namespace TestOKImporter
         {
             if (okLoginDialog == null) {
                 okLoginDialog = new OKLoginDialog();
-                okRestClient = okLoginDialog.okRestClient;
+                okRestClient = okLoginDialog.OkRestClient;
             }
             okLoginDialog.Login();
         }

@@ -1,101 +1,48 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Diagnostics;
-using System.IO;
-using System.Net;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Linq;
 using System.Threading;
-using Smrf.AppLib;
+using Newtonsoft.Json.Linq;
 using rcsir.net.common.Network;
+using rcsir.net.ok.importer.Api;
+using Smrf.AppLib;
 
 namespace rcsir.net.ok.importer.GraphDataProvider
 {
     public class OKRestClient
     {
-        public static string redirect_url = "http://rcsoc.spbu.ru/";
-
-        private static string client_secret = "EDDB1A6D680BDFF8E49A179C";
-        private static string client_open = "CBAHFJANABABABABA";
-        private static string apiUrl = "http://api.odnoklassniki.ru/fb.do";
-        private const string token_Url = "http://api.odnoklassniki.ru/oauth/token.do";
-
-        private string postPrefix { get { return "application_key=" + client_open + "&access_token=" + authToken + "&"; } }
-        private string sigSecret { get { return StringUtil.GetMd5Hash(string.Format("{0}{1}", authToken, client_secret)); } }
-
         private Vertex egoVertex;
         private List<string> friendIds = new List<string>();
         private VertexCollection vertices = new VertexCollection();
         private EdgeCollection edges = new EdgeCollection();
 
-        private String _authToken;
-        public String authToken { get { return _authToken; } set { _authToken = value; } }
         private String _userId;
         public String userId { get { return _userId; } set { _userId = value; } }
 
         public Vertex GetEgo()
         {
-            return this.egoVertex;
+            return egoVertex;
         }
 
         public VertexCollection GetVertices()
         {
-            return this.vertices;
+            return vertices;
         }
 
         public EdgeCollection GetEdges()
         {
-            return this.edges;
+            return edges;
         }
 
         // OK API
 
         public void GetAccessToken(string code)
         {
-            string responseToString;
-            string postedData = "client_id=201872896&grant_type=authorization_code&client_secret=" + client_secret +
-                                "&code=" + code + "&redirect_uri=" + redirect_url + "&type=user_agent";
-            var response = PostMethod(postedData, token_Url);
-            if (response == null)
-                return;
-
-            var strreader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
-            responseToString = strreader.ReadToEnd();
-            JObject o = JObject.Parse(responseToString);
-            authToken = o["access_token"].ToString();
-            Debug.WriteLine("authToken = " + authToken);
+            string responseString = PostRequests.MakeTokenRequest(code);
+            JObject o = JObject.Parse(responseString);
+            PostRequests.AuthToken = o["access_token"].ToString();
             CreateEgoVertex();
-        }
-
-        private static HttpWebResponse PostMethod(string postedData, string postUrl)
-        {
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(postUrl);
-            request.Method = "POST";
-            request.Credentials = CredentialCache.DefaultCredentials;
-
-            UTF8Encoding encoding = new UTF8Encoding();
-            var bytes = encoding.GetBytes(postedData);
-
-            request.ContentType = "application/x-www-form-urlencoded";
-            request.ContentLength = bytes.Length;
-
-            using (var newStream = request.GetRequestStream())
-            {
-                newStream.Write(bytes, 0, bytes.Length);
-                newStream.Close();
-            }
-            return (HttpWebResponse)request.GetResponse();
-        }
-
-        private void CreateEgoVertex()
-        {
-            JObject ego = JObject.Parse(MakeRequest("method=users.getCurrentUser"));
-            userId = ego["uid"].ToString();
-            AttributesDictionary<String> attributes = createAttributes(ego);
-            egoVertex = new Vertex(ego["uid"].ToString(), ego["name"].ToString(), "Ego", attributes);
-            vertices.Add(egoVertex);
         }
 /*
         private void GetMutualFriends()
@@ -121,7 +68,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
 */
         public void LoadFriends()
         {
-            JArray friends = JArray.Parse(MakeRequest("method=friends.get")); // fid=160539089447&fid=561967133371&fid=561692396161&
+            JArray friends = JArray.Parse(PostRequests.MakeApiRequest("method=friends.get")); // fid=160539089447&fid=561967133371&fid=561692396161&
             string friendUids = ""; // userId;
             foreach (var friend in friends) {
 //                JObject friendDict = JObject.Parse(MakeRequest("method=friends.getMutualFriends&target_id=" + friend));  //  &source_id=160539089447
@@ -151,7 +98,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             for (var i = 0; i < uidsArr1.Length; i += 100) {
                 string uids1 = string.Join(",", uidsArr1.Skip(i).Take(100).ToArray());
                 string uids2 = string.Join(",", uidsArr2.Skip(i).Take(100).ToArray());
-                JArray friendsDict = JArray.Parse(MakeRequest("method=friends.areFriends&uids1=" + uids1 + "&uids2=" + uids2));
+                JArray friendsDict = JArray.Parse(PostRequests.MakeApiRequest("method=friends.areFriends&uids1=" + uids1 + "&uids2=" + uids2));
                 foreach (var friend in friendsDict) {
                     if (friend["are_friends"].ToString().ToLower() == "true") {
                         CreateEdge(friend["uid1"].ToString(), friend["uid2"].ToString());
@@ -164,16 +111,12 @@ namespace rcsir.net.ok.importer.GraphDataProvider
 
         public void GetMutualFriends()
         {
-/*          vertexCollection.Clear();
-            edgeCollection.Clear();*/
             string friendUids = userId;
-
             foreach (var friendId in friendIds) {
-                JArray friendDict = JArray.Parse(MakeRequest("method=friends.getMutualFriends&target_id=" + friendId));  //  &source_id=160539089447
+                JArray friendDict = JArray.Parse(PostRequests.MakeApiRequest("method=friends.getMutualFriends&target_id=" + friendId));  //  &source_id=160539089447
                 friendUids += "," + friendId;
-//                addVertex(friend.String);
                 foreach (var subFriend in friendDict) {
-                    Debug.WriteLine("Mutual: " + subFriend.ToString()); // Debug.WriteLine(subFriend);
+                    Debug.WriteLine("Mutual: " + subFriend.ToString());
                     CreateEdge(friendId, subFriend.ToString());
                 }
 /*
@@ -182,9 +125,18 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             }
         }
 
+        private void CreateEgoVertex()
+        {
+            JObject ego = JObject.Parse(PostRequests.MakeApiRequest("method=users.getCurrentUser"));
+            userId = ego["uid"].ToString();
+            AttributesDictionary<String> attributes = createAttributes(ego);
+            egoVertex = new Vertex(ego["uid"].ToString(), ego["name"].ToString(), "Ego", attributes);
+            vertices.Add(egoVertex);
+        }
+
         private void CreateFriendsVertices(string uids)
         {
-            string response = MakeRequest("fields=uid,name,first_name,last_name,age,gender,locale&method=users.getInfo&uids=" + uids);
+            string response = PostRequests.MakeApiRequest("fields=uid,name,first_name,last_name,age,gender,locale&method=users.getInfo&uids=" + uids);
             if (response == null)
                 return;
             JArray dict = JArray.Parse(response);
@@ -219,34 +171,6 @@ namespace rcsir.net.ok.importer.GraphDataProvider
             }
 
             return attributes;
-        }
-
-        private string MakeRequest(string requestString)
-        {
-            var sig = StringUtil.GetMd5Hash(string.Format("{0}{1}", "application_key=" + client_open + requestString.Replace("&", ""), sigSecret));
-            string postedData = postPrefix + requestString + "&sig=" + sig;
-            var response = PostMethod(postedData, apiUrl);
-            var strreader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
-            string responseToString = strreader.ReadToEnd();
-            return responseToString; //JObject.Parse(responseToString); // JObject.CreateFromString(responseToString);
-        }
-
-        private void handleWebException(WebException Ex)
-        {
-            if (Ex.Status == WebExceptionStatus.ProtocolError) {
-                int StatusCode = (int)((HttpWebResponse)Ex.Response).StatusCode;
-                Stream ResponseStream = null;
-                ResponseStream = ((HttpWebResponse)Ex.Response).GetResponseStream();
-                string responseText = (new StreamReader(ResponseStream)).ReadToEnd();
-                if (StatusCode == 500) {
-                    Debug.WriteLine("Error 500 - " + responseText);
-                } else {
-                    // Do Something for other status codes
-                    Debug.WriteLine("Error " + StatusCode);
-                }
-            } else {
-                throw (Ex); // Or check for other WebExceptionStatus
-            }
         }
     }
 }
