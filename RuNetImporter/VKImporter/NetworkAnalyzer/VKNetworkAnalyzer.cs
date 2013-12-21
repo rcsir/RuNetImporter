@@ -8,24 +8,106 @@ using System.ComponentModel;
 using Smrf.AppLib;
 using rcsir.net.common.NetworkAnalyzer;
 using rcsir.net.common.Network;
-using rcsir.net.vk.importer.GraphDataProvider;
+using rcsir.net.vk.importer.api;
 using Smrf.NodeXL.GraphDataProviders;
 using Smrf.SocialNetworkLib;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace rcsir.net.vk.importer.NetworkAnalyzer
 {
     public class VKNetworkAnalyzer : VKNetworkAnalyzerBase
     {
+        private VKRestApi vkRestApi;
+
+        private Vertex egoVertex;
+        private List<string> friendIds = new List<string>();
+        private VertexCollection vertices = new VertexCollection();
+        private EdgeCollection edges = new EdgeCollection();
+
+        public VKNetworkAnalyzer()
+        {
+            vkRestApi = new VKRestApi();
+            // set up data handler
+            vkRestApi.OnData += new VKRestApi.DataHandler(OnData);
+            // set up error handler
+            vkRestApi.OnError += new VKRestApi.ErrorHandler(OnError);
+        }
+
+        // main data handler
+        public void OnData(object vkRestApi, OnDataEventArgs onDataArgs)
+        {
+            switch (onDataArgs.function)
+            {
+                case VKFunction.LoadUserInfo:
+                    OnLoadUserInfo(onDataArgs.data);
+                    break;
+                case VKFunction.LoadFriends:
+                    OnLoadFriends(onDataArgs.data);
+                    break;
+                case VKFunction.GetMutual:
+                    OnGetMutual(onDataArgs.data);
+                    break;
+                default:
+                    Debug.WriteLine("Error, unknown function.");
+                    break;
+            }
+        }
+
+        // main error handler
+        public void OnError(object vkRestApi, OnErrorEventArgs onErrorArgs)
+        {
+            // TODO: notify user about the error
+            Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
+        }
+
+        // process load user info response
+        private void OnLoadUserInfo(JObject data)
+        {
+            if (data[VKRestApi.RESPONSE_BODY].Count() > 0)
+            {
+                JObject ego = data["VKRestApi.RESPONSE_BODY"][0].ToObject<JObject>();
+                Console.WriteLine("Ego: " + ego.ToString());
+
+                // ok, create the ego object here
+                AttributesDictionary<String> attributes = createAttributes(ego);
+
+                this.egoVertex = new Vertex(ego["uid"].ToString(),
+                    ego["first_name"].ToString() + " " + ego["last_name"].ToString(),
+                    "Ego", attributes);
+
+                // add ego to the vertices
+                //this.vertices.Add(this.egoVertex);
+            }
+
+        }
+
+        // process load user friends response
+        private void OnLoadFriends(JObject data)
+        {
+
+        }
+
+        // process get mutual response
+        private void OnGetMutual(JObject data)
+        {
+
+        }
+
         public XmlDocument analyze(String userId, String authToken)
         {
-            VKRestClient vkRestClient = new VKRestClient();
+            VKRestContext context = new VKRestContext(userId, authToken);
 
-            vkRestClient.LoadUserInfo(userId, authToken);
-            vkRestClient.LoadFriends(userId);
-            vkRestClient.GetMutual(userId, authToken);
+            vkRestApi.callVKFunction(VKFunction.LoadUserInfo, context);
 
-            VertexCollection vertices = vkRestClient.GetVertices();
-            EdgeCollection edges = vkRestClient.GetEdges();
+            // SYNC
+            vkRestApi.LoadFriends(userId);
+            
+            // SYNC
+            vkRestApi.GetMutual(userId, authToken);
+
+            VertexCollection vertices = vkRestApi.GetVertices();
+            EdgeCollection edges = vkRestApi.GetEdges();
             
             // TODO: make is optional, should be controlled by a UI flag 
             // let's disable it for now
@@ -54,6 +136,41 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
             }
         }
 
+        private void CreateFriendsMutualEdge(String friendId, String friendFriendsId, EdgeCollection edges, VertexCollection vertices)
+        {
+            Vertex friend = vertices.FirstOrDefault(x => x.ID == friendId);
+            Vertex friendsFriend = vertices.FirstOrDefault(x => x.ID == friendFriendsId);
+
+            if (friend != null && friendsFriend != null)
+            {
+                edges.Add(new Edge(friend, friendsFriend, "", "Friend", "", 1));
+            }
+        }
+
+        private AttributesDictionary<String> createAttributes(JObject obj)
+        {
+            AttributesDictionary<String> attributes = new AttributesDictionary<String>();
+            List<AttributeUtils.Attribute> keys = new List<AttributeUtils.Attribute>(attributes.Keys);
+            foreach (AttributeUtils.Attribute key in keys)
+            {
+                String name = key.value;
+
+                if (obj[name] != null)
+                {
+                    // assert it is null?
+                    String value = obj[name].ToString();
+                    attributes[key] = value;
+                }
+            }
+
+            return attributes;
+        }
+
+        // Network details
+        public Vertex GetEgo()
+        {
+            return this.egoVertex;
+        }
 
         //*************************************************************************
         //  Method: BackgroundWorker_DoWork()
