@@ -43,14 +43,6 @@ namespace TestVKImporter
                 case VKFunction.LoadUserInfo:
                     OnLoadUserInfo(onDataArgs.data);
                     break;
-                    /*
-                case VKFunction.LoadFriends:
-                    OnLoadFriends(onDataArgs.data);
-                    break;
-                case VKFunction.GetMutual:
-                    OnGetMutual(onDataArgs.data);
-                    break;
-                     */
                 default:
                     Debug.WriteLine("Error, unknown function.");
                     break;
@@ -71,7 +63,22 @@ namespace TestVKImporter
             {
                 JObject ego = data[VKRestApi.RESPONSE_BODY][0].ToObject<JObject>();
                 Console.WriteLine("Ego: " + ego.ToString());
+
+                this.userInfoTextBox.Clear();
+                this.userInfoTextBox.AppendText(ego["uid"].ToString());
+                this.userInfoTextBox.AppendText("\n");
+                this.userInfoTextBox.AppendText(ego["first_name"].ToString());
+                this.userInfoTextBox.AppendText("\n");
+                this.userInfoTextBox.AppendText(ego["last_name"].ToString());
+                this.userInfoTextBox.AppendText("\n");
             }
+        }
+
+        private void ActivateControls(bool activate)
+        {
+            this.userIdTextBox.Enabled = activate;
+            this.LoadUserInfoButton.Enabled = activate;
+            this.GenerateGraphButton.Enabled = activate;
         }
 
         private void AuthButton_Click(object sender, EventArgs e)
@@ -82,33 +89,41 @@ namespace TestVKImporter
         public void UserLogin(object loginDialog, UserLoginEventArgs loginArgs)
         {
             Debug.WriteLine("User Logged In: " + loginArgs.ToString());
+            this.userIdTextBox.Clear();
+            this.userIdTextBox.Text = loginArgs.userId;
+            this.ActivateControls(true);
         }
 
         private void LoadUserInfoButton_Click(object sender, EventArgs e)
         {
-            VKRestContext context = new VKRestContext(vkLoginDialog.userId, vkLoginDialog.authToken);
-            vkRestApi.callVKFunction(VKFunction.LoadUserInfo, context);
-        }
+            String userId = this.userIdTextBox.Text;
+            if (userId == null ||
+                userId.Length == 0)
+            {
+                userId = vkLoginDialog.userId;
+                this.userIdTextBox.Text = userId;
+            }
 
-        private void LoadFriendsButton_Click(object sender, EventArgs e)
-        {
-            vkRestApi.LoadFriends(vkLoginDialog.userId);
-        }
-
-        private void GetMutualButton_Click(object sender, EventArgs e)
-        {
-            vkRestApi.GetMutual(vkLoginDialog.userId, vkLoginDialog.authToken);
+            VKRestContext context = new VKRestContext(userId, vkLoginDialog.authToken);
+            vkRestApi.CallVKFunction(VKFunction.LoadUserInfo, context);
         }
 
         private void GenerateGraphButton_Click(object sender, EventArgs e)
         {
-            VKNetworkAnalyzer vkNetworkAnalyzer = new VKNetworkAnalyzer();
+            String userId = this.userIdTextBox.Text;
+            if (userId == null ||
+                userId.Length == 0)
+            {
+                userId = vkLoginDialog.userId;
+                this.userIdTextBox.Text = userId;
+            }
 
-            XmlDocument graph = vkNetworkAnalyzer.analyze(vkLoginDialog.userId, vkLoginDialog.authToken);
+            VKNetworkAnalyzer vkNetworkAnalyzer = new VKNetworkAnalyzer();
+            XmlDocument graph = vkNetworkAnalyzer.analyze(userId, vkLoginDialog.authToken);
 
             if (graph != null)
             {
-                graph.Save("VKNetwork_" + vkLoginDialog.userId + ".graphml");
+                graph.Save("VKNetwork_" + userId + ".graphml");
             }
         }
     }

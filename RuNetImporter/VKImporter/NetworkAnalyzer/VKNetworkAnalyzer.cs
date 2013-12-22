@@ -5,6 +5,7 @@ using System.Text;
 using System.Xml;
 using System.Diagnostics;
 using System.ComponentModel;
+using System.Threading;
 using Smrf.AppLib;
 using rcsir.net.common.NetworkAnalyzer;
 using rcsir.net.common.Network;
@@ -20,6 +21,9 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
     {
         private VKRestApi vkRestApi;
 
+        private static AutoResetEvent readyEvent = new AutoResetEvent(false);
+
+        private bool includeEgo = false; // include ego vertex and edges, should be controled by UI
         private Vertex egoVertex;
         private List<string> friendIds = new List<string>();
         private VertexCollection vertices = new VertexCollection();
@@ -46,12 +50,15 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
                     OnLoadFriends(onDataArgs.data);
                     break;
                 case VKFunction.GetMutual:
-                    OnGetMutual(onDataArgs.data);
+                    OnGetMutual(onDataArgs.data, onDataArgs.cookie);
                     break;
                 default:
                     Debug.WriteLine("Error, unknown function.");
                     break;
             }
+
+            // indicate that data is ready and we can continue
+            readyEvent.Set();
         }
 
         // main error handler
@@ -59,6 +66,9 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         {
             // TODO: notify user about the error
             Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
+            
+            // indicate that we can continue
+            readyEvent.Set();
         }
 
         // process load user info response
@@ -66,7 +76,7 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         {
             if (data[VKRestApi.RESPONSE_BODY].Count() > 0)
             {
-                JObject ego = data["VKRestApi.RESPONSE_BODY"][0].ToObject<JObject>();
+                JObject ego = data[VKRestApi.RESPONSE_BODY][0].ToObject<JObject>();
                 Console.WriteLine("Ego: " + ego.ToString());
 
                 // ok, create the ego object here
@@ -77,41 +87,90 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
                     "Ego", attributes);
 
                 // add ego to the vertices
-                //this.vertices.Add(this.egoVertex);
+                if(includeEgo)
+                {
+                    this.vertices.Add(this.egoVertex);
+                }
             }
-
         }
 
         // process load user friends response
         private void OnLoadFriends(JObject data)
         {
+            if (data[VKRestApi.RESPONSE_BODY].Count() > 0)
+            {
 
+                for (int i = 0; i < data[VKRestApi.RESPONSE_BODY].Count(); ++i)
+                {
+                    JObject friend = data[VKRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+                    // uid, first_name, last_name, nickname, sex, bdate, city, country, timezone
+                    Console.WriteLine(i.ToString() + ") friend: " + friend.ToString());
+
+                    string uid = friend["uid"].ToString();
+                    // add user id to the friends list
+                    this.friendIds.Add(uid);
+
+                    // add friend vertex
+                    AttributesDictionary<String> attributes = createAttributes(friend);
+
+                    this.vertices.Add(new Vertex(uid,
+                        friend["first_name"].ToString() + " " + friend["last_name"].ToString(),
+                        "Friend", attributes));
+                }
+            }
         }
 
         // process get mutual response
-        private void OnGetMutual(JObject data)
+        private void OnGetMutual(JObject data, String cookie)
         {
+            if (data[VKRestApi.RESPONSE_BODY].Count() > 0)
+            {
+                List<String> friendFriendsIds = new List<string>();
 
+                for (int i = 0; i < data[VKRestApi.RESPONSE_BODY].Count(); ++i)
+                {
+                    String friendFriendsId = data[VKRestApi.RESPONSE_BODY][i].ToString();
+
+                    CreateFriendsMutualEdge(cookie, // target id we passed as a param
+                                            friendFriendsId,
+                                            this.edges,
+                                            this.vertices);
+                }
+            }
         }
 
         public XmlDocument analyze(String userId, String authToken)
         {
             VKRestContext context = new VKRestContext(userId, authToken);
 
-            vkRestApi.callVKFunction(VKFunction.LoadUserInfo, context);
+            vkRestApi.CallVKFunction(VKFunction.LoadUserInfo, context);
 
-            // SYNC
-            vkRestApi.LoadFriends(userId);
-            
-            // SYNC
-            vkRestApi.GetMutual(userId, authToken);
+            // wait for the user data
+            readyEvent.WaitOne();
+            context.parameters = "fields=uid,first_name,last_name,nickname,sex,bdate,city,country,education";
+            vkRestApi.CallVKFunction(VKFunction.LoadFriends, context);
 
-            VertexCollection vertices = vkRestApi.GetVertices();
-            EdgeCollection edges = vkRestApi.GetEdges();
-            
-            // TODO: make is optional, should be controlled by a UI flag 
-            // let's disable it for now
-            if (false)
+            // wait for the friends data
+            readyEvent.WaitOne();
+            foreach (string targetId in this.friendIds)
+            {
+                StringBuilder sb = new StringBuilder("target_uid=");
+                // Append target friend ids
+                sb.Append(targetId);
+
+                context.parameters = sb.ToString();
+                context.cookie = targetId; // pass target id in the cookie context field
+                vkRestApi.CallVKFunction(VKFunction.GetMutual, context);
+
+                // wait for the mutual data
+                readyEvent.WaitOne();
+
+                // play nice, sleep for 1/3 sec to stay within 3 requests/second limit
+                // TODO: account for time spent in processing
+                Thread.Sleep(333);
+            }
+
+            if (includeEgo)
             {
                 CreateIncludeMeEdges(edges, vertices);
             }
@@ -170,6 +229,16 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         public Vertex GetEgo()
         {
             return this.egoVertex;
+        }
+
+        public VertexCollection GetVertices()
+        {
+            return this.vertices;
+        }
+
+        public EdgeCollection GetEdges()
+        {
+            return this.edges;
         }
 
         //*************************************************************************
