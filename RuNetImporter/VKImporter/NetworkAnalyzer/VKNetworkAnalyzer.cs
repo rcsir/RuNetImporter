@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
+using System.Net;
 using System.Diagnostics;
 using System.ComponentModel;
 using System.Threading;
@@ -17,7 +18,7 @@ using Newtonsoft.Json.Linq;
 
 namespace rcsir.net.vk.importer.NetworkAnalyzer
 {
-    public class VKNetworkAnalyzer : VKNetworkAnalyzerBase
+    public class VKNetworkAnalyzer : HttpNetworkAnalyzerBase
     {
         private VKRestApi vkRestApi;
 
@@ -301,7 +302,83 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
 
         }
 
+        //*************************************************************************
+        //  Method: ExceptionToMessage()
+        //
+        /// <summary>
+        /// Converts an exception to an error message appropriate for a user
+        /// interface.
+        /// </summary>
+        ///
+        /// <param name="oException">
+        /// The exception that occurred.
+        /// </param>
+        ///
+        /// <returns>
+        /// An error message appropriate for a user interface.
+        /// </returns>
+        //*************************************************************************
 
+        public override String
+        ExceptionToMessage
+        (
+            Exception oException
+        )
+        {
+            Debug.Assert(oException != null);
+            AssertValid();
+
+            String sMessage = null;
+
+            const String TimeoutMessage =
+                "The VK Web service didn't respond.";
+
+
+            if (oException is WebException)
+            {
+                WebException oWebException = (WebException)oException;
+
+                if (oWebException.Response is HttpWebResponse)
+                {
+                    HttpWebResponse oHttpWebResponse =
+                        (HttpWebResponse)oWebException.Response;
+
+                    switch (oHttpWebResponse.StatusCode)
+                    {
+                        case HttpStatusCode.RequestTimeout:  // HTTP 408.
+
+                            sMessage = TimeoutMessage;
+                            break;
+
+                        default:
+
+                            break;
+                    }
+                }
+                else
+                {
+                    switch (oWebException.Status)
+                    {
+                        case WebExceptionStatus.Timeout:
+
+                            sMessage = TimeoutMessage;
+                            break;
+
+                        default:
+
+                            break;
+                    }
+                }
+            }
+
+            if (sMessage == null)
+            {
+                sMessage = ExceptionUtil.GetMessageTrace(oException);
+            }
+
+            return (sMessage);
+        }
+      
         //*************************************************************************
         //  Method: AssertValid()
         //
@@ -329,8 +406,10 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         /// </summary>
         //*************************************************************************
 
-        protected class GetNetworkAsyncArgs : GetNetworkAsyncArgsBase
+        protected class GetNetworkAsyncArgs
         {
+            ///
+            public String AccessToken;
             ///
             public AttributesDictionary<bool> attributes;
             ///           

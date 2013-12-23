@@ -8,11 +8,12 @@ using System.Text;
 using System.Windows.Forms;
 using Smrf.SocialNetworkLib;
 using Smrf.AppLib;
+using Smrf.NodeXL.GraphDataProviders;
 using rcsir.net.vk.importer.NetworkAnalyzer;
 
 namespace rcsir.net.vk.importer.Dialogs
 {
-    public partial class VKDialog : VKGraphDataProviderDialogBase
+    public partial class VKDialog : GraphDataProviderDialogBase
     {
         public VKDialog()
             :
@@ -86,10 +87,6 @@ namespace rcsir.net.vk.importer.Dialogs
             if (bFromControls)
             {
                 // Validate the controls.
-
-                
-
-            
             }
             else
             {
@@ -364,15 +361,12 @@ namespace rcsir.net.vk.importer.Dialogs
             }
         }
 
-
-        private void button1_Click_1(object sender, EventArgs e)
-        {            
+        private void btnLogin_Click(object sender, EventArgs e)
+        {
             readAttributes();
             loginDialog = new VKLoginDialog();
             loginDialog.Login();
-        
-        }        
-        
+        }
 
         private void PrintAttributes()
         {
@@ -408,29 +402,6 @@ namespace rcsir.net.vk.importer.Dialogs
             }
         }
 
-        private void FacebookDialog_Load(object sender, EventArgs e)
-        {
-            dgAttributes.Columns[1].Width = 
-                TextRenderer.MeasureText(dgAttributes.Columns[1].HeaderText,
-                dgAttributes.Columns[1].HeaderCell.Style.Font).Width + 25;
-            //Get the column header cell bounds
-
-            Rectangle rect =
-                this.dgAttributes.GetCellDisplayRectangle(1, -1, true);           
-
-            //Change the location of the CheckBox to make it stay on the header
-
-            chkSelectAll.Location = 
-                new Point(rect.Location.X + rect.Width - 20,
-                    rect.Location.Y + Math.Abs((rect.Height - chkSelectAll.Height)/2));
-
-            chkSelectAll.CheckedChanged += new EventHandler(chkSelectAll_CheckedChanged);
-
-            //Add the CheckBox into the DataGridView
-
-            this.dgAttributes.Controls.Add(chkSelectAll);
-        }
-
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             if (loginDialog == null)
@@ -464,6 +435,28 @@ namespace rcsir.net.vk.importer.Dialogs
         private void chkIncludeMe_CheckedChanged(object sender, EventArgs e)
         {
         }
-    
+
+        private void VKDialog_Load(object sender, EventArgs e)
+        {
+            dgAttributes.Columns[1].Width =
+            TextRenderer.MeasureText(dgAttributes.Columns[1].HeaderText,
+             dgAttributes.Columns[1].HeaderCell.Style.Font).Width + 25;
+            //Get the column header cell bounds
+
+            Rectangle rect =
+                this.dgAttributes.GetCellDisplayRectangle(1, -1, true);
+
+            //Change the location of the CheckBox to make it stay on the header
+
+            chkSelectAll.Location =
+                new Point(rect.Location.X + rect.Width - 20,
+                    rect.Location.Y + Math.Abs((rect.Height - chkSelectAll.Height) / 2));
+
+            chkSelectAll.CheckedChanged += new EventHandler(chkSelectAll_CheckedChanged);
+
+            //Add the CheckBox into the DataGridView
+            this.dgAttributes.Controls.Add(chkSelectAll);
+
+        }    
     }
 }

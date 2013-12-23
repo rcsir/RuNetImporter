@@ -1,8 +1,4 @@
-﻿
-
-//  Copyright (c) Microsoft Corporation.  All rights reserved.
-
-using System;
+﻿using System;
 using System.Diagnostics;
 using Smrf.NodeXL.GraphDataProviders;
 using rcsir.net.vk.importer.Dialogs;
