@@ -30,6 +30,21 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         private VertexCollection vertices = new VertexCollection();
         private EdgeCollection edges = new EdgeCollection();
 
+        public static List<AttributeUtils.Attribute> VKAttributes = new List<AttributeUtils.Attribute>()
+        {
+            new AttributeUtils.Attribute("Name","name"),
+            new AttributeUtils.Attribute("First Name","first_name"),
+            new AttributeUtils.Attribute("Last Name","last_name"),
+            new AttributeUtils.Attribute("Picture","picture_small"), // photo_50
+            new AttributeUtils.Attribute("Sex","sex"),
+            new AttributeUtils.Attribute("Birth Date","bdate"),
+            new AttributeUtils.Attribute("Relation","relation"),
+            new AttributeUtils.Attribute("City","city"),
+            new AttributeUtils.Attribute("Country","country"),
+
+        };
+
+
         public VKNetworkAnalyzer()
         {
             vkRestApi = new VKRestApi();
@@ -148,7 +163,7 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
 
             // wait for the user data
             readyEvent.WaitOne();
-            context.parameters = "fields=uid,first_name,last_name,nickname,sex,bdate,city,country,education";
+            context.parameters = "fields=uid,first_name,last_name,sex,bdate,photo_50,city,country,relation,nickname";
             vkRestApi.CallVKFunction(VKFunction.LoadFriends, context);
 
             // wait for the friends data
@@ -177,7 +192,7 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
             }
 
             // create default attributes (values will be empty)
-            AttributesDictionary<String> attributes = new AttributesDictionary<String>();
+            AttributesDictionary<String> attributes = new AttributesDictionary<String>(VKAttributes);
 
             return GenerateNetworkDocument(vertices, edges, attributes);
         }
@@ -209,11 +224,18 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
 
         private AttributesDictionary<String> createAttributes(JObject obj)
         {
-            AttributesDictionary<String> attributes = new AttributesDictionary<String>();
+            AttributesDictionary<String> attributes = new AttributesDictionary<String>(VKAttributes);
             List<AttributeUtils.Attribute> keys = new List<AttributeUtils.Attribute>(attributes.Keys);
             foreach (AttributeUtils.Attribute key in keys)
             {
                 String name = key.value;
+
+                // TODO: think how to do it better
+                // map picture field name
+                if (name.Equals("picture_small"))
+                {
+                    name = "photo_50";
+                }
 
                 if (obj[name] != null)
                 {

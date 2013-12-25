@@ -17,8 +17,18 @@ namespace Smrf.AppLib
             {
                 this.Add(oAttribute, default(TValue));
             }            
-        }        
+        }
 
+        public AttributesDictionary(List<AttributeUtils.Attribute> attributes)
+            : base()
+        {
+            index = 0;
+            foreach (AttributeUtils.Attribute oAttribute in attributes)
+            {
+                this.Add(oAttribute, default(TValue));
+            }
+        }
+        
         public TValue this[string sKey]
         {
             get { return this[Keys.First(x => x.value.Equals(sKey))]; }
