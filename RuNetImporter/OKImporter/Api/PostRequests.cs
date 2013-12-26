@@ -8,17 +8,17 @@ namespace rcsir.net.ok.importer.Api
 {
     public class PostRequests
     {
-        public const string client_secret = "EDDB1A6D680BDFF8E49A179C";
+        internal const string client_secret = "EDDB1A6D680BDFF8E49A179C";
         private const string client_open = "CBAHFJANABABABABA";
 
         private const string token_Url = "http://api.odnoklassniki.ru/oauth/token.do";
         private const string apiUrl = "http://api.odnoklassniki.ru/fb.do";
 
-        private static string authToken;
-        public static string AuthToken { set { authToken = value; } }
+//        private static string authToken;
+        internal static string AuthToken { get; set; }
 
-        private static string postPrefix { get { return "application_key=" + client_open + "&access_token=" + authToken + "&"; } }
-        private static string sigSecret { get { return StringUtil.GetMd5Hash(string.Format("{0}{1}", authToken, client_secret)); } }
+        private static string postPrefix { get { return "application_key=" + client_open + "&access_token=" + AuthToken + "&"; } }
+        private static string sigSecret { get { return StringUtil.GetMd5Hash(string.Format("{0}{1}", AuthToken, client_secret)); } }
 
         public static string MakeApiRequest(string requestString)
         {

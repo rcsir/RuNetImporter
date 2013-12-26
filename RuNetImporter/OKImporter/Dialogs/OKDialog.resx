@@ -117,7 +117,30 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <metadata name="timer.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="attributeColumn.UserAddedColumn" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="includeColumn.UserAddedColumn" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="attributeValueColumn.UserAddedColumn" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="statusStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing">
     <value>17, 17</value>
-  </metadata>
+  </data>
+  <data name="lblMainText.Text" xml:space="preserve">
+    <value>The NodeXL OK network importer will download the friendship relations between your friends. It needs to access your basic information from OK. After you login and authorize the application, you can click download.</value>
+  </data>
+  <data name="ttRateLimit.TrayLocation" type="System.Drawing.Point, System.Drawing">
+    <value>133, 17</value>
+  </data>
+  <data name="ttLogoutLogin.TrayLocation" type="System.Drawing.Point, System.Drawing">
+    <value>244, 17</value>
+  </data>
+  <data name="ttCallPerSecond.TrayLocation" type="System.Drawing.Point, System.Drawing">
+    <value>373, 17</value>
+  </data>
 </root>

@@ -11,11 +11,14 @@ namespace rcsir.net.ok.importer.Api
         private const string scope = "(SET_STATUS;VALUABLE_ACCESS;)"; // permissions
         private const string display = "page"; // authorization windows appearence: page, popup, touch, wap
         private const string response_type = "code"; // Response type
+
+        private static string code;
+        internal static string Code { get { return code; } }
         
         internal static string ClientId { get { return "201872896"; } } // application id
         internal static string RedirectUrl { get { return "http://rcsoc.spbu.ru/"; } }
 
-        public string AuthUri
+        internal string AuthUri
         {
             get
             {
@@ -35,7 +38,7 @@ namespace rcsir.net.ok.importer.Api
         private long _expiresIn;
         public long expiresIn { get { return _expiresIn; } set { _expiresIn = value; } }
 */
-        public void deleteCookies()
+        internal void deleteCookies()
         {
             DirectoryInfo folder = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.Cookies));
             FileInfo[] files = folder.GetFiles();
@@ -48,14 +51,17 @@ namespace rcsir.net.ok.importer.Api
             }
         }
 
-        public string GetCode(string stringUrl)
+        internal string GetCode(string stringUrl)
         {
+            // Valid response url, f.e.:    "http://rcsoc.spbu.ru/?code=d750985c65.a10a853f71c03cb8de3d27e664ee73f448bfc4ee9d88185e_b87f4d037111f0f1d2ad3866d4ce5cd5_1387810283"
             if (!stringUrl.StartsWith(RedirectUrl))
-                return null;
-
-            int index = stringUrl.IndexOf("=");
-            int index2 = stringUrl.Length;
-            return stringUrl.Substring(index + 1, index2 - index - 1);
+                code = null;
+            else {
+                int index1 = stringUrl.IndexOf("=");
+                int index2 = stringUrl.Length;
+                code = stringUrl.Substring(index1 + 1, index2 - index1 - 1);
+            }
+            return code;
         }
     }
 }
