@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Windows.Forms;
 
 namespace TestOKImporter
@@ -16,6 +14,7 @@ namespace TestOKImporter
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new TestOKImpotrerForm());
+//            Application.Run(new rcsir.net.ok.importer.Dialogs.OKDialog());
         }
     }
 }

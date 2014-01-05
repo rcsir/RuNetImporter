@@ -85,7 +85,7 @@ namespace rcsir.net.ok.importer.GraphDataProvider
         /// Value of the Name property.
 
         public const String GraphDataProviderName =
-            "OK Network Importer (v.0.0.1)";
+            "Odnoklassniki Network Importer (v.0.0.1)";
 
 
         //*************************************************************************

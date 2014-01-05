@@ -1,28 +1,33 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Windows.Forms;
 using Newtonsoft.Json.Linq;
-using rcsir.net.common.Network;
-using rcsir.net.ok.importer.Data;
+using rcsir.net.ok.importer.Events;
+using rcsir.net.ok.importer.Storages;
+using Smrf.AppLib;
 
 namespace rcsir.net.ok.importer.Controllers
 {
-    internal class GraphDataManager
+    public class GraphDataManager
     {
         private readonly GraphStorage graphStorage;
-
-        internal string EgoId { get { return graphStorage.EgoId; } }
+        private readonly AttributesStorage attributeStorage;
 
         internal List<string> FriendIds { get { return graphStorage.FriendIds; } }
 
         internal int FriendsCount { get { return graphStorage.FriendIds.Count; } }
 
-        internal VertexCollection Vertices { get { return graphStorage.Vertices; } }
+        internal AttributesDictionary<bool> OkDialogAttributes { get { return attributeStorage.OkDialogAttributes; } }
 
-        internal EdgeCollection Edges { get { return graphStorage.Edges; } }
+        internal AttributesDictionary<string> GraphAttributes { get { return attributeStorage.GraphAttributes; } }
 
-        internal GraphDataManager() //  GraphStorage storage
+        public event EventHandler<GraphEventArgs> OnData;
+
+        public GraphDataManager() //  GraphStorage storage
         {
             graphStorage = new GraphStorage();
+            attributeStorage = new AttributesStorage();
         }
 
         internal void AddFriendId(string id)
@@ -30,15 +35,20 @@ namespace rcsir.net.ok.importer.Controllers
             graphStorage.AddFriendId(id);
         }
 
-        internal void AddEgo(JObject ego, string cookie = null)
+        internal void SendEgo(JObject ego, string cookie = null)
         {
-            graphStorage.AddEgoVertexIfNeeded(ego);
+//            graphStorage.AddEgoVertexIfNeeded(ego, attributeStorage.CreateVertexAttributes(ego));
+            GraphEventArgs evnt = new GraphEventArgs(GraphEventArgs.Types.UserInfoLoaded, ego);
+            DispatchEvent(evnt);
         }
 
         internal void AddFriends(JArray friends, string cookie = null)
         {
             foreach (var friend in friends)
-                graphStorage.AddFriendVertex(friend.ToObject<JObject>());
+                graphStorage.AddFriendVertex(friend.ToObject<JObject>(), attributeStorage.CreateVertexAttributes(friend));
+
+            GraphEventArgs evnt = new GraphEventArgs(GraphEventArgs.Types.FriendsLoaded);
+            DispatchEvent(evnt);
         }
 
         internal void AddAreFriends(JArray friendsDict, string cookie = null)
@@ -71,9 +81,38 @@ namespace rcsir.net.ok.importer.Controllers
         internal void AddMeIfNeeded()
         {
             graphStorage.AddIncludeMeEdgesIfNeeded();
-            // create default attributes (values will be empty)
-/*            AttributesDictionary<String> attributes = new AttributesDictionary<String>();
-            return GenerateNetworkDocument(vertices, edges, attributes);*/
+            var evnt = new GraphEventArgs(graphStorage.Vertices, graphStorage.Edges, attributeStorage.OkDialogAttributes, attributeStorage.GraphAttributes);
+            DispatchEvent(evnt);
+        }
+
+        internal void MakeGraphAttributes(DataGridViewRow[] rows)
+        {
+            foreach (DataGridViewRow row in rows)
+                attributeStorage.UpdateDialogAttributes(row.Cells[2].Value.ToString(), (bool)row.Cells[1].Value);
+            attributeStorage.MakeGraphAttributes();
+        }
+
+        internal string CreateRequiredFieldsString()
+        {
+            return attributeStorage.CreateRequiredFieldsString();
+        }
+
+        internal void ResumeGetGraph(bool isMutual = true)
+        {
+            GraphEventArgs evnt;
+            if (isMutual)
+                evnt = new GraphEventArgs(GraphEventArgs.Types.MutualGraphLoaded);
+            else
+                evnt = new GraphEventArgs(GraphEventArgs.Types.AreGraphLoaded);
+
+            DispatchEvent(evnt);
+        }
+
+        protected virtual void DispatchEvent(GraphEventArgs e)
+        {
+            var handler = OnData;
+            if (handler != null)
+                handler(this, e);
         }
     }
 }

@@ -1,65 +1,93 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Windows.Forms;
 using Newtonsoft.Json.Linq;
-using rcsir.net.ok.importer.Api;
+using Smrf.AppLib;
 using rcsir.net.ok.importer.Controllers;
 using rcsir.net.ok.importer.Dialogs;
+using rcsir.net.ok.importer.Events;
+using rcsir.net.ok.importer.GraphDataProvider;
 using rcsir.net.ok.importer.NetworkAnalyzer;
 
 namespace TestOKImporter
 {
-    public partial class TestOKImpotrerForm : Form
+    public partial class TestOKImpotrerForm : Form,  ICommandEventDispatcher
     {
-        private readonly OkController controller;
-        private OKLoginDialog okLoginDialog;
+        private readonly OKNetworkAnalyzer analyzer;
+
         private DateTime areStartTime;
         private DateTime mutualStartTime;
+
+        private readonly OKLoginDialog okLoginDialog;
+
+        public OKLoginDialog LoginDialog { get { return okLoginDialog; } }
+
+        private AttributesDictionary<bool> dialogAttributes;
+
+        public AttributesDictionary<bool> DialogAttributes { set { dialogAttributes = value; } }
+
+        string authUri;
+
+        public string AuthUri { set { authUri = value; } }
+
+        public event EventHandler<CommandEventArgs> CommandEventHandler;
 
         public TestOKImpotrerForm()
         {
             InitializeComponent();
-            controller = new OkController();
-            controller.OnData += OnData;
-            controller.OnError += OnError;
+            AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
+            analyzer = new OKNetworkAnalyzer();
+            okLoginDialog = new OKLoginDialog(authUri);
+            new OkController(this);
+            
+/*            var graphDataManager = new GraphDataManager();
+            var requestController = new RequestController();
+            requestController.DeleteCookies();*/
+            okLoginDialog.AuthUri = authUri;
+            new OkController(this);
         }
 
-        public void OnData(object okRestApi, OnDataEventArgs onDataArgs)
+        void CurrentDomain_FirstChanceException(object sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
         {
-            switch (onDataArgs.function) {
-                case OKFunction.LoadUserInfo:
-                    OnLoadUserInfo(onDataArgs.data);
+            Debug.WriteLine(e);
+        }
+       
+        protected virtual void DispatchEvent(CommandEventArgs e)
+        {
+            EventHandler<CommandEventArgs> handler = CommandEventHandler;
+            if (handler != null)
+                handler(this, e);
+        }
+
+        public void OnData(object obj, GraphEventArgs graphEvent = null)
+        {
+            switch (graphEvent.Type) {
+                case GraphEventArgs.Types.UserInfoLoaded:
+                    onLoadUserInfo(graphEvent.JData);
                     break;
-                case OKFunction.LoadFriends:
-                    OnLoadFriends();
+                case GraphEventArgs.Types.FriendsLoaded:
+                    onLoadFriends();
                     break;
-                case OKFunction.GetAreGraph:
-                    OnGetFriends(false);
+                case GraphEventArgs.Types.AreGraphLoaded:
+                    onGetFriends(false);
                     break;
-                case OKFunction.GetMutualGraph:
-                    OnGetFriends();
+                case GraphEventArgs.Types.MutualGraphLoaded:
+                    onGetFriends();
                     break;
-                case OKFunction.GenerateAreGraph:
-                    OnGenerateGraph();
-                    break;
-                case OKFunction.GenerateMutualGraph:
-                    OnGenerateGraph();
-                    break;
-                default:
-                    Debug.WriteLine("Error, unknown function.");
+                case GraphEventArgs.Types.GraphGenerated:
+                    onGenerateGraph(graphEvent);
                     break;
             }
         }
 
-        // main error handler
-        public void OnError(object okRestApi, OnErrorEventArgs onErrorArgs)
+        public void OnError(object obj, rcsir.net.ok.importer.Events.ErrorEventArgs onErrorArgs)
         {
             // TODO: notify user about the error
-            Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
+            Debug.WriteLine("Function " + onErrorArgs.Type + ", returned error: " + onErrorArgs.Error);
         }
 
-        // process load user info response
-        private void OnLoadUserInfo(JObject ego)
+        private void onLoadUserInfo(JObject ego)
         {
             userInfoTextBox.Clear();
             userInfoTextBox.AppendText(ego["name"] + "\n");
@@ -73,16 +101,18 @@ namespace TestOKImporter
 
             pictureBox.ImageLocation = ego["pic_2"].ToString();
             userIdTextBox.Clear();
-            userIdTextBox.Text = ego["uid"].ToString();
+            userIdTextBox.Text = analyzer.EgoId = ego["uid"].ToString();
+
+            LoginDialog.Close();
             ActivateAuthControls(true);
         }
-        // process load user friends response
-        private void OnLoadFriends()
+
+        private void onLoadFriends()
         {
             ActivateFriendsControls(true);
         }
 
-        private void OnGetFriends(bool isMutual = true)
+        private void onGetFriends(bool isMutual = true)
         {
             timer.Stop();
             if (isMutual)
@@ -91,10 +121,13 @@ namespace TestOKImporter
                 areTimeTextBox.Text = (DateTime.Now - areStartTime).ToString();
         }
 
-        private void OnGenerateGraph()
+        private void onGenerateGraph(GraphEventArgs graphEvent)
         {
+            analyzer.SetGraph(graphEvent.Vertices, graphEvent.Edges, graphEvent.DialogAttributes, graphEvent.GraphAttributes);
+            analyzer.MakeTestXml();
             Enabled = true;
         }
+
         private void ActivateFriendsControls(bool activate)
         {
             GeByAreFriendsButton.Enabled = activate;
@@ -110,43 +143,59 @@ namespace TestOKImporter
 
         private void AuthButton_Click(object sender, EventArgs e)
         {
-            if (okLoginDialog == null)
-                okLoginDialog = new OKLoginDialog(controller);
-            
-            okLoginDialog.Login();
+/*
+            if (okLoginDialog == null){
+                okLoginDialog = new OKLoginDialog(requestController);
+//               okLoginDialog += controller.CallOkFunction(OkFunction.LoadUserInfo);
+            }
+*/
+            LoginDialog.Login();
         }
 
         private void LoadFriendsButton_Click(object sender, EventArgs e)
         {
-            controller.CallOkFunction(OKFunction.LoadFriends);
+            var evnt = new CommandEventArgs(CommandEventArgs.Commands.LoadFriends);
+            DispatchEvent(evnt);
         }
 
         private void GeByAreFriendsButton_Click(object sender, EventArgs e)
         {
             areStartTime = DateTime.Now;
-            controller.CallOkFunction(OKFunction.GetAreGraph);
+            var evnt = new CommandEventArgs(CommandEventArgs.Commands.GetGraphByAreFriends);
+            DispatchEvent(evnt);
         }
 
         private void GetMutualButton_Click(object sender, EventArgs e)
         {
             mutualStartTime = DateTime.Now;
-            controller.CallOkFunction(OKFunction.GetMutualGraph);
+            var evnt = new CommandEventArgs(CommandEventArgs.Commands.GetGraphByMutualFriends);
+            DispatchEvent(evnt);
         }
 
         private void GenerateGraphAreButton_Click(object sender, EventArgs e)
         {
             Enabled = false;
-            controller.CallOkFunction(OKFunction.GenerateAreGraph);
-            OKNetworkAnalyzer analyzer = new OKNetworkAnalyzer();
-            analyzer.MakeTestXml(controller.Vertices, controller.Edges, controller.EgoId);
+            areStartTime = DateTime.Now;
+            var evnt = new CommandEventArgs(CommandEventArgs.Commands.GenerateGraphByAreFriends);
+            DispatchEvent(evnt);
         }
 
         private void GenerateGraphMutualButton_Click(object sender, EventArgs e)
         {
             Enabled = false;
-            controller.CallOkFunction(OKFunction.GenerateMutualGraph);
-            OKNetworkAnalyzer analyzer = new OKNetworkAnalyzer();
-            analyzer.MakeTestXml(controller.Vertices, controller.Edges, controller.EgoId);
+            mutualStartTime = DateTime.Now;
+            var evnt = new CommandEventArgs(CommandEventArgs.Commands.GenerateGraphByMutualFriends);
+            DispatchEvent(evnt);
+        }
+
+        private void TestAllButton_Click(object sender, EventArgs e)
+        {
+            OKGraphDataProvider fbGraph = new OKGraphDataProvider();
+            string data;
+            fbGraph.TryGetGraphDataAsTemporaryFile(out data);
+            TextWriter tw = new StreamWriter("FanPageASGraphML.txt");
+            tw.WriteLine(data);
+            tw.Close();
         }
     }
 }

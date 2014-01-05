@@ -139,10 +139,10 @@ namespace rcsir.net.common.NetworkAnalyzer
             AppendVertexTooltipXmlNodes(oGraphMLXmlDocument, oVertexXmlNode, oVertex.Name, oVertex.ToolTip == null ? "" : oVertex.ToolTip);
 
             // add picture
-            if (oVertex.Attributes.ContainsKey("picture_small") &&
-                oVertex.Attributes["picture_small"] != null)
+            if (oVertex.Attributes.ContainsKey("pic_small") &&
+                oVertex.Attributes["pic_small"] != null)
             {
-                oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "Image", oVertex.Attributes["picture_small"].ToString());
+                oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "Image", oVertex.Attributes["pic_small"].ToString());
             }
 
         }

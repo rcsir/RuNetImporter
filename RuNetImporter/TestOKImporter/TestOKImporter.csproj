@@ -34,6 +34,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.NodeXL.ExcelTemplatePlugIns, Version=1.0.1.245, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\MYB\Примеры\NodeXL\NodeXL Projects\Microsoft.NodeXL.ExcelTemplatePlugIns.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\Json.NET\Bin\Net35\Newtonsoft.Json.dll</HintPath>
     </Reference>

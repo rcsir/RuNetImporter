@@ -1,30 +1,99 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
-using rcsir.net.ok.importer.Api;
+using Smrf.NodeXL.GraphDataProviders;
+using rcsir.net.ok.importer.Controllers;
+using rcsir.net.ok.importer.Events;
 using rcsir.net.ok.importer.NetworkAnalyzer;
 using Smrf.AppLib;
 using Smrf.SocialNetworkLib;
 
 namespace rcsir.net.ok.importer.Dialogs
 {
-    public partial class OKDialog : OKGraphDataProviderDialogBase
+    public partial class OKDialog : GraphDataProviderDialogBase, ICommandEventDispatcher
     {
+        private readonly OKLoginDialog loginDialog;
+
+        public OKLoginDialog LoginDialog { get { return loginDialog; } }
+
+        private AttributesDictionary<bool> dialogAttributes;
+
+        public AttributesDictionary<bool> DialogAttributes { set { dialogAttributes = value; } }
+
+        string authUri;
+
+        public string AuthUri { set { authUri = value; } }
+
+        public event EventHandler<CommandEventArgs> CommandEventHandler;
+
         public OKDialog() : base(new OKNetworkAnalyzer())
         {
             InitializeComponent();
-            addAttributes();
+/*            var graphDataManager = new GraphDataManager();
+            var requestController = new RequestController();*/
+            loginDialog = new OKLoginDialog(authUri);
+            new OkController(this);
+            loginDialog.AuthUri = authUri;
+            addAttributes(dialogAttributes);
+        }
+
+        public void OnData(object obj, GraphEventArgs graphEvent)
+        {
+            switch (graphEvent.Type)
+            {
+                case GraphEventArgs.Types.UserInfoLoaded:
+                    onLoadUserInfo(graphEvent.JData["uid"].ToString());
+                    break;
+/*               case GraphEventArgs.Types.FriendsLoaded:
+                    onLoadFriends();
+                    break;
+                case GraphEventArgs.Types.AreGraphLoaded:
+                    onGetFriends(false);
+                    break;
+                case GraphEventArgs.Types.MutualGraphLoaded:
+                    onGetFriends();
+                    break;*/
+                case GraphEventArgs.Types.GraphGenerated:
+                    onGenerateGraph(graphEvent);
+                    break;
+            }
+        }
+        // main error handler
+        private void OnError(object obj, ErrorEventArgs onErrorArgs)
+        {
+            // TODO: notify user about the error
+            Debug.WriteLine("Function " + onErrorArgs.Type + ", returned error: " + onErrorArgs.Error);
+        }
+
+        private void onLoadUserInfo(string id)
+        {
+            ((OKNetworkAnalyzer)m_oHttpNetworkAnalyzer).EgoId = id;
+            btnOK.Enabled = true;
+            LoginDialog.Close();
+        }
+
+        private void onGenerateGraph(GraphEventArgs graphEvent)
+        {
+            ((OKNetworkAnalyzer)m_oHttpNetworkAnalyzer).SetGraph(graphEvent.Vertices, graphEvent.Edges, graphEvent.DialogAttributes, graphEvent.GraphAttributes);
+            try
+            {
+                List<NetworkType> oEdgeType = new List<NetworkType>();
+                ((OKNetworkAnalyzer)m_oHttpNetworkAnalyzer).GetNetworkAsync(oEdgeType, chkIncludeMe.Checked, DateTime.Now, DateTime.Now);
+            }
+            catch (NullReferenceException e)
+            {
+                MessageBox.Show(e.Message);
+            }
+            Enabled = true;
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             AssertValid();
-            
-
+            Close();
         }
-
-
         //*************************************************************************
         //  Property: ToolStripStatusLabel
         //
@@ -44,16 +113,7 @@ namespace rcsir.net.ok.importer.Dialogs
         /// </remarks>
         //*************************************************************************
 
-        protected override ToolStripStatusLabel
-        ToolStripStatusLabel
-        {
-            get
-            {
-                AssertValid();
-
-                return (this.slStatusLabel);
-            }
-        }
+        protected override ToolStripStatusLabel ToolStripStatusLabel { get { AssertValid(); return (slStatusLabel); } }
 
         //*************************************************************************
         //  Method: DoDataExchange()
@@ -72,25 +132,13 @@ namespace rcsir.net.ok.importer.Dialogs
         /// </returns>
         //*************************************************************************
 
-        protected override Boolean
-        DoDataExchange
-        (
-            Boolean bFromControls
-        )
+        protected override Boolean DoDataExchange (Boolean bFromControls)
         {
-            if (bFromControls)
-            {
+            if (bFromControls){
                 // Validate the controls.
+            } else{
 
-                
-
-            
             }
-            else
-            {
-           
-            }
-
             return (true);
         }
 
@@ -106,27 +154,27 @@ namespace rcsir.net.ok.importer.Dialogs
         /// </remarks>
         //*************************************************************************
 
-        protected override void
-        StartAnalysis()
+        protected override void StartAnalysis()
         {
             AssertValid();
-
-            m_oGraphMLXmlDocument = null;            
-
-            try
-            {
-                accessToken = PostRequests.AuthToken;
-                String userId = Authorization.ClientId;
-
+            m_oGraphMLXmlDocument = null;
+            DispatchCommandEvent(CommandEventArgs.Commands.GenerateGraph);
+/*            try {
                 List<NetworkType> oEdgeType = new List<NetworkType>();
-
-                ((OKNetworkAnalyzer)m_oHttpNetworkAnalyzer).analyze(userId, accessToken);
-            }
-            catch (NullReferenceException e)
-            {
+                DispatchCommandEvent(CommandEventArgs.Commands.GenerateGraph);
+                ((OKNetworkAnalyzer)m_oHttpNetworkAnalyzer).GetNetworkAsync(oEdgeType, chkIncludeMe.Checked, DateTime.Now, DateTime.Now);
+ //               ((OKNetworkAnalyzer)m_oHttpNetworkAnalyzer).analyze();
+            } catch (NullReferenceException e) {
                 MessageBox.Show(e.Message);
-            }      
-        
+            }*/
+        }
+
+        protected virtual void DispatchCommandEvent(CommandEventArgs.Commands command, DataGridViewRow[] rows = null)
+        {
+            var evnt = new CommandEventArgs(command, rows);
+            EventHandler<CommandEventArgs> handler = CommandEventHandler;
+            if (handler != null)
+                handler(this, evnt);
         }
 
         //*************************************************************************
@@ -137,16 +185,10 @@ namespace rcsir.net.ok.importer.Dialogs
         /// </summary>
         //*************************************************************************
 
-        protected override void
-        EnableControls()
+        protected override void EnableControls()
         {
             AssertValid();
-
             Boolean bIsBusy = m_oHttpNetworkAnalyzer.IsBusy;
-
-            //EnableControls(!bIsBusy, pnlUserInputs);
-            //btnOK.Enabled = !bIsBusy;
-            //this.UseWaitCursor = bIsBusy;
         }
 
         //*************************************************************************
@@ -157,13 +199,9 @@ namespace rcsir.net.ok.importer.Dialogs
         /// </summary>
         //*************************************************************************
 
-        protected override void
-        OnEmptyGraph()
+        protected override void OnEmptyGraph()
         {
             AssertValid();
-
-            //this.ShowInformation("That tag has no related tags.");
-            //txbTag.Focus();
         }
 
         //*************************************************************************
@@ -182,39 +220,13 @@ namespace rcsir.net.ok.importer.Dialogs
         /// </param>
         //*************************************************************************
 
-        protected void
-        btnOK_Click
-        (
-            object sender,
-            EventArgs e
-        )
+        protected void btnOK_Click(object sender, EventArgs e)
         {
             AssertValid();
-
+            readAttributes();
+//            (m_oHttpNetworkAnalyzer as OKNetworkAnalyzer).GraphDataManager = graphDataManager;
             OnOKClick();
         }
-
-
-        //*************************************************************************
-        //  Method: AssertValid()
-        //
-        /// <summary>
-        /// Asserts if the object is in an invalid state.  Debug-only.
-        /// </summary>
-        //*************************************************************************
-
-        // [Conditional("DEBUG")]
-
-        public override void
-        AssertValid()
-        {
-            base.AssertValid();
-
-            //Debug.Assert(m_sTag != null);
-            // m_eNetworkLevel
-            // m_bIncludeSampleThumbnails
-        }
-
 
         //*************************************************************************
         //  Protected constants
@@ -232,7 +244,7 @@ namespace rcsir.net.ok.importer.Dialogs
 
         /// Tag to get the related tags for.  Can be empty but not null.
 
-        protected static String m_sTag = "sociology";
+//        protected static String m_sTag = "sociology";
 
         /// Network level to include.
 
@@ -240,135 +252,27 @@ namespace rcsir.net.ok.importer.Dialogs
 
         /// true to include a sample thumbnail for each tag.
 
-        protected static Boolean m_bIncludeSampleThumbnails = false;
+//        protected static Boolean m_bIncludeSampleThumbnails = false;
 
-        public String accessToken;
-        
-        private OKLoginDialog loginDialog;
-
-        //private Dictionary<Attribute, bool> attributes = new Dictionary<Attribute,bool>() 
-        //{
-        //    {new Attribute("Name","name"),true},
-        //    {new Attribute("First Name","first_name"),true},
-        //    {new Attribute("Middle Name","middle_name"),true},
-        //    {new Attribute("Last Name","last_name"),true},
-        //    {new Attribute("Hometown","hometown_location"),true},
-        //    {new Attribute("Current Location","current_location"),true},
-        //    {new Attribute("Birthday","birthday"),true},
-        //    {new Attribute("Picture","pic_small"),true},
-        //    {new Attribute("Profile Update Time","profile_update_time"),false},
-        //    {new Attribute("Timezone","timezone"),true},
-        //    {new Attribute("Religion","religion"),false},
-        //    {new Attribute("Sex","sex"),true},
-        //    {new Attribute("Relationship","relationship_status"),true},
-        //    {new Attribute("Political Views","political"),false},
-        //    {new Attribute("Activities","activities"),false},
-        //    {new Attribute("Interests","interests"),false},
-        //    {new Attribute("Music","music"),false},
-        //    {new Attribute("TV","tv"),false},
-        //    {new Attribute("Movies","movies"),false},
-        //    {new Attribute("Books","books"),false},
-        //    {new Attribute("Quotes","quotes"),false},
-        //    {new Attribute("About Me","about_me"),true},            
-        //    {new Attribute("Online Presence","online_presence"),true},
-        //    {new Attribute("Locale","locale"),true},
-        //    {new Attribute("Website","website"),false}                      
-        //};
-
-        private AttributesDictionary<bool> attributes = new AttributesDictionary<bool>()
-        {
-            {true},
-            {true},
-            {true},
-            {true},
-            {true},
-            {true},
-            {true},
-            {true},
-            {false},
-            {true},
-            {false},
-            {true},
-            {true},
-            {false},
-            {false},
-            {false},
-            {false},
-            {false},
-            {false},
-            {false},
-            {false},
-            {true},            
-            {true},
-            {true},
-            {false}        
-        };
-
-        private Dictionary<string, string> attributeFriendsPermissionMapping = new Dictionary<string, string>()
-        {
-            {"birthday", "friends_birthday"},
-            {"hometown_location","friends_hometown"},
-            {"current_location","friends_location"},
-            {"religion", "friends_religion_politics"},
-            {"relationship_status", "friends_relationships"},
-            {"political","friends_religion_politics"},
-            {"activities","friends_activities"},
-            {"interests","friends_interests"},
-            {"music","friends_likes"},
-            {"tv","friends_likes"},
-            {"movies","friends_likes"},
-            {"books","friends_likes"},
-            {"quotes","friends_about_me"},
-            {"about_me","friends_about_me"},
-            {"status","friends_status"},
-            {"online_presence","friends_online_presence"},
-            {"website","friends_website"},            
-        };
-
-        private Dictionary<string, string> attributeUserPermissionMapping = new Dictionary<string, string>()
-        {
-            {"birthday", "user_birthday"},
-            {"hometown_location","user_hometown"},
-            {"current_location","user_location"},
-            {"religion", "user_religion_politics"},
-            {"relationship_status", "user_relationships"},
-            {"political","user_religion_politics"},
-            {"activities","user_activities"},
-            {"interests","user_interests"},
-            {"music","user_likes"},
-            {"tv","user_likes"},
-            {"movies","user_likes"},
-            {"books","user_likes"},
-            {"quotes","user_about_me"},
-            {"about_me","user_about_me"},
-            {"status","user_status"},
-            {"online_presence","user_online_presence"},
-            {"website","user_website"},            
-        };
-
-        private void addAttributes()
+        private void addAttributes(AttributesDictionary<bool> dialogAttributes)
         {
             int i = 0;
-            dgAttributes.Rows.Add(attributes.Count);            
-            foreach (KeyValuePair<AttributeUtils.Attribute, bool> kvp in attributes)
-            {
+            dgAttributes.Rows.Add(dialogAttributes.Count);
+            foreach (KeyValuePair<AttributeUtils.Attribute, bool> kvp in dialogAttributes) {
                 dgAttributes.Rows[i].Cells[0].Value = kvp.Key.name;
-                dgAttributes.Rows[i].Cells[1].Value = kvp.Value;                
-                dgAttributes.Rows[i].Cells[2].Value = kvp.Key.value;                
+                dgAttributes.Rows[i].Cells[1].Value = kvp.Value;
+                dgAttributes.Rows[i].Cells[2].Value = kvp.Key.value;
                 i++;
             }
         }
 
-
-        private void button1_Click_1(object sender, EventArgs e)
-        {            
-            readAttributes();
-            loginDialog = new OKLoginDialog();
-            loginDialog.Login();
-        
-        }        
-        
-
+        private void btnLogin_Click(object sender, EventArgs e)
+        {
+/*            if (loginDialog == null)
+                loginDialog = new OKLoginDialog(requestController);*/
+            LoginDialog.Login();
+        }
+/*
         private void PrintAttributes()
         {
             string text = "";
@@ -377,88 +281,45 @@ namespace rcsir.net.ok.importer.Dialogs
                 text += kvp.Key.name + "=" + kvp.Value.ToString() + "\n";
             }
 
-            this.ShowInformation(text);            
+            this.ShowInformation(text);
         }
-
+*/
         private void readAttributes()
         {
-            foreach (DataGridViewRow row in dgAttributes.Rows)
-            {
-                attributes[row.Cells[2].Value.ToString()] = (Boolean)row.Cells[1].Value;
-            }            
-        }
-
-        private string createRequiredPermissionsString()
-        {
-            string permissionsString = "&scope=";
-            // TODO
-            return permissionsString.Remove(permissionsString.Length - 1);            
+            var rows = new DataGridViewRow[dgAttributes.Rows.Count];
+            dgAttributes.Rows.CopyTo(rows, 0);
+            DispatchCommandEvent(CommandEventArgs.Commands.MakeAttributes, rows);
         }
 
         private void chkSelectAll_CheckedChanged(object sender, EventArgs e)
         {
             foreach (DataGridViewRow row in dgAttributes.Rows)
-            {
                 row.Cells[1].Value = ((CheckBox)sender).Checked;
-            }
-        }
-
-        private void OkDialog_Load(object sender, EventArgs e)
-        {
-            dgAttributes.Columns[1].Width = 
-                TextRenderer.MeasureText(dgAttributes.Columns[1].HeaderText,
-                dgAttributes.Columns[1].HeaderCell.Style.Font).Width + 25;
-            //Get the column header cell bounds
-
-            Rectangle rect =
-                this.dgAttributes.GetCellDisplayRectangle(1, -1, true);           
-
-            //Change the location of the CheckBox to make it stay on the header
-
-            chkSelectAll.Location = 
-                new Point(rect.Location.X + rect.Width - 20,
-                    rect.Location.Y + Math.Abs((rect.Height - chkSelectAll.Height)/2));
-
-            chkSelectAll.CheckedChanged += new EventHandler(chkSelectAll_CheckedChanged);
-
-            //Add the CheckBox into the DataGridView
-
-            this.dgAttributes.Controls.Add(chkSelectAll);
         }
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            if (loginDialog == null)
-                loginDialog = new OKLoginDialog();
-
+/*            if (loginDialog == null)
+                loginDialog = new OKLoginDialog(requestController);*/
             loginDialog.Logout();
-        }
-
-        public OKLoginDialog OKLoginDialog
-        {
-            get
-            {
-                throw new System.NotImplementedException();
-            }
-            set
-            {
-            }
-        }
-
-        public OKNetworkAnalyzer sdcsd
-        {
-            get
-            {
-                throw new System.NotImplementedException();
-            }
-            set
-            {
-            }
         }
 
         private void chkIncludeMe_CheckedChanged(object sender, EventArgs e)
         {
         }
-    
+
+        private void OKDialog_Load(object sender, EventArgs e)
+        {
+            dgAttributes.Columns[1].Width =
+            TextRenderer.MeasureText(dgAttributes.Columns[1].HeaderText,
+            dgAttributes.Columns[1].HeaderCell.Style.Font).Width + 25;
+            //Get the column header cell bounds
+            Rectangle rect = dgAttributes.GetCellDisplayRectangle(1, -1, true);
+            //Change the location of the CheckBox to make it stay on the header
+            chkSelectAll.Location = new Point(rect.Location.X + rect.Width - 20, rect.Location.Y + Math.Abs((rect.Height - chkSelectAll.Height) / 2));
+            chkSelectAll.CheckedChanged += chkSelectAll_CheckedChanged;
+            //Add the CheckBox into the DataGridView
+            dgAttributes.Controls.Add(chkSelectAll);
+        }
     }
 }

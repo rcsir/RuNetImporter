@@ -1,38 +1,34 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Windows.Forms;
-using rcsir.net.ok.importer.Api;
-using rcsir.net.ok.importer.Controllers;
+using rcsir.net.ok.importer.Events;
+using rcsir.net.ok.importer.Storages;
 
 namespace rcsir.net.ok.importer.Dialogs
 {
     public partial class OKLoginDialog : Form
     {
-        private Authorization auth = new Authorization();
-        private readonly OkController controller;
- 
-        public OKLoginDialog()
-        {
-            InitializeComponent();
-            auth.deleteCookies();
-        }
+        private string authUri;
 
-        public OKLoginDialog(OkController controller)
+        public string AuthUri { set { authUri = value; } }
+
+        public event EventHandler<CommandEventArgs> CommandEventHandler;
+
+        public OKLoginDialog(string uri)
         {
             InitializeComponent();
-            auth.deleteCookies();
-            this.controller = controller;
         }
 
         public void Login()
         {
             Debug.WriteLine("Navigate");
-            webBrowserLogin.Navigate(auth.AuthUri);
+            webBrowserLogin.Navigate(authUri);
             ShowDialog();
         }
 
         public void Logout()
         {
-            webBrowserLogin.Navigate("http://www.odnoklassniki.ru/");
+            webBrowserLogin.Navigate(RequestParametersStorage.StartUrl);
             ShowDialog();
         }
 
@@ -41,12 +37,16 @@ namespace rcsir.net.ok.importer.Dialogs
             Debug.WriteLine("DocumentCompleted");
             string stringUrl = webBrowserLogin.Url.ToString();
             Debug.WriteLine(stringUrl);
-            string code = auth.GetCode(stringUrl);
-            if (code == null)
-                return;
+            var evnt = new CommandEventArgs(CommandEventArgs.Commands.GetAccessToken, stringUrl);
+            DispatchEvent(evnt);
 //          DisableComponents(fcbDialog);
-            Close();
-            controller.CallOkFunction(OKFunction.GetAccessToken);
+        }
+
+        protected virtual void DispatchEvent(CommandEventArgs e)
+        {
+            EventHandler<CommandEventArgs> handler = CommandEventHandler;
+            if (handler != null)
+                handler(this, e);
         }
     }
 }

@@ -46,6 +46,7 @@
             this.userIdTextBox = new System.Windows.Forms.TextBox();
             this.pictureBox = new System.Windows.Forms.PictureBox();
             this.timer = new System.Windows.Forms.Timer(this.components);
+            this.TestAllButton = new System.Windows.Forms.Button();
             this.mutualGroupBox.SuspendLayout();
             this.areGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).BeginInit();
@@ -213,11 +214,23 @@
             this.pictureBox.TabIndex = 17;
             this.pictureBox.TabStop = false;
             // 
+            // TestAllButton
+            // 
+            this.TestAllButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.TestAllButton.Location = new System.Drawing.Point(196, 344);
+            this.TestAllButton.Name = "TestAllButton";
+            this.TestAllButton.Size = new System.Drawing.Size(224, 38);
+            this.TestAllButton.TabIndex = 18;
+            this.TestAllButton.Text = "Test All";
+            this.TestAllButton.UseVisualStyleBackColor = true;
+            this.TestAllButton.Click += new System.EventHandler(this.TestAllButton_Click);
+            // 
             // TestOKImpotrerForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(608, 328);
+            this.ClientSize = new System.Drawing.Size(608, 394);
+            this.Controls.Add(this.TestAllButton);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.userIdTextBox);
             this.Controls.Add(this.areGroupBox);
@@ -257,6 +270,7 @@
         private System.Windows.Forms.TextBox userIdTextBox;
         private System.Windows.Forms.PictureBox pictureBox;
         private System.Windows.Forms.Timer timer;
+        private System.Windows.Forms.Button TestAllButton;
     }
 }
 
