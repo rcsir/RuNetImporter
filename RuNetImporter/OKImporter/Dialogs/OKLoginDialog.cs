@@ -14,7 +14,7 @@ namespace rcsir.net.ok.importer.Dialogs
 
         public event EventHandler<CommandEventArgs> CommandEventHandler;
 
-        public OKLoginDialog(string uri)
+        public OKLoginDialog()
         {
             InitializeComponent();
         }

@@ -22,20 +22,13 @@ namespace rcsir.net.ok.importer.Dialogs
 
         public AttributesDictionary<bool> DialogAttributes { set { dialogAttributes = value; } }
 
-        string authUri;
-
-        public string AuthUri { set { authUri = value; } }
-
         public event EventHandler<CommandEventArgs> CommandEventHandler;
 
         public OKDialog() : base(new OKNetworkAnalyzer())
         {
             InitializeComponent();
-/*            var graphDataManager = new GraphDataManager();
-            var requestController = new RequestController();*/
-            loginDialog = new OKLoginDialog(authUri);
+            loginDialog = new OKLoginDialog();
             new OkController(this);
-            loginDialog.AuthUri = authUri;
             addAttributes(dialogAttributes);
         }
 

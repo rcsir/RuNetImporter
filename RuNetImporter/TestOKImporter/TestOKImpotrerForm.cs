@@ -27,10 +27,6 @@ namespace TestOKImporter
 
         public AttributesDictionary<bool> DialogAttributes { set { dialogAttributes = value; } }
 
-        string authUri;
-
-        public string AuthUri { set { authUri = value; } }
-
         public event EventHandler<CommandEventArgs> CommandEventHandler;
 
         public TestOKImpotrerForm()
@@ -38,13 +34,7 @@ namespace TestOKImporter
             InitializeComponent();
             AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
             analyzer = new OKNetworkAnalyzer();
-            okLoginDialog = new OKLoginDialog(authUri);
-            new OkController(this);
-            
-/*            var graphDataManager = new GraphDataManager();
-            var requestController = new RequestController();
-            requestController.DeleteCookies();*/
-            okLoginDialog.AuthUri = authUri;
+            okLoginDialog = new OKLoginDialog();
             new OkController(this);
         }
 
@@ -143,12 +133,6 @@ namespace TestOKImporter
 
         private void AuthButton_Click(object sender, EventArgs e)
         {
-/*
-            if (okLoginDialog == null){
-                okLoginDialog = new OKLoginDialog(requestController);
-//               okLoginDialog += controller.CallOkFunction(OkFunction.LoadUserInfo);
-            }
-*/
             LoginDialog.Login();
         }
 

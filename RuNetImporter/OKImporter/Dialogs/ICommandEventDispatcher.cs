@@ -8,7 +8,6 @@ namespace rcsir.net.ok.importer.Dialogs
     {
         OKLoginDialog LoginDialog { get; }
         AttributesDictionary<bool> DialogAttributes { set; }
-        string AuthUri { set; }
         
         event EventHandler<CommandEventArgs> CommandEventHandler;
 

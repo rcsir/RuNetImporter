@@ -25,7 +25,7 @@ namespace rcsir.net.ok.importer.Controllers
 
         private void updateMainForm(ICommandEventDispatcher main)
         {
-            main.AuthUri = requestController.AuthUri;
+            main.LoginDialog.AuthUri = requestController.AuthUri;
             main.DialogAttributes = graphDataManager.OkDialogAttributes;
         }
 
