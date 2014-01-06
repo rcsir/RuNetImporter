@@ -10,6 +10,7 @@ namespace rcsir.net.ok.importer.Events
         public readonly Commands CommandName;
         public readonly string Parameter;
         public readonly DataGridViewRow[] Rows;
+        public readonly bool IsMeIncluding;
 
         public CommandEventArgs(Commands name, string parameter = null)
         {
@@ -17,10 +18,11 @@ namespace rcsir.net.ok.importer.Events
             Parameter = parameter;
         }
 
-        public CommandEventArgs(Commands name, DataGridViewRow[] rows)
+        public CommandEventArgs(Commands name, DataGridViewRow[] rows, bool isMeIncluding)
         {
             CommandName = name; //    (Commands)Enum.Parse(typeof(Commands), name);
             Rows = rows;
+            IsMeIncluding = isMeIncluding;
         }
     }
 }

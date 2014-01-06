@@ -162,9 +162,9 @@ namespace rcsir.net.ok.importer.Dialogs
             }*/
         }
 
-        protected virtual void DispatchCommandEvent(CommandEventArgs.Commands command, DataGridViewRow[] rows = null)
+        protected virtual void DispatchCommandEvent(CommandEventArgs.Commands command, DataGridViewRow[] rows = null, bool isMeIncluding = false)
         {
-            var evnt = new CommandEventArgs(command, rows);
+            var evnt = new CommandEventArgs(command, rows, isMeIncluding);
             EventHandler<CommandEventArgs> handler = CommandEventHandler;
             if (handler != null)
                 handler(this, evnt);
@@ -281,7 +281,7 @@ namespace rcsir.net.ok.importer.Dialogs
         {
             var rows = new DataGridViewRow[dgAttributes.Rows.Count];
             dgAttributes.Rows.CopyTo(rows, 0);
-            DispatchCommandEvent(CommandEventArgs.Commands.MakeAttributes, rows);
+            DispatchCommandEvent(CommandEventArgs.Commands.MakeAttributes, rows, chkIncludeMe.Checked);
         }
 
         private void chkSelectAll_CheckedChanged(object sender, EventArgs e)

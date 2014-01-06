@@ -9,7 +9,7 @@ using Smrf.AppLib;
 
 namespace rcsir.net.ok.importer.Controllers
 {
-    public class GraphDataManager
+    class GraphDataManager
     {
         private readonly GraphStorage graphStorage;
         private readonly AttributesStorage attributeStorage;
@@ -20,11 +20,9 @@ namespace rcsir.net.ok.importer.Controllers
 
         internal AttributesDictionary<bool> OkDialogAttributes { get { return attributeStorage.OkDialogAttributes; } }
 
-        internal AttributesDictionary<string> GraphAttributes { get { return attributeStorage.GraphAttributes; } }
+        internal event EventHandler<GraphEventArgs> OnData;
 
-        public event EventHandler<GraphEventArgs> OnData;
-
-        public GraphDataManager() //  GraphStorage storage
+        internal GraphDataManager()
         {
             graphStorage = new GraphStorage();
             attributeStorage = new AttributesStorage();
@@ -35,23 +33,27 @@ namespace rcsir.net.ok.importer.Controllers
             graphStorage.AddFriendId(id);
         }
 
-        internal void SendEgo(JObject ego, string cookie = null)
+        internal void SendEgo(JObject ego)
         {
-//            graphStorage.AddEgoVertexIfNeeded(ego, attributeStorage.CreateVertexAttributes(ego));
             GraphEventArgs evnt = new GraphEventArgs(GraphEventArgs.Types.UserInfoLoaded, ego);
             DispatchEvent(evnt);
         }
 
-        internal void AddFriends(JArray friends, string cookie = null)
+        internal void MakeEgo(JToken ego)
+        {
+            graphStorage.MakeEgoVertex(ego, attributeStorage.CreateVertexAttributes(ego));
+        }
+
+        internal void AddFriends(JArray friends)
         {
             foreach (var friend in friends)
-                graphStorage.AddFriendVertex(friend.ToObject<JObject>(), attributeStorage.CreateVertexAttributes(friend));
+                graphStorage.AddFriendVertex(friend, attributeStorage.CreateVertexAttributes(friend));
 
             GraphEventArgs evnt = new GraphEventArgs(GraphEventArgs.Types.FriendsLoaded);
             DispatchEvent(evnt);
         }
 
-        internal void AddAreFriends(JArray friendsDict, string cookie = null)
+        internal void AddAreFriends(JArray friendsDict)
         {
             foreach (var friend in friendsDict)
                 if (friend["are_friends"].ToString().ToLower() == "true") {
@@ -60,7 +62,7 @@ namespace rcsir.net.ok.importer.Controllers
                 }
         }
 
-        internal void AddFriends(string userId, JArray friendsDict, string cookie = null)
+        internal void AddFriends(string userId, JArray friendsDict)
         {
             foreach (var subFriend in friendsDict) {
                 graphStorage.AddEdge(userId, subFriend.ToString());

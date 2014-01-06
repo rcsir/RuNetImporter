@@ -14,6 +14,8 @@ namespace rcsir.net.ok.importer.Controllers
         private readonly GraphDataManager graphDataManager;
         private readonly RequestController requestController;
 
+        private string egoId;
+
         public OkController(ICommandEventDispatcher main)
         {
             graphDataManager = new GraphDataManager();
@@ -62,6 +64,8 @@ namespace rcsir.net.ok.importer.Controllers
                     break;
                 case CommandEventArgs.Commands.MakeAttributes:
                     graphDataManager.MakeGraphAttributes(e.Rows);
+                    makeEgoIfNeeded(e.IsMeIncluding);
+//                    graphDataManager.IsMeIncluding = e.IsMeIncluding;
                     break;
             }
         }
@@ -130,6 +134,7 @@ namespace rcsir.net.ok.importer.Controllers
         private void loadEgoInfo()
         {
             var ego = requestController.GetEgoInfo();
+            egoId = ego["uid"].ToString();
             graphDataManager.SendEgo(ego);
        }
 
@@ -138,6 +143,15 @@ namespace rcsir.net.ok.importer.Controllers
             updateRequiredFields();
             var friends = requestController.GetUsersInfo(uids);
             graphDataManager.AddFriends(friends);
+        }
+
+        private void makeEgoIfNeeded(bool isMeIncluding)
+        {
+            if (!isMeIncluding)
+                return;
+            updateRequiredFields();
+            var ego = requestController.GetUsersInfo(egoId);
+            graphDataManager.MakeEgo(ego[0]);
         }
 
         private void updateRequiredFields()
