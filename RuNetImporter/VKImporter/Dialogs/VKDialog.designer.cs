@@ -65,7 +65,7 @@ namespace rcsir.net.vk.importer.Dialogs
             this.btnCancel.TabIndex = 0;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
-            this.btnCancel.Click += new System.EventHandler(this.button1_Click);
+            this.btnCancel.Click += new System.EventHandler(this.CancelButton_Click);
             // 
             // linkLabel1
             // 

@@ -79,11 +79,38 @@ namespace rcsir.net.vk.importer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to popup.
+        /// </summary>
+        internal static string display {
+            get {
+                return ResourceManager.GetString("display", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to https://oauth.vk.com/blank.html.
         /// </summary>
         internal static string redirect_url {
             get {
                 return ResourceManager.GetString("redirect_url", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to token.
+        /// </summary>
+        internal static string response_type {
+            get {
+                return ResourceManager.GetString("response_type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to .
+        /// </summary>
+        internal static string v {
+            get {
+                return ResourceManager.GetString("v", resourceCulture);
             }
         }
     }

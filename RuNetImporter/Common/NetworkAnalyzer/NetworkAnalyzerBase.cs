@@ -90,6 +90,7 @@ namespace rcsir.net.common.NetworkAnalyzer
             {
                 oVertexXmlNode = graphMLXmlDocument.AppendVertexXmlNode(oVertex.ID);
                 AddVertexAttributes(oVertexXmlNode, oVertex, graphMLXmlDocument);
+                AddVertexImageAttribute(oVertexXmlNode, oVertex, graphMLXmlDocument);
             }
 
             // add edges
@@ -111,6 +112,14 @@ namespace rcsir.net.common.NetworkAnalyzer
             return graphMLXmlDocument;
         }
 
+        /// <summary>
+        /// The list of default network attributes
+        /// </summary>
+        /// <returns></returns>
+        public virtual List<AttributeUtils.Attribute> GetDefaultNetworkAttributes()
+        {
+            return AttributeUtils.UserAttributes; // this list is based on Facebook attributes, override as needed
+        }
 
         private void AddVertexAttributes(XmlNode oVertexXmlNode, Vertex oVertex, GraphMLXmlDocument oGraphMLXmlDocument)
         {
@@ -138,13 +147,22 @@ namespace rcsir.net.common.NetworkAnalyzer
 
             AppendVertexTooltipXmlNodes(oGraphMLXmlDocument, oVertexXmlNode, oVertex.Name, oVertex.ToolTip == null ? "" : oVertex.ToolTip);
 
+        }
+
+        /// <summary>
+        /// Adds Image attribute, if present
+        /// </summary>
+        /// <param name="oVertexXmlNode"></param>
+        /// <param name="oVertex"></param>
+        /// <param name="oGraphMLXmlDocument"></param>
+        protected virtual void AddVertexImageAttribute(XmlNode oVertexXmlNode, Vertex oVertex, GraphMLXmlDocument oGraphMLXmlDocument)
+        {
             // add picture
             if (oVertex.Attributes.ContainsKey("picture_small") &&
                 oVertex.Attributes["picture_small"] != null)
             {
-                oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, "Image", oVertex.Attributes["picture_small"].ToString());
+                oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, ImageFileID, oVertex.Attributes["picture_small"].ToString());
             }
-
         }
 
         private void AddEdgeAttributes ( XmlNode oEdgeXmlNode, Edge oEdge,GraphMLXmlDocument oGraphMLXmlDocument)
@@ -152,7 +170,6 @@ namespace rcsir.net.common.NetworkAnalyzer
             oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, "e_type", oEdge.Type);
             oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, RelationshipID, oEdge.Relationship);
         }
-
 
         //*************************************************************************
         //  Method: AppendVertexTooltipXmlNodes()

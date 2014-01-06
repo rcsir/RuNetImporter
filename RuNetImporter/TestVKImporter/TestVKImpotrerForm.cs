@@ -83,7 +83,7 @@ namespace TestVKImporter
 
         private void AuthButton_Click(object sender, EventArgs e)
         {
-            vkLoginDialog.Login();
+            vkLoginDialog.Login("friends"); // default permission - friends
         }
 
         public void UserLogin(object loginDialog, UserLoginEventArgs loginArgs)
@@ -125,6 +125,12 @@ namespace TestVKImporter
             {
                 graph.Save("VKNetwork_" + userId + ".graphml");
             }
+        }
+
+        private void testVkDialogButton_Click(object sender, EventArgs e)
+        {
+            VKDialog vkDialog = new VKDialog();
+            vkDialog.ShowDialog();
         }
     }
 }

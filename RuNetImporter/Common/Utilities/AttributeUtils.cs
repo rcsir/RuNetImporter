@@ -11,12 +11,23 @@ namespace Smrf.AppLib
     {
         public struct Attribute
         {
-            public string name, value;
+            public string name, value, permission;
+            public bool required;
 
             public Attribute(string name, string value)
             {
                 this.name = name;
                 this.value = value;
+                this.permission = default(string);
+                this.required = false;
+            }
+        
+            public Attribute(string name, string value, string permission, bool required)
+            {
+                this.name = name;
+                this.value = value;
+                this.permission = permission;
+                this.required = required;
             }
         }
 
@@ -48,8 +59,5 @@ namespace Smrf.AppLib
             new Attribute("Locale","locale"),
             new Attribute("Website","website"),
         };
-
-        
-        
     }
 }

@@ -34,6 +34,7 @@
             this.userIdTextBox = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.userInfoTextBox = new System.Windows.Forms.TextBox();
+            this.testVkDialogButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // AuthButton
@@ -94,11 +95,22 @@
             this.userInfoTextBox.Size = new System.Drawing.Size(224, 98);
             this.userInfoTextBox.TabIndex = 7;
             // 
+            // testVkDialogButton
+            // 
+            this.testVkDialogButton.Location = new System.Drawing.Point(71, 347);
+            this.testVkDialogButton.Name = "testVkDialogButton";
+            this.testVkDialogButton.Size = new System.Drawing.Size(224, 38);
+            this.testVkDialogButton.TabIndex = 8;
+            this.testVkDialogButton.Text = "Test VKDialog";
+            this.testVkDialogButton.UseVisualStyleBackColor = true;
+            this.testVkDialogButton.Click += new System.EventHandler(this.testVkDialogButton_Click);
+            // 
             // TestVKImpotrerForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(365, 400);
+            this.Controls.Add(this.testVkDialogButton);
             this.Controls.Add(this.userInfoTextBox);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.userIdTextBox);
@@ -120,6 +132,7 @@
         private System.Windows.Forms.TextBox userIdTextBox;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox userInfoTextBox;
+        private System.Windows.Forms.Button testVkDialogButton;
     }
 }
 

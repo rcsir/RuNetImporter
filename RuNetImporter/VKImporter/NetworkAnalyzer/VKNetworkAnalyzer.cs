@@ -7,6 +7,7 @@ using System.Net;
 using System.Diagnostics;
 using System.ComponentModel;
 using System.Threading;
+using Smrf.XmlLib;
 using Smrf.AppLib;
 using rcsir.net.common.NetworkAnalyzer;
 using rcsir.net.common.Network;
@@ -30,17 +31,17 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         private VertexCollection vertices = new VertexCollection();
         private EdgeCollection edges = new EdgeCollection();
 
-        public static List<AttributeUtils.Attribute> VKAttributes = new List<AttributeUtils.Attribute>()
+        private static List<AttributeUtils.Attribute> VKAttributes = new List<AttributeUtils.Attribute>()
         {
-            new AttributeUtils.Attribute("Name","name"),
-            new AttributeUtils.Attribute("First Name","first_name"),
-            new AttributeUtils.Attribute("Last Name","last_name"),
-            new AttributeUtils.Attribute("Picture","picture_small"), // photo_50
-            new AttributeUtils.Attribute("Sex","sex"),
-            new AttributeUtils.Attribute("Birth Date","bdate"),
-            new AttributeUtils.Attribute("Relation","relation"),
-            new AttributeUtils.Attribute("City","city"),
-            new AttributeUtils.Attribute("Country","country"),
+            new AttributeUtils.Attribute("Name","name", "friends", false),
+            new AttributeUtils.Attribute("First Name","first_name", "friends", true),
+            new AttributeUtils.Attribute("Last Name","last_name", "friends", true),
+            new AttributeUtils.Attribute("Picture","photo_50", "friends", true),
+            new AttributeUtils.Attribute("Sex","sex", "friends", true),
+            new AttributeUtils.Attribute("Birth Date","bdate", "friends", true),
+            new AttributeUtils.Attribute("Relation","relation", "friends", false),
+            new AttributeUtils.Attribute("City","city", "friends", false),
+            new AttributeUtils.Attribute("Country","country", "friends", false),
 
         };
 
@@ -222,6 +223,12 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
             }
         }
 
+
+        public override List<AttributeUtils.Attribute> GetDefaultNetworkAttributes()
+        {
+            return VKAttributes;
+        }
+
         private AttributesDictionary<String> createAttributes(JObject obj)
         {
             AttributesDictionary<String> attributes = new AttributesDictionary<String>(VKAttributes);
@@ -229,14 +236,6 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
             foreach (AttributeUtils.Attribute key in keys)
             {
                 String name = key.value;
-
-                // TODO: think how to do it better
-                // map picture field name
-                if (name.Equals("picture_small"))
-                {
-                    name = "photo_50";
-                }
-
                 if (obj[name] != null)
                 {
                     // assert it is null?
@@ -247,6 +246,17 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
 
             return attributes;
         }
+
+        protected override void AddVertexImageAttribute(XmlNode oVertexXmlNode, Vertex oVertex, GraphMLXmlDocument oGraphMLXmlDocument)
+        {
+            // add picture
+            if (oVertex.Attributes.ContainsKey("photo_50") &&
+                oVertex.Attributes["photo_50"] != null)
+            {
+                oGraphMLXmlDocument.AppendGraphMLAttributeValue(oVertexXmlNode, ImageFileID, oVertex.Attributes["photo_50"].ToString());
+            }
+        }
+
 
         // Network details
         public Vertex GetEgo()
@@ -283,39 +293,15 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         protected override void
         BackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-
             Debug.Assert(sender is BackgroundWorker);
+            BackgroundWorker bw = sender as BackgroundWorker;
 
-            BackgroundWorker oBackgroundWorker = (BackgroundWorker)sender;
-
-            Debug.Assert(e.Argument is GetNetworkAsyncArgs);
-
-            GetNetworkAsyncArgs oGetNetworkAsyncArgs =
-                (GetNetworkAsyncArgs)e.Argument;
+            Debug.Assert(e.Argument is NetworkAsyncArgs);
+            NetworkAsyncArgs args = e.Argument as NetworkAsyncArgs;
 
             try
             {
                 e.Result = this.analyze("","");
-
-                /*
-                    GetFriendsNetworkInternal
-                    (
-                    oGetNetworkAsyncArgs.AccessToken,
-                    oGetNetworkAsyncArgs.EdgeType,
-                    oGetNetworkAsyncArgs.DownloadFirstPosts,
-                    oGetNetworkAsyncArgs.DownloadBetweenDates,
-                    oGetNetworkAsyncArgs.EgoTimeline,
-                    oGetNetworkAsyncArgs.FriendsTimeline,
-                    oGetNetworkAsyncArgs.NrOfFirstPosts,
-                    oGetNetworkAsyncArgs.StartDate,
-                    oGetNetworkAsyncArgs.EndDate,
-                    oGetNetworkAsyncArgs.LimitCommentsLikes,
-                    oGetNetworkAsyncArgs.Limit,
-                    oGetNetworkAsyncArgs.GetTooltips,
-                    oGetNetworkAsyncArgs.IncludeMe,
-                    oGetNetworkAsyncArgs.attributes
-                    );
-                     */
             }
             catch (CancellationPendingException)
             {
@@ -420,44 +406,26 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         }
 
         //*************************************************************************
-        //  Embedded class: GetNetworkAsyncArgs()
+        //  Embedded class: NetworkAsyncArgs
         //
         /// <summary>
-        /// Contains the arguments needed to asynchronously get a network of Flickr
-        /// users.
+        /// Contains the arguments needed to asynchronously get a network of VK users.
         /// </summary>
         //*************************************************************************
 
-        protected class GetNetworkAsyncArgs
+        public class NetworkAsyncArgs
         {
             ///
-            public String AccessToken;
+            public String accessToken;
+
+            public String userId;
             ///
-            public AttributesDictionary<bool> attributes;
-            ///           
-            public List<NetworkType> EdgeType;
+            public List<AttributeUtils.Attribute> attributes;
+
+            public String fields;
+
             ///
-            public bool DownloadFirstPosts;
-            ///
-            public bool DownloadBetweenDates;
-            ///
-            public bool EgoTimeline;
-            ///
-            public bool FriendsTimeline;
-            ///
-            public int NrOfFirstPosts;
-            ///
-            public DateTime StartDate;
-            ///
-            public DateTime EndDate;
-            ///
-            public bool LimitCommentsLikes;
-            ///
-            public int Limit;
-            ///
-            public bool GetTooltips;
-            ///
-            public bool IncludeMe;
+            public bool includeMe;
         };
     }
 }

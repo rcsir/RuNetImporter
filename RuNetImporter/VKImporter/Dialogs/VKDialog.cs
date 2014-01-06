@@ -15,19 +15,16 @@ namespace rcsir.net.vk.importer.Dialogs
 {
     public partial class VKDialog : GraphDataProviderDialogBase
     {
-        public VKDialog()
-            :
+        public VKDialog(): 
             base(new VKNetworkAnalyzer())
         {
             InitializeComponent();
             addAttributes();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void CancelButton_Click(object sender, EventArgs e)
         {
             AssertValid();
-            
-
         }
 
 
@@ -100,7 +97,7 @@ namespace rcsir.net.vk.importer.Dialogs
         //  Method: StartAnalysis()
         //
         /// <summary>
-        /// Starts the Flickr analysis.
+        /// Starts the VK network analysis.
         /// </summary>
         ///
         /// <remarks>
@@ -112,17 +109,23 @@ namespace rcsir.net.vk.importer.Dialogs
         StartAnalysis()
         {
             AssertValid();
-
             m_oGraphMLXmlDocument = null;            
 
             try
             {
-                accessToken = loginDialog.authToken;
-                String userId = loginDialog.userId;
+                //accessToken = loginDialog.authToken;
+                //String userId = loginDialog.userId;
+                //((VKNetworkAnalyzer)m_oHttpNetworkAnalyzer).analyze(userId, accessToken);
 
-                List<NetworkType> oEdgeType = new List<NetworkType>();
-
-                ((VKNetworkAnalyzer)m_oHttpNetworkAnalyzer).analyze(userId, accessToken);
+                VKNetworkAnalyzer.NetworkAsyncArgs arguments = new VKNetworkAnalyzer.NetworkAsyncArgs();
+                arguments.accessToken = loginDialog.authToken;
+                arguments.userId = loginDialog.userId;
+                arguments.attributes = attributes;
+                arguments.fields = fields;
+                arguments.includeMe = this.chkIncludeMe.Checked;
+             
+                // run the task in the background
+                m_oHttpNetworkAnalyzer.RunAsync(arguments);
             }
             catch (NullReferenceException e)
             {
@@ -147,8 +150,8 @@ namespace rcsir.net.vk.importer.Dialogs
             Boolean bIsBusy = m_oHttpNetworkAnalyzer.IsBusy;
 
             //EnableControls(!bIsBusy, pnlUserInputs);
-            //btnOK.Enabled = !bIsBusy;
-            //this.UseWaitCursor = bIsBusy;
+            btnOK.Enabled = !bIsBusy;
+            this.UseWaitCursor = bIsBusy;
         }
 
         //*************************************************************************
@@ -163,9 +166,6 @@ namespace rcsir.net.vk.importer.Dialogs
         OnEmptyGraph()
         {
             AssertValid();
-
-            //this.ShowInformation("That tag has no related tags.");
-            //txbTag.Focus();
         }
 
         //*************************************************************************
@@ -211,10 +211,6 @@ namespace rcsir.net.vk.importer.Dialogs
         AssertValid()
         {
             base.AssertValid();
-
-            //Debug.Assert(m_sTag != null);
-            // m_eNetworkLevel
-            // m_bIncludeSampleThumbnails
         }
 
 
@@ -237,126 +233,26 @@ namespace rcsir.net.vk.importer.Dialogs
         protected static String m_sTag = "sociology";
 
         /// Network level to include.
-
         //protected static NetworkLevel m_eNetworkLevel = NetworkLevel.OnePointFive;
 
-        /// true to include a sample thumbnail for each tag.
-
-        protected static Boolean m_bIncludeSampleThumbnails = false;
-
-        public String accessToken;
-        
         private VKLoginDialog loginDialog;
 
-        //private Dictionary<Attribute, bool> attributes = new Dictionary<Attribute,bool>() 
-        //{
-        //    {new Attribute("Name","name"),true},
-        //    {new Attribute("First Name","first_name"),true},
-        //    {new Attribute("Middle Name","middle_name"),true},
-        //    {new Attribute("Last Name","last_name"),true},
-        //    {new Attribute("Hometown","hometown_location"),true},
-        //    {new Attribute("Current Location","current_location"),true},
-        //    {new Attribute("Birthday","birthday"),true},
-        //    {new Attribute("Picture","pic_small"),true},
-        //    {new Attribute("Profile Update Time","profile_update_time"),false},
-        //    {new Attribute("Timezone","timezone"),true},
-        //    {new Attribute("Religion","religion"),false},
-        //    {new Attribute("Sex","sex"),true},
-        //    {new Attribute("Relationship","relationship_status"),true},
-        //    {new Attribute("Political Views","political"),false},
-        //    {new Attribute("Activities","activities"),false},
-        //    {new Attribute("Interests","interests"),false},
-        //    {new Attribute("Music","music"),false},
-        //    {new Attribute("TV","tv"),false},
-        //    {new Attribute("Movies","movies"),false},
-        //    {new Attribute("Books","books"),false},
-        //    {new Attribute("Quotes","quotes"),false},
-        //    {new Attribute("About Me","about_me"),true},            
-        //    {new Attribute("Online Presence","online_presence"),true},
-        //    {new Attribute("Locale","locale"),true},
-        //    {new Attribute("Website","website"),false}                      
-        //};
+        private List<AttributeUtils.Attribute> attributes;
 
-        private AttributesDictionary<bool> attributes = new AttributesDictionary<bool>()
-        {
-            {true},
-            {true},
-            {true},
-            {true},
-            {true},
-            {true},
-            {true},
-            {true},
-            {false},
-            {true},
-            {false},
-            {true},
-            {true},
-            {false},
-            {false},
-            {false},
-            {false},
-            {false},
-            {false},
-            {false},
-            {false},
-            {true},            
-            {true},
-            {true},
-            {false}        
-        };
+        private String permissions;
 
-        private Dictionary<string, string> attributeFriendsPermissionMapping = new Dictionary<string, string>()
-        {
-            {"birthday", "friends_birthday"},
-            {"hometown_location","friends_hometown"},
-            {"current_location","friends_location"},
-            {"religion", "friends_religion_politics"},
-            {"relationship_status", "friends_relationships"},
-            {"political","friends_religion_politics"},
-            {"activities","friends_activities"},
-            {"interests","friends_interests"},
-            {"music","friends_likes"},
-            {"tv","friends_likes"},
-            {"movies","friends_likes"},
-            {"books","friends_likes"},
-            {"quotes","friends_about_me"},
-            {"about_me","friends_about_me"},
-            {"status","friends_status"},
-            {"online_presence","friends_online_presence"},
-            {"website","friends_website"},            
-        };
-
-        private Dictionary<string, string> attributeUserPermissionMapping = new Dictionary<string, string>()
-        {
-            {"birthday", "user_birthday"},
-            {"hometown_location","user_hometown"},
-            {"current_location","user_location"},
-            {"religion", "user_religion_politics"},
-            {"relationship_status", "user_relationships"},
-            {"political","user_religion_politics"},
-            {"activities","user_activities"},
-            {"interests","user_interests"},
-            {"music","user_likes"},
-            {"tv","user_likes"},
-            {"movies","user_likes"},
-            {"books","user_likes"},
-            {"quotes","user_about_me"},
-            {"about_me","user_about_me"},
-            {"status","user_status"},
-            {"online_presence","user_online_presence"},
-            {"website","user_website"},            
-        };
+        private String fields;
 
         private void addAttributes()
         {
+            attributes = new List<AttributeUtils.Attribute>(this.m_oHttpNetworkAnalyzer.GetDefaultNetworkAttributes());
             int i = 0;
             dgAttributes.Rows.Add(attributes.Count);            
-            foreach (KeyValuePair<AttributeUtils.Attribute, bool> kvp in attributes)
+            foreach (AttributeUtils.Attribute a in attributes)
             {
-                dgAttributes.Rows[i].Cells[0].Value = kvp.Key.name;
-                dgAttributes.Rows[i].Cells[1].Value = kvp.Value;                
-                dgAttributes.Rows[i].Cells[2].Value = kvp.Key.value;                
+                dgAttributes.Rows[i].Cells[0].Value = a.name;
+                dgAttributes.Rows[i].Cells[1].Value = a.required;                
+                dgAttributes.Rows[i].Cells[2].Value = a.value;                
                 i++;
             }
         }
@@ -365,15 +261,15 @@ namespace rcsir.net.vk.importer.Dialogs
         {
             readAttributes();
             loginDialog = new VKLoginDialog();
-            loginDialog.Login();
+            loginDialog.Login(this.permissions);
         }
 
         private void PrintAttributes()
         {
             string text = "";
-            foreach (KeyValuePair<AttributeUtils.Attribute, bool> kvp in attributes)
+            foreach (AttributeUtils.Attribute a in attributes)
             {
-                text += kvp.Key.name + "=" + kvp.Value.ToString() + "\n";
+                text += a.name + "=" + a.required.ToString() + "\n";
             }
 
             this.ShowInformation(text);            
@@ -381,17 +277,66 @@ namespace rcsir.net.vk.importer.Dialogs
 
         private void readAttributes()
         {
+            if (attributes == null ||
+                attributes.Count == 0)
+            {
+                return;
+            }
+
+            HashSet<String> permissions = new HashSet<string>();
+            HashSet<String> fields = new HashSet<string>();
+
             foreach (DataGridViewRow row in dgAttributes.Rows)
             {
-                attributes[row.Cells[2].Value.ToString()] = (Boolean)row.Cells[1].Value;
-            }            
-        }
+                int i = attributes.FindIndex(x => x.name.Equals(row.Cells[0].Value.ToString()));
 
-        private string createRequiredPermissionsString()
-        {
-            string permissionsString = "&scope=";
-            // TODO
-            return permissionsString.Remove(permissionsString.Length - 1);            
+                if (i >= 0)
+                {
+                    if(attributes[i].required != (Boolean)row.Cells[1].Value)
+                    {
+                        AttributeUtils.Attribute a = attributes[i];
+                        a.required = (Boolean)row.Cells[1].Value;
+                        attributes[i] = a;
+                    }
+
+                    if(attributes[i].required) 
+                    {
+                        // if required, add permission 
+                        permissions.Add(attributes[i].permission);
+                        fields.Add(attributes[i].value);
+                    }
+                }
+            }
+            
+            // build permission string from permissions
+            StringBuilder sb = new StringBuilder();
+            foreach (String p in permissions)
+            {
+                if (sb.Length > 0)
+                {
+                    sb.Append(',');
+                } 
+                
+                sb.Append(p);
+            }
+
+            this.permissions = sb.ToString();
+
+            // build field string from fields
+            sb.Length = 0;
+
+            foreach (String f in fields)
+            {
+                if (sb.Length > 0)
+                {
+                    sb.Append(',');
+                }
+
+                sb.Append(f);
+            }
+
+            this.fields = sb.ToString();
+        
         }
 
         private void chkSelectAll_CheckedChanged(object sender, EventArgs e)
@@ -408,28 +353,6 @@ namespace rcsir.net.vk.importer.Dialogs
                 loginDialog = new VKLoginDialog();
 
             loginDialog.Logout();
-        }
-
-        public VKLoginDialog VKLoginDialog
-        {
-            get
-            {
-                throw new System.NotImplementedException();
-            }
-            set
-            {
-            }
-        }
-
-        public VKNetworkAnalyzer sdcsd
-        {
-            get
-            {
-                throw new System.NotImplementedException();
-            }
-            set
-            {
-            }
         }
 
         private void chkIncludeMe_CheckedChanged(object sender, EventArgs e)
@@ -456,7 +379,6 @@ namespace rcsir.net.vk.importer.Dialogs
 
             //Add the CheckBox into the DataGridView
             this.dgAttributes.Controls.Add(chkSelectAll);
-
         }    
     }
 }

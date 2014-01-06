@@ -28,14 +28,6 @@ namespace rcsir.net.vk.importer.Dialogs
 
     public partial class VKLoginDialog : Form
     {
-        private readonly String auth_url = Secret.auth_url;
-        private readonly String client_id = Secret.client_id; // application id
-        private readonly String scope = "friends"; // permissions
-        private readonly String redirect_url = Secret.redirect_url; // URL where access token will be passed to
-        private readonly String display = "popup"; // authorization windows appearence: page, popup, touch, wap
-        // private readonly String v = ""; // API version
-        private readonly String response_type = "token"; // Response type
-
         private String _authToken;
         public String authToken { get { return this._authToken; } set { this._authToken = value;  } }
         private String _userId;
@@ -59,17 +51,21 @@ namespace rcsir.net.vk.importer.Dialogs
             deleteCookies();
         }
 
-        public void Login()
+        /// <summary>
+        /// Initiates OAuth login process
+        /// </summary>
+        /// <param name="permissions">VK access permissions, comma separated</param>
+        public void Login(String permissions)
         {
             Debug.WriteLine("Navigate");
 
-            StringBuilder sb = new StringBuilder(auth_url);
+            StringBuilder sb = new StringBuilder(Secret.auth_url);
             sb.Append('?');
-            sb.Append("client_id=").Append(client_id).Append('&');
-            sb.Append("scope=").Append(scope).Append('&');
-            sb.Append("redirect_uri=").Append(redirect_url).Append('&');
-            sb.Append("display=").Append(display).Append('&');
-            sb.Append("response_type=").Append(response_type);
+            sb.Append("client_id=").Append(Secret.client_id).Append('&');
+            sb.Append("scope=").Append(permissions).Append('&');
+            sb.Append("redirect_uri=").Append(Secret.redirect_url).Append('&');
+            sb.Append("display=").Append(Secret.display).Append('&');
+            sb.Append("response_type=").Append(Secret.response_type);
 
             String navigateUri = sb.ToString();
             Debug.WriteLine("Navigate uri: " + navigateUri);
@@ -97,7 +93,7 @@ namespace rcsir.net.vk.importer.Dialogs
             // Good response example
             // https://oauth.vk.com/blank.html#access_token=20660ffedf0d1d48533bee9b0931b2f0649b90c4a6592810de9b4961e30866910fd2cf2c7fb0a67878e7b&expires_in=86400&user_id=2927314
 
-            if (stringUrl.StartsWith(redirect_url))
+            if (stringUrl.StartsWith(Secret.redirect_url))
             {
                 String[] tokens = System.Text.RegularExpressions.Regex.Split(stringUrl, "[=&#]");
                 for(int i = 0; i < tokens.Length; ++i)

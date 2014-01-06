@@ -109,6 +109,22 @@ public abstract class HttpNetworkAnalyzerBase : NetworkAnalyzerBase
         }
     }
 
+
+    /// <summary>
+    /// Runs background task async
+    /// </summary>
+    /// <param name="arguments">task arguments</param>
+    public void RunAsync(object arguments)
+    {
+        AssertValid();
+
+        if (!this.IsBusy)
+        {
+            m_oBackgroundWorker.RunWorkerAsync(arguments);
+        }
+    }
+
+
     //*************************************************************************
     //  Method: CreateHttpWebRequest()
     //
