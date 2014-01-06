@@ -25,6 +25,7 @@ namespace rcsir.net.vk.importer.Dialogs
         private void CancelButton_Click(object sender, EventArgs e)
         {
             AssertValid();
+            this.m_oHttpNetworkAnalyzer.CancelAsync();
         }
 
 

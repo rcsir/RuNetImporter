@@ -30,6 +30,7 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         private List<string> friendIds = new List<string>();
         private VertexCollection vertices = new VertexCollection();
         private EdgeCollection edges = new EdgeCollection();
+        private Exception error;
 
         private static List<AttributeUtils.Attribute> VKAttributes = new List<AttributeUtils.Attribute>()
         {
@@ -83,7 +84,9 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         {
             // TODO: notify user about the error
             Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
-            
+
+            this.error = new Exception("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
+
             // indicate that we can continue
             readyEvent.Set();
         }
@@ -301,13 +304,87 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
 
             try
             {
-                e.Result = this.analyze("","");
+                CheckCancellationPending();
+                ReportProgress("Startting");
+
+                // shell include ego node in the graph
+                this.includeEgo = args.includeMe;
+
+                // prepare rest contexts
+                VKRestContext context = new VKRestContext(args.userId, args.accessToken);
+
+                // get ego node
+                vkRestApi.CallVKFunction(VKFunction.LoadUserInfo, context);
+
+                // wait for the user data
+                readyEvent.WaitOne();
+
+                CheckCancellationPending();
+                ReportProgress("Retrieving friends");
+
+                // prepare fields context parameter
+                StringBuilder sb = new StringBuilder("fields=");
+                sb.Append(args.fields);
+                context.parameters = sb.ToString();
+
+                // get friends node
+                vkRestApi.CallVKFunction(VKFunction.LoadFriends, context);
+
+                // wait for the friends data
+                readyEvent.WaitOne();
+
+                int total = this.friendIds.Count;
+                int current = 0;
+
+                foreach (string targetId in this.friendIds)
+                {
+                    CheckCancellationPending();
+                    current++;
+                    ReportProgress("Retrieving friends mutual " + current.ToString() + " out of " + total.ToString());
+
+                    // Append target friend ids
+                    sb.Length = 0;
+                    sb.Append("target_uid=");
+                    sb.Append(targetId);
+
+                    context.parameters = sb.ToString();
+                    context.cookie = targetId; // pass target id in the context's cookie field
+                    
+                    // get mutual friends 
+                    vkRestApi.CallVKFunction(VKFunction.GetMutual, context);
+
+                    // wait for the mutual data
+                    readyEvent.WaitOne();
+
+                    // play it nice, sleep for 1/3 sec to stay within 3 requests/second limit
+                    // TODO: account for time spent in processing
+                    Thread.Sleep(333);
+                }
+
+                if (includeEgo)
+                {
+                    CreateIncludeMeEdges(edges, vertices);
+                }
+
+                CheckCancellationPending();
+                ReportProgress("Building network graph document");
+
+                // create default attributes (values will be empty)
+                AttributesDictionary<String> attributes = new AttributesDictionary<String>(VKAttributes);
+
+                if (this.error != null)
+                {
+                    // there was an error - throw it
+                    throw this.error;
+                }
+
+                // All good, save the result
+                e.Result = GenerateNetworkDocument(vertices, edges, attributes);
             }
             catch (CancellationPendingException)
             {
                 e.Cancel = true;
             }
-
         }
 
         //*************************************************************************

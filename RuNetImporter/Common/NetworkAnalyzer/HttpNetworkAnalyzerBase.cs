@@ -825,7 +825,7 @@ public abstract class HttpNetworkAnalyzerBase : NetworkAnalyzerBase
     {
         AssertValid();
 
-        FireProgressChanged( new ProgressChangedEventArgs(0, String.Empty) );
+        FireProgressChanged( new ProgressChangedEventArgs(0, "Done") );
 
         // Forward the event.
 

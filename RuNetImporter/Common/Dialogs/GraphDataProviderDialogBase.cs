@@ -408,9 +408,10 @@ public class GraphDataProviderDialogBase : FormPlus
         else //if (oException is FacebookAPIException ||
         //         oException is KeyNotFoundException)
         {
+            // TODO: change report text
             this.ShowWarning(
                 "The network couldn't be obtained. If the problem persists please copy the following message "+
-                "and report it to http://socialnetimporter.codeplex.com/discussions. \r\n\r\n Details:"
+                "and report it to RCSIR. \r\n\r\n Details:"
                 + "\r\n\r\n"
                 + m_oHttpNetworkAnalyzer.ExceptionToMessage(oException)
                 +"\r\n"+
