@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using rcsir.net.common.Network;
 using Smrf.AppLib;
 
-namespace rcsir.net.ok.importer.Data
+namespace rcsir.net.ok.importer.Storages
 {
-    public class GraphStorage
+    public class GraphStorage : INotifyPropertyChanged
     {
         private Vertex egoVertex;
 
@@ -23,24 +24,22 @@ namespace rcsir.net.ok.importer.Data
         private bool includeEgo; // include ego vertex and edges, should be controled by UI
         public bool IncludeEgo { set { includeEgo = value;  } }
 
-        public string EgoId { get { return egoVertex.ID; } }
+//        public string EgoId { get { return egoVertex.ID; } }
 
         public void AddFriendId(string id)
         {
             friendIds.Add(id);
         }
-
-        public void AddEgoVertexIfNeeded(JObject ego)
+/*
+        public void AddEgoVertexIfNeeded(JObject ego, AttributesDictionary<String> attributes)
         {
-            AttributesDictionary<String> attributes = createAttributes(ego);
             egoVertex = new Vertex(ego["uid"].ToString(), ego["name"].ToString(), "Ego", attributes);
             if (includeEgo)
                 vertices.Add(egoVertex);
         }
-
-        public void AddFriendVertex(JObject friend)
+*/
+        public void AddFriendVertex(JObject friend, AttributesDictionary<String> attributes)
         {
-            AttributesDictionary<String> attributes = createAttributes(friend);
             vertices.Add(new Vertex(friend["uid"].ToString(), friend["name"].ToString(), "Friend", attributes)); ;
         }
 
@@ -54,6 +53,8 @@ namespace rcsir.net.ok.importer.Data
 
         public void AddIncludeMeEdgesIfNeeded()
         {
+            if (!includeEgo)
+                return;
             List<Vertex> friends = vertices.Where(x => x.Type == "Friend").ToList();
             foreach (Vertex friend in friends)
                 edges.Add(new Edge(egoVertex, friend, "", "Friend", "", 1));
@@ -69,19 +70,12 @@ namespace rcsir.net.ok.importer.Data
             vertices.Clear();
         }
 
-        private AttributesDictionary<String> createAttributes(JObject obj)
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void NotifyPropertyChanged(String info)
         {
-            AttributesDictionary<String> attributes = new AttributesDictionary<String>();
-            List<AttributeUtils.Attribute> keys = new List<AttributeUtils.Attribute>(attributes.Keys);
-            foreach (AttributeUtils.Attribute key in keys) {
-                string name = key.value;
-                if (obj[name] != null) {
-                    // assert it is null?
-                    string value = obj[name].ToString();
-                    attributes[key] = value;
-                }
-            }
-            return attributes;
+            if (PropertyChanged != null)
+                PropertyChanged(this, new PropertyChangedEventArgs(info));
         }
     }
 }

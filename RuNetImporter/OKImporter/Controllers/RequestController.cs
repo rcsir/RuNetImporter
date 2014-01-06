@@ -1,45 +1,74 @@
 ﻿using Newtonsoft.Json.Linq;
 using rcsir.net.ok.importer.Api;
+using rcsir.net.ok.importer.Storages;
 
 namespace rcsir.net.ok.importer.Controllers
 {
-    class RequestController
+    public class RequestController
     {
+        private readonly RequestParametersStorage parametersStorage;
+        private readonly Authorization auth;
+        private readonly PostRequests postRequests;
 
-        internal void GetToken()
+        private string requiredFields;
+        public string RequiredFields { set { requiredFields = parametersStorage.HiddenFields + value; } }
+
+        public string AuthUri { get { return parametersStorage.AuthUri; } }
+
+        public RequestController()
         {
-            string postedData = "client_id=" + Authorization.ClientId + "&grant_type=authorization_code&client_secret=" + PostRequests.client_secret +
-                                "&code=" + Authorization.Code + "&redirect_uri=" + Authorization.RedirectUrl + "&type=user_agent";
+            parametersStorage = new RequestParametersStorage();
+            auth = new Authorization(parametersStorage);
+            postRequests = new PostRequests(parametersStorage);
+            requiredFields = parametersStorage.AllUserFields;
+        }
+
+        public void DeleteCookies()
+        {
+            auth.DeleteCookies();
+        }
+
+        internal bool TryGetAccessToken(string stringUrl)
+        {
+            if (!auth.IsCodeValid(stringUrl))
+                return false;
+            getToken();
+            return true;
+        }
+
+        private void getToken()
+        {
+            string postedData = parametersStorage.TokenParameters;
 // Valid response string, f.e.: "{\"token_type\":\"session\",\"refresh_token\":\"e19530afe4f7c094d20f966078e2d0a16896a5_561692396161_138785\",\"access_token\":\"63ipa.949evrsa14g4i039194d1f3bh3kd\"}"
-            string responseString = PostRequests.MakeRequest(postedData, false);
+            string responseString = postRequests.MakeRequest(postedData, false);
             var token = JObject.Parse(responseString);
-            PostRequests.AuthToken = token["access_token"].ToString();
+            parametersStorage.UpdateAuthTokens(token["access_token"], token["refresh_token"]);
         }
 
         internal JArray GetFriends()
         {
-            return JArray.Parse(PostRequests.MakeApiRequest("method=friends.get")); // fid=160539089447&fid=561967133371&fid=561692396161&
+            return JArray.Parse(postRequests.MakeApiRequest("method=friends.get")); // fid=160539089447&fid=561967133371&fid=561692396161&
         }
 
         internal JObject GetEgoInfo()
         {
-            return JObject.Parse(PostRequests.MakeApiRequest("method=users.getCurrentUser"));
+            return JObject.Parse(postRequests.MakeApiRequest("method=users.getCurrentUser"));
         }
 
         internal JArray GetUsersInfo(string usersIds)
         {
-            var response = PostRequests.MakeApiRequest("fields=uid,name,first_name,last_name,age,gender,locale&method=users.getInfo&uids=" + usersIds);
-            return response != null ? JArray.Parse(response) : null;  //   PostRequests.MakeApiRequest("fields=uid,name,first_name,last_name,age,gender,locale&method=users.getInfo&uids=" + usersIds);
+            var response = postRequests.MakeApiRequest("fields=" + requiredFields + "&method=users.getInfo&uids=" + usersIds);
+            return response != null ? JArray.Parse(response) : null;
         }
 
         internal JArray GetAreFriends(string uids1, string uids2)
         {
-            return JArray.Parse(PostRequests.MakeApiRequest("method=friends.areFriends&uids1=" + uids1 + "&uids2=" + uids2));
+            return JArray.Parse(postRequests.MakeApiRequest("method=friends.areFriends&uids1=" + uids1 + "&uids2=" + uids2));
         }
 
-        public JArray GetMutualFriends(string friendId)
+        internal JArray GetMutualFriends(string friendId)
         {
-            return JArray.Parse(PostRequests.MakeApiRequest("method=friends.getMutualFriends&target_id=" + friendId));  //  &source_id=160539089447
+            return JArray.Parse(postRequests.MakeApiRequest("method=friends.getMutualFriends&target_id=" + friendId));  //  &source_id=160539089447
         }
     }
 }

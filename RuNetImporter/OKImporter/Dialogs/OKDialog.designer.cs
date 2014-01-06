@@ -45,7 +45,7 @@ namespace rcsir.net.ok.importer.Dialogs
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.slStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.lblMainText = new System.Windows.Forms.Label();
-            this.button1 = new System.Windows.Forms.Button();
+            this.btnLogin = new System.Windows.Forms.Button();
             this.btnOK = new System.Windows.Forms.Button();
             this.ttRateLimit = new System.Windows.Forms.ToolTip(this.components);
             this.ttLogoutLogin = new System.Windows.Forms.ToolTip(this.components);
@@ -72,7 +72,7 @@ namespace rcsir.net.ok.importer.Dialogs
             this.linkLabel1.AutoSize = true;
             this.linkLabel1.Location = new System.Drawing.Point(207, 41);
             this.linkLabel1.Name = "linkLabel1";
-            this.linkLabel1.Size = new System.Drawing.Size(141, 13);
+            this.linkLabel1.Size = new System.Drawing.Size(142, 13);
             this.linkLabel1.TabIndex = 12;
             this.linkLabel1.TabStop = true;
             this.linkLabel1.Text = "Click here to logout from OK.";
@@ -178,18 +178,19 @@ namespace rcsir.net.ok.importer.Dialogs
             this.lblMainText.TabIndex = 3;
             this.lblMainText.Text = resources.GetString("lblMainText.Text");
             // 
-            // button1
+            // btnLogin
             // 
-            this.button1.Location = new System.Drawing.Point(18, 443);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(105, 41);
-            this.button1.TabIndex = 2;
-            this.button1.Text = "Login";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click_1);
+            this.btnLogin.Location = new System.Drawing.Point(18, 443);
+            this.btnLogin.Name = "btnLogin";
+            this.btnLogin.Size = new System.Drawing.Size(105, 41);
+            this.btnLogin.TabIndex = 2;
+            this.btnLogin.Text = "Login";
+            this.btnLogin.UseVisualStyleBackColor = true;
+            this.btnLogin.Click += new System.EventHandler(this.btnLogin_Click);
             // 
             // btnOK
             // 
+            this.btnOK.Enabled = false;
             this.btnOK.Location = new System.Drawing.Point(129, 443);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(105, 41);
@@ -233,7 +234,7 @@ namespace rcsir.net.ok.importer.Dialogs
             this.Controls.Add(this.grpOptions);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.lblMainText);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.btnLogin);
             this.Controls.Add(this.btnOK);
             this.Controls.Add(this.btnCancel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
@@ -242,7 +243,7 @@ namespace rcsir.net.ok.importer.Dialogs
             this.Name = "OKDialog";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "OK Network Importer";
-            this.Load += new System.EventHandler(this.OkDialog_Load);
+            this.Load += new System.EventHandler(this.OKDialog_Load);
             this.grpAttributes.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgAttributes)).EndInit();
             this.grpOptions.ResumeLayout(false);
@@ -252,13 +253,13 @@ namespace rcsir.net.ok.importer.Dialogs
             this.ResumeLayout(false);
             this.PerformLayout();
 
-        }        
+        }
 
         #endregion
 
         private System.Windows.Forms.Button btnCancel;
         public System.Windows.Forms.Button btnOK;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button btnLogin;
         private System.Windows.Forms.Label lblMainText;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel slStatusLabel;

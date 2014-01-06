@@ -2,40 +2,34 @@
 using System.IO;
 using System.Net;
 using System.Text;
-using Smrf.AppLib;
+using rcsir.net.ok.importer.Storages;
 
 namespace rcsir.net.ok.importer.Api
 {
-    public class PostRequests
+    class PostRequests
     {
-        internal const string client_secret = "EDDB1A6D680BDFF8E49A179C";
-        private const string client_open = "CBAHFJANABABABABA";
+        private RequestParametersStorage parametersStorage;
 
-        private const string token_Url = "http://api.odnoklassniki.ru/oauth/token.do";
-        private const string apiUrl = "http://api.odnoklassniki.ru/fb.do";
-
-//        private static string authToken;
-        internal static string AuthToken { get; set; }
-
-        private static string postPrefix { get { return "application_key=" + client_open + "&access_token=" + AuthToken + "&"; } }
-        private static string sigSecret { get { return StringUtil.GetMd5Hash(string.Format("{0}{1}", AuthToken, client_secret)); } }
-
-        public static string MakeApiRequest(string requestString)
+        internal PostRequests(RequestParametersStorage storage)
         {
-            var sig = StringUtil.GetMd5Hash(string.Format("{0}{1}", "application_key=" + client_open + requestString.Replace("&", ""), sigSecret));
-            string postedData = postPrefix + requestString + "&sig=" + sig;
+            parametersStorage = storage;
+        }
+
+        internal string MakeApiRequest(string requestString)
+        {
+            string postedData = parametersStorage.MakePostedData(requestString);
             return MakeRequest(postedData);
         }
 
-        public static string MakeRequest(string postedData, bool isApiRequest = true)
+        internal string MakeRequest(string postedData, bool isApiRequest = true)
         {
-            var response = PostMethod(postedData, isApiRequest ? apiUrl : token_Url);
+            var response = PostMethod(postedData, isApiRequest ? parametersStorage.ApiUrl : parametersStorage.TokenUrl);
             if (response == null)
                 return null;
 
             var strreader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
             string responseToString = strreader.ReadToEnd();
-            return responseToString; //JObject.Parse(responseToString); // JObject.CreateFromString(responseToString);
+            return responseToString;
         }
 
         private static HttpWebResponse PostMethod(string postedData, string postUrl)
@@ -56,7 +50,7 @@ namespace rcsir.net.ok.importer.Api
             return (HttpWebResponse)request.GetResponse();
         }
 
-        private static void HandleWebException(WebException Ex)
+        private void HandleWebException(WebException Ex)
         {
             if (Ex.Status == WebExceptionStatus.ProtocolError) {
                 int StatusCode = (int)((HttpWebResponse)Ex.Response).StatusCode;
@@ -73,5 +67,42 @@ namespace rcsir.net.ok.importer.Api
                 throw (Ex); // Or check for other WebExceptionStatus
             }
         }
+
+        /*
+        private void handleWebException(OKFunction function, WebException Ex)
+        {
+            if (Ex.Status == WebExceptionStatus.ProtocolError)
+            {
+                int StatusCode = (int)((HttpWebResponse)Ex.Response).StatusCode;
+                Stream ResponseStream = null;
+                ResponseStream = ((HttpWebResponse)Ex.Response).GetResponseStream();
+                string responseText = (new StreamReader(ResponseStream)).ReadToEnd();
+
+                if (StatusCode == 500)
+                {
+                    Debug.WriteLine("Error 500 - " + responseText);
+                }
+                else
+                {
+                    // Do Something for other status codes
+                    Debug.WriteLine("Error " + StatusCode);
+                }
+
+                // Error - notify listeners
+                if (OnError != null)
+                {
+                    StringBuilder errorsb = new StringBuilder();
+                    errorsb.Append("StatusCode: ").Append(StatusCode).Append(',');
+                    errorsb.Append("Error: \'").Append(responseText).Append("\'");
+                    OnErrorEventArgs args = new OnErrorEventArgs(function, errorsb.ToString());
+                    OnError(this, args);
+                }
+            }
+            else
+            {
+                throw (Ex); // Or check for other WebExceptionStatus
+            }
+        }
+    }*/
     }
 }

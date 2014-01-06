@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.VisualBasic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
 
 namespace Smrf.AppLib
 {
@@ -39,6 +34,13 @@ namespace Smrf.AppLib
             new Attribute("Last Name","last_name"),
             new Attribute("Hometown","hometown_location"),
             new Attribute("Current Location","current_location"),
+//  Add for OK
+            new Attribute("Age", "age"),
+            new Attribute("Status", "current_status"),
+            new Attribute("Last online", "last_online"),
+            new Attribute("Registered date","registered_date"),
+            new Attribute("Anonym access","allows_anonym_access"),
+//  End Add
             new Attribute("Birthday","birthday"),
             new Attribute("Picture","pic_small"),
             new Attribute("Profile Update Time","profile_update_time"),

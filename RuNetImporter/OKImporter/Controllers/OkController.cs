@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Threading;
-using rcsir.net.common.Network;
-using rcsir.net.ok.importer.Api;
+using rcsir.net.ok.importer.Dialogs;
+using rcsir.net.ok.importer.Events;
 using Smrf.AppLib;
 
 namespace rcsir.net.ok.importer.Controllers
@@ -14,61 +14,66 @@ namespace rcsir.net.ok.importer.Controllers
         private readonly GraphDataManager graphDataManager;
         private readonly RequestController requestController;
 
-        public string EgoId { get { return graphDataManager.EgoId; } }
-        public VertexCollection Vertices { get { return graphDataManager.Vertices; } }
-        public EdgeCollection Edges { get { return graphDataManager.Edges; } }
-
-        public DataHandler OnData;
-        public ErrorHandler OnError;
-        // define OnData delegate
-        public delegate void DataHandler(object obj, OnDataEventArgs onDataArgs);
-        // define OnError delegate
-        public delegate void ErrorHandler(object obj, OnErrorEventArgs onErrorArgs);
-
-        public OkController()
+        public OkController(ICommandEventDispatcher main)
         {
             graphDataManager = new GraphDataManager();
             requestController = new RequestController();
+            requestController.DeleteCookies();
+            updateMainForm(main);
+            configureListeners(main);
         }
 
-        public void CallOkFunction(OKFunction function)
+        private void updateMainForm(ICommandEventDispatcher main)
         {
-            switch (function) {
-                case OKFunction.GetAccessToken:
-                    GetAccessToken();
+            main.AuthUri = requestController.AuthUri;
+            main.DialogAttributes = graphDataManager.OkDialogAttributes;
+        }
+
+        private void configureListeners(ICommandEventDispatcher main)
+        {
+            main.CommandEventHandler += commandHandler;
+            main.LoginDialog.CommandEventHandler += commandHandler;
+            graphDataManager.OnData += main.OnData;
+        }
+
+        private void commandHandler(object sender, CommandEventArgs e)
+        {
+            switch (e.CommandName) {
+                case CommandEventArgs.Commands.GetAccessToken:
+                    getAccessToken(e.Parameter);
                     break;
-                case OKFunction.LoadFriends:
-                    LoadFriends();
+                case CommandEventArgs.Commands.LoadFriends:
+                    loadFriends();
                     break;
-                case OKFunction.GetAreGraph:
-                    GetAreGraph();
+                case CommandEventArgs.Commands.GetGraphByAreFriends:
+                    getAreGraph();
                     break;
-                case OKFunction.GetMutualGraph:
-                    GetMutualGraph();
+                case CommandEventArgs.Commands.GetGraphByMutualFriends:
+                    getMutualGraph();
                     break;
-                case OKFunction.GenerateAreGraph:
-                    GenerateGraph(true, false);
+                case CommandEventArgs.Commands.GenerateGraphByAreFriends:
+                    generateGraph(true, false);
                     break;
-                case OKFunction.GenerateMutualGraph:
-                    GenerateGraph(true);
+                case CommandEventArgs.Commands.GenerateGraphByMutualFriends:
+                    generateGraph(true);
                     break;
-                case OKFunction.GenerateGraph:
-                    GenerateGraph();
+                case CommandEventArgs.Commands.GenerateGraph:
+                    generateGraph();
+                    break;
+                case CommandEventArgs.Commands.MakeAttributes:
+                    graphDataManager.MakeGraphAttributes(e.Rows);
                     break;
             }
-            if (OnData != null) {
-                OnDataEventArgs args = new OnDataEventArgs(function);
-                OnData(this, args);
-            }
         }
 
-        private void GetAccessToken()
+        private void getAccessToken(string stringUrl)
         {
-            requestController.GetToken();
-            LoadEgoInfo();
+            if (!requestController.TryGetAccessToken(stringUrl))
+                return;
+            loadEgoInfo();
         }
 
-        private void LoadFriends()
+        private void loadFriends()
         {
             var friends = requestController.GetFriends(); // fid=160539089447&fid=561967133371&fid=561692396161&
             string friendUids = ""; // userId;
@@ -77,10 +82,10 @@ namespace rcsir.net.ok.importer.Controllers
                 friendUids += "," + friend;
                 graphDataManager.AddFriendId(friend.ToString());
             }
-            LoadFriendsInfo(friendUids);
+            loadFriendsInfo(friendUids);
         }
 
-        private void GetAreGraph()
+        private void getAreGraph()
         {
             graphDataManager.ClearEdges();
             var pares = MathUtil.GeneratePares(graphDataManager.FriendIds.ToArray());
@@ -93,9 +98,10 @@ namespace rcsir.net.ok.importer.Controllers
                 graphDataManager.AddAreFriends(friendsDict);
                 Thread.Sleep(sleepTimeout);
             }
+            graphDataManager.ResumeGetGraph(false);
         }
 
-        private void GetMutualGraph()
+        private void getMutualGraph()
         {
             graphDataManager.ClearEdges();
             foreach (var friendId in graphDataManager.FriendIds) {
@@ -103,37 +109,40 @@ namespace rcsir.net.ok.importer.Controllers
                 graphDataManager.AddFriends(friendId, friendsDict);
                 Thread.Sleep(sleepTimeout);
             }
+            graphDataManager.ResumeGetGraph();
 /*
             if (friend.Integer > subFriend.Integer)
                 addEdge(friend.String, subFriend.String);*/
         }
 
-        private void GenerateGraph(bool isTest = false, bool isMutual = true)
+        private void generateGraph(bool isTest = false, bool isMutual = true)
         {
-            LoadFriends();
+            loadFriends();
             if (!isTest)
                 isMutual = graphDataManager.FriendsCount > areFriendsPerStep / 2;
             if (isMutual)
-                GetMutualGraph();
+                getMutualGraph();
             else
-                GetAreGraph();
+                getAreGraph();
             graphDataManager.AddMeIfNeeded();
         }
 
-        private void LoadEgoInfo()
+        private void loadEgoInfo()
         {
             var ego = requestController.GetEgoInfo();
-            if (OnData != null) {
-                OnDataEventArgs args = new OnDataEventArgs(OKFunction.LoadUserInfo, ego);
-                OnData(this, args);
-            }
-            graphDataManager.AddEgo(ego);
-        }
+            graphDataManager.SendEgo(ego);
+       }
 
-        private void LoadFriendsInfo(string uids)
+        private void loadFriendsInfo(string uids)
         {
+            updateRequiredFields();
             var friends = requestController.GetUsersInfo(uids);
             graphDataManager.AddFriends(friends);
+        }
+
+        private void updateRequiredFields()
+        {
+            requestController.RequiredFields = graphDataManager.CreateRequiredFieldsString();
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Xml;
 using System.IO;
 using System.Net;
