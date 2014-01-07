@@ -9,8 +9,8 @@ namespace rcsir.net.ok.importer.Events
     {
         public enum Types
         {
-//            GetAccessToken,
             UserInfoLoaded,
+            FriendsListLoaded,
             FriendsLoaded,
             AreGraphLoaded,
             MutualGraphLoaded,
@@ -26,11 +26,18 @@ namespace rcsir.net.ok.importer.Events
         public readonly EdgeCollection Edges;
         public readonly AttributesDictionary<bool> DialogAttributes;
         public readonly AttributesDictionary<string> GraphAttributes;
+        public readonly int Count;
 
         public GraphEventArgs(Types type, JObject data = null)
         {
             Type = type;
             JData = data;
+        }
+
+        public GraphEventArgs(Types type, int cunt)
+        {
+            Type = type;
+            Count = cunt;
         }
 
         public GraphEventArgs(VertexCollection vertices, EdgeCollection edges, AttributesDictionary<bool> dialogAttributes, AttributesDictionary<string> graphAttributes)

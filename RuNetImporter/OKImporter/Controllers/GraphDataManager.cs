@@ -49,7 +49,7 @@ namespace rcsir.net.ok.importer.Controllers
             foreach (var friend in friends)
                 graphStorage.AddFriendVertex(friend, attributeStorage.CreateVertexAttributes(friend));
 
-            GraphEventArgs evnt = new GraphEventArgs(GraphEventArgs.Types.FriendsLoaded);
+            var evnt = new GraphEventArgs(GraphEventArgs.Types.FriendsLoaded);
             DispatchEvent(evnt);
         }
 
@@ -60,6 +60,7 @@ namespace rcsir.net.ok.importer.Controllers
                     graphStorage.AddEdge(friend["uid1"].ToString(), friend["uid2"].ToString());
                     Debug.WriteLine(friend["uid1"] + " AreFriends: " + friend["uid2"]);
                 }
+
         }
 
         internal void AddFriends(string userId, JArray friendsDict)
@@ -97,6 +98,12 @@ namespace rcsir.net.ok.importer.Controllers
         internal string CreateRequiredFieldsString()
         {
             return attributeStorage.CreateRequiredFieldsString();
+        }
+
+        internal void ResumeFriendsList()
+        {
+            var evnt = new GraphEventArgs(GraphEventArgs.Types.FriendsListLoaded, FriendsCount);
+            DispatchEvent(evnt);
         }
 
         internal void ResumeGetGraph(bool isMutual = true)

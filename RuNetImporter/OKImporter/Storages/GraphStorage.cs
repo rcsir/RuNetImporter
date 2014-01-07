@@ -63,6 +63,7 @@ namespace rcsir.net.ok.importer.Storages
 
         internal void ClearVertices()
         {
+            FriendIds.Clear();
             vertices.Clear();
         }
 

@@ -8,17 +8,17 @@ using rcsir.net.common.Network;
 using Smrf.AppLib;
 using Smrf.NodeXL.GraphDataProviders;
 using Smrf.SocialNetworkLib;
-using Smrf.XmlLib;
 
 namespace rcsir.net.ok.importer.NetworkAnalyzer
 {
     public class OKNetworkAnalyzer : HttpNetworkAnalyzerBase
     {
+/*
         private System.Timers.Timer oTimer = new System.Timers.Timer();
         private int iSecondsToWait = 600;
         private string sTimerProgress;
         private GraphMLXmlDocument oGraphMLXmlDocument;
-
+*/
         private int NrOfSteps = 4;
         private int CurrentStep = 0;
 
@@ -37,7 +37,7 @@ namespace rcsir.net.ok.importer.NetworkAnalyzer
             dialogAttributes = okDialogAttributes;
             graphAttributes = okDraphAttributes;
         }
-
+/*
         void oTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             iSecondsToWait--;
@@ -50,7 +50,7 @@ namespace rcsir.net.ok.importer.NetworkAnalyzer
 
             ReportProgress(sProgress + string.Format(" - Resuming in {0} seconds", iSecondsToWait));
         }
-
+*/
 
         //*************************************************************************
         //  Method: GetNetworkAsync()
@@ -103,7 +103,6 @@ namespace rcsir.net.ok.importer.NetworkAnalyzer
             CheckIsBusy(MethodName);
 
             GetNetworkAsyncArgs oGetNetworkAsyncArgs = new GetNetworkAsyncArgs();
-//            oGetNetworkAsyncArgs.AccessToken = s_accessToken;
             oGetNetworkAsyncArgs.Attributes = dialogAttributes;
             oGetNetworkAsyncArgs.EdgeType = oEdgeType;
             oGetNetworkAsyncArgs.DownloadFirstPosts = bDownloadFirstPosts;
@@ -374,70 +373,6 @@ namespace rcsir.net.ok.importer.NetworkAnalyzer
             return (oGraphMLXmlDocument);
         }
 */
-
-/*        private OKRestClient _okRestClient;
-        public OKRestClient okRestClient { set { _okRestClient = value; }}
-
-        private OKRestApi okRestApi;
-
-        private static AutoResetEvent readyEvent = new AutoResetEvent(false);
-
-        private bool includeEgo = false; // include ego vertex and edges, should be controled by UI
-        private List<string> friendIds = new List<string>();
-//        private Vertex egoVertex;
-        private VertexCollection vertices = new VertexCollection();
-        private EdgeCollection edges = new EdgeCollection();
-*/
-/*
-        // process load user info response
-        public void OnLoadUserInfo(JObject ego, string cookie = null)
-        {
-            AttributesDictionary<string> attributes = createAttributes(ego);
-            egoVertex = new Vertex(ego["uid"].ToString(), ego["name"].ToString(), "Ego", attributes);
-            // add ego to the vertices
-            if (includeEgo)
-                vertices.Add(egoVertex);
-        }
-        // process load user friends response
-        public void OnLoadFriends(JArray data, string cookie = null)
-        {
-            foreach (var friend in data) {
-                AttributesDictionary<string> attributes = createAttributes(friend.ToObject<JObject>());
-                vertices.Add(new Vertex(friend["uid"].ToString(), friend["name"].ToString(), "Friend", attributes));
-            }
-        }
-        // process get mutual response
-        public void OnGetAre(JArray friendsDict, string cookie = null)
-        {
-            foreach (var friend in friendsDict)
-                if (friend["are_friends"].ToString().ToLower() == "true") {
-                    CreateEdge(friend["uid1"].ToString(), friend["uid2"].ToString());
-                    Debug.WriteLine(friend["uid1"] + " AreFriends: " + friend["uid2"]);
-                }
-        }
-        // process get mutual response
-        public void OnGetMutual(JArray friendsDict, string friendId, string cookie = null)
-        {
-            foreach (var subFriend in friendsDict) {
-                Debug.WriteLine("Mutual: " + subFriend);
-                CreateEdge(friendId, subFriend.ToString());
-            }
-        }
-
-        public static List<AttributeUtils.Attribute> OKAttributes = new List<AttributeUtils.Attribute>()
-        {
-            new AttributeUtils.Attribute("Name","name"),
-            new AttributeUtils.Attribute("First Name","first_name"),
-            new AttributeUtils.Attribute("Last Name","last_name"),
-            new AttributeUtils.Attribute("Picture","pic_1"), // photo_50
-            new AttributeUtils.Attribute("Sex","gender"),
-            new AttributeUtils.Attribute("Birth Date","birthday "),
-            new AttributeUtils.Attribute("Relation","relation"),
-            new AttributeUtils.Attribute("City","location"),
-            new AttributeUtils.Attribute("Country","location"),
-
-        };
-*/
         public void MakeTestXml()
         {
             var graph = GenerateNetworkDocument(vertices, edges, graphAttributes);
@@ -445,103 +380,21 @@ namespace rcsir.net.ok.importer.NetworkAnalyzer
                 graph.Save("OKNetwork_" + egoId + ".graphml");
         }
 
-        public XmlDocument analyze()
+        public XmlDocument Analyze()
         {
- /*           OKRestContext context = new OKRestContext(userId, authToken);
-
-            okRestApi.CallOKFunction(OKFunction.LoadUserInfo, context);
-
-            // wait for the user data
-            readyEvent.WaitOne();
-            context.parameters = "fields=uid,first_name,last_name,nickname,sex,bdate,city,country,education";
-            okRestApi.CallOKFunction(OKFunction.LoadFriends, context);
-
+ /*        
             // wait for the friends data
             readyEvent.WaitOne();
-            foreach (string targetId in friendIds)
-            {
-                StringBuilder sb = new StringBuilder("target_uid=");
-                // Append target friend ids
-                sb.Append(targetId);
 
-                context.parameters = sb.ToString();
-                context.cookie = targetId; // pass target id in the cookie context field
-                okRestApi.CallOKFunction(OKFunction.GetMutualGraph, context);
-                // wait for the mutual data
-                readyEvent.WaitOne();
-
-                // play nice, sleep for 1/3 sec to stay within 3 requests/second limit
-                // TODO: account for time spent in processing
-                Thread.Sleep(100);
-            }
-
-            if (includeEgo)
-                CreateIncludeMeEdges(edges, vertices);*/
-//  TEMP
+            CheckCancellationPending();
+            ReportProgress("Generating graph document...");*/
             var graph = GenerateNetworkDocument(vertices, edges, graphAttributes);
+//  TEMP
             if (graph != null)
                 graph.Save("OK_analyze_" + egoId + ".graphml");
 //  END TEMP
-            return graph; //  GenerateNetworkDocument(controller.Vertices, controller.Edges, attributes);
+            return graph;
         }
-/*
-        private void CreateIncludeMeEdges(EdgeCollection edges, VertexCollection vertices)
-        {
-            List<Vertex> friends = vertices.Where(x => x.Type == "Friend").ToList();
-            Vertex ego = vertices.FirstOrDefault(x => x.Type == "Ego");
-
-            if (ego != null)
-                foreach (Vertex oFriend in friends)
-                    edges.Add(new Edge(ego, oFriend, "", "Friend", "", 1));
-        }
-
-        private void CreateEdge(string friendId, string friendFriendsId)
-        {
-            Vertex friend = vertices.FirstOrDefault(x => x.ID == friendId);
-            Vertex friendsFriend = vertices.FirstOrDefault(x => x.ID == friendFriendsId);
-
-            if (friend != null && friendsFriend != null)
-                edges.Add(new Edge(friend, friendsFriend, "", "Friend", "", 1));
-        }
-
-        private AttributesDictionary<string> createAttributes(JObject obj)
-        {
-            AttributesDictionary<string> attributes = new AttributesDictionary<string>();
-            List<AttributeUtils.Attribute> keys = new List<AttributeUtils.Attribute>(attributes.Keys);
-            foreach (AttributeUtils.Attribute key in keys)
-            {
-                string name = key.value;
-
-                if (obj[name] != null)
-                {
-                    // assert it is null?
-                    string value = obj[name].ToString();
-                    attributes[key] = value;
-                }
-            }
-
-            return attributes;
-        }
-
-        // Network details
-        public Vertex GetEgo()
-        {
-            return egoVertex;
-        }
-
-
-        public VertexCollection GetVertices()
-        {
-            return vertices;
-        }
-
-        public EdgeCollection GetEdges()
-        {
-            return edges;
-        }
-*/
-
-
         //*************************************************************************
         //  Method: BackgroundWorker_DoWork()
         //
@@ -573,7 +426,7 @@ namespace rcsir.net.ok.importer.NetworkAnalyzer
 
             try
             {
-                e.Result = this.analyze();
+                e.Result = this.Analyze();
 
                 /*
                     GetFriendsNetworkInternal

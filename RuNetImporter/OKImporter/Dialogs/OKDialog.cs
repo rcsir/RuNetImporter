@@ -14,6 +14,13 @@ namespace rcsir.net.ok.importer.Dialogs
 {
     public partial class OKDialog : GraphDataProviderDialogBase, ICommandEventDispatcher
     {
+        private const int stageCount = 4;
+      
+        private OKNetworkAnalyzer analyzer { get { return (OKNetworkAnalyzer)m_oHttpNetworkAnalyzer; } }
+        private string userName;
+        private int friendsCount;
+        private int currentStage = 0;
+        
         private readonly OKLoginDialog loginDialog;
 
         public OKLoginDialog LoginDialog { get { return loginDialog; } }
@@ -34,20 +41,21 @@ namespace rcsir.net.ok.importer.Dialogs
 
         public void OnData(object obj, GraphEventArgs graphEvent)
         {
-            switch (graphEvent.Type)
-            {
+            switch (graphEvent.Type) {
                 case GraphEventArgs.Types.UserInfoLoaded:
+                    userName = graphEvent.JData["name"].ToString();
                     onLoadUserInfo(graphEvent.JData["uid"].ToString());
                     break;
-/*               case GraphEventArgs.Types.FriendsLoaded:
+                case GraphEventArgs.Types.FriendsListLoaded:
+                    onLoadFriendsList(graphEvent.Count);
+                    break;
+                case GraphEventArgs.Types.FriendsLoaded:
                     onLoadFriends();
                     break;
                 case GraphEventArgs.Types.AreGraphLoaded:
-                    onGetFriends(false);
-                    break;
                 case GraphEventArgs.Types.MutualGraphLoaded:
                     onGetFriends();
-                    break;*/
+                    break;
                 case GraphEventArgs.Types.GraphGenerated:
                     onGenerateGraph(graphEvent);
                     break;
@@ -62,29 +70,44 @@ namespace rcsir.net.ok.importer.Dialogs
 
         private void onLoadUserInfo(string id)
         {
-            ((OKNetworkAnalyzer)m_oHttpNetworkAnalyzer).EgoId = id;
+            analyzer.EgoId = id;
             btnOK.Enabled = true;
             LoginDialog.Close();
         }
 
+        private void onLoadFriendsList(int friendsNumber)
+        {
+            friendsCount = friendsNumber;
+            showProgress("Loading list of " + friendsCount + "  friends");
+        }
+
+        private void onLoadFriends()
+        {
+            showProgress("Loading " + friendsCount + " friends info...");
+        }
+
+        private void onGetFriends()
+        {
+            showProgress("Generating friends graph...");
+        }
+
         private void onGenerateGraph(GraphEventArgs graphEvent)
         {
-            ((OKNetworkAnalyzer)m_oHttpNetworkAnalyzer).SetGraph(graphEvent.Vertices, graphEvent.Edges, graphEvent.DialogAttributes, graphEvent.GraphAttributes);
-            try
-            {
+            analyzer.SetGraph(graphEvent.Vertices, graphEvent.Edges, graphEvent.DialogAttributes, graphEvent.GraphAttributes);
+            try {
                 List<NetworkType> oEdgeType = new List<NetworkType>();
-                ((OKNetworkAnalyzer)m_oHttpNetworkAnalyzer).GetNetworkAsync(oEdgeType, chkIncludeMe.Checked, DateTime.Now, DateTime.Now);
-            }
-            catch (NullReferenceException e)
-            {
+                analyzer.GetNetworkAsync(oEdgeType, chkIncludeMe.Checked, DateTime.Now, DateTime.Now);
+            } catch (NullReferenceException e) {
                 MessageBox.Show(e.Message);
             }
             Enabled = true;
+            showProgress("Generating graph document...");
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             AssertValid();
+            m_oHttpNetworkAnalyzer.CancelAsync();
             Close();
         }
         //*************************************************************************
@@ -152,14 +175,6 @@ namespace rcsir.net.ok.importer.Dialogs
             AssertValid();
             m_oGraphMLXmlDocument = null;
             DispatchCommandEvent(CommandEventArgs.Commands.GenerateGraph);
-/*            try {
-                List<NetworkType> oEdgeType = new List<NetworkType>();
-                DispatchCommandEvent(CommandEventArgs.Commands.GenerateGraph);
-                ((OKNetworkAnalyzer)m_oHttpNetworkAnalyzer).GetNetworkAsync(oEdgeType, chkIncludeMe.Checked, DateTime.Now, DateTime.Now);
- //               ((OKNetworkAnalyzer)m_oHttpNetworkAnalyzer).analyze();
-            } catch (NullReferenceException e) {
-                MessageBox.Show(e.Message);
-            }*/
         }
 
         protected virtual void DispatchCommandEvent(CommandEventArgs.Commands command, DataGridViewRow[] rows = null, bool isMeIncluding = false)
@@ -182,6 +197,8 @@ namespace rcsir.net.ok.importer.Dialogs
         {
             AssertValid();
             Boolean bIsBusy = m_oHttpNetworkAnalyzer.IsBusy;
+            btnOK.Enabled = !bIsBusy;
+            UseWaitCursor = bIsBusy;
         }
 
         //*************************************************************************
@@ -216,8 +233,8 @@ namespace rcsir.net.ok.importer.Dialogs
         protected void btnOK_Click(object sender, EventArgs e)
         {
             AssertValid();
+            ToolStripStatusLabel.Text = "Starting for user " + userName;
             readAttributes();
-//            (m_oHttpNetworkAnalyzer as OKNetworkAnalyzer).GraphDataManager = graphDataManager;
             OnOKClick();
         }
 
@@ -236,15 +253,10 @@ namespace rcsir.net.ok.importer.Dialogs
         // that and so it resorts to static fields.
 
         /// Tag to get the related tags for.  Can be empty but not null.
-
 //        protected static String m_sTag = "sociology";
-
         /// Network level to include.
-
         //protected static NetworkLevel m_eNetworkLevel = NetworkLevel.OnePointFive;
-
         /// true to include a sample thumbnail for each tag.
-
 //        protected static Boolean m_bIncludeSampleThumbnails = false;
 
         private void addAttributes(AttributesDictionary<bool> dialogAttributes)
@@ -261,8 +273,6 @@ namespace rcsir.net.ok.importer.Dialogs
 
         private void btnLogin_Click(object sender, EventArgs e)
         {
-/*            if (loginDialog == null)
-                loginDialog = new OKLoginDialog(requestController);*/
             LoginDialog.Login();
         }
 /*
@@ -292,8 +302,6 @@ namespace rcsir.net.ok.importer.Dialogs
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-/*            if (loginDialog == null)
-                loginDialog = new OKLoginDialog(requestController);*/
             loginDialog.Logout();
         }
 
@@ -313,6 +321,11 @@ namespace rcsir.net.ok.importer.Dialogs
             chkSelectAll.CheckedChanged += chkSelectAll_CheckedChanged;
             //Add the CheckBox into the DataGridView
             dgAttributes.Controls.Add(chkSelectAll);
+        }
+
+        private void showProgress(string message)
+        {
+            ToolStripStatusLabel.Text = "Stage " + ++currentStage + " / " + stageCount + ": " + message;
         }
     }
 }

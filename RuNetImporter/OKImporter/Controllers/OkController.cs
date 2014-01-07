@@ -79,6 +79,7 @@ namespace rcsir.net.ok.importer.Controllers
 
         private void loadFriends()
         {
+            graphDataManager.ClearVertices();
             var friends = requestController.GetFriends(); // fid=160539089447&fid=561967133371&fid=561692396161&
             string friendUids = ""; // userId;
             foreach (var friend in friends) {
@@ -86,6 +87,7 @@ namespace rcsir.net.ok.importer.Controllers
                 friendUids += "," + friend;
                 graphDataManager.AddFriendId(friend.ToString());
             }
+            graphDataManager.ResumeFriendsList();
             loadFriendsInfo(friendUids);
         }
 
