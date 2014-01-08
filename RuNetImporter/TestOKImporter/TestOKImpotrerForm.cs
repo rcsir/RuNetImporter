@@ -9,6 +9,7 @@ using rcsir.net.ok.importer.Dialogs;
 using rcsir.net.ok.importer.Events;
 using rcsir.net.ok.importer.GraphDataProvider;
 using rcsir.net.ok.importer.NetworkAnalyzer;
+using ErrorEventArgs = rcsir.net.ok.importer.Events.ErrorEventArgs;
 
 namespace TestOKImporter
 {
@@ -71,10 +72,10 @@ namespace TestOKImporter
             }
         }
 
-        public void OnError(object obj, rcsir.net.ok.importer.Events.ErrorEventArgs onErrorArgs)
+        public void OnRequestError(object obj, ErrorEventArgs onErrorArgs)
         {
-            // TODO: notify user about the error
-            Debug.WriteLine("Function " + onErrorArgs.Type + ", returned error: " + onErrorArgs.Error);
+            MessageBox.Show("Error type: " + onErrorArgs.Type + "\nReturned error: " + onErrorArgs.Description, "Test OKImpotrer ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            Debug.WriteLine("Error type: " + onErrorArgs.Type + ", returned error: " + onErrorArgs.Description);
         }
 
         private void onLoadUserInfo(JObject ego)

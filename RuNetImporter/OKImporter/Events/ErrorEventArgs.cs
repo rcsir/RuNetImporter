@@ -1,15 +1,16 @@
-﻿
+﻿using System;
+
 namespace rcsir.net.ok.importer.Events
 {
-    public class ErrorEventArgs
+    public class ErrorEventArgs : EventArgs
     {
-        public readonly GraphEventArgs.Types Type;
-        public readonly string Error;
+        public readonly string Type;
+        public readonly string Description;
 
-        public ErrorEventArgs(GraphEventArgs.Types type, string error)
+        public ErrorEventArgs(string type, string description)
         {
             Type = type;
-            Error = error;
+            Description = description;
         }
     }
 }

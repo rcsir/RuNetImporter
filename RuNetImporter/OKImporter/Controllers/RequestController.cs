@@ -4,18 +4,21 @@ using rcsir.net.ok.importer.Storages;
 
 namespace rcsir.net.ok.importer.Controllers
 {
-    public class RequestController
+    class RequestController
     {
         private readonly RequestParametersStorage parametersStorage;
         private readonly Authorization auth;
+
         private readonly PostRequests postRequests;
 
+        internal PostRequests RequestsHelper { get { return postRequests; } }
+
         private string requiredFields;
-        public string RequiredFields { set { requiredFields = parametersStorage.HiddenFields + value; } }
+        internal string RequiredFields { set { requiredFields = parametersStorage.HiddenFields + value; } }
 
-        public string AuthUri { get { return parametersStorage.AuthUri; } }
+        internal string AuthUri { get { return parametersStorage.AuthUri; } }
 
-        public RequestController()
+        internal RequestController()
         {
             parametersStorage = new RequestParametersStorage();
             auth = new Authorization(parametersStorage);
@@ -23,7 +26,7 @@ namespace rcsir.net.ok.importer.Controllers
             requiredFields = parametersStorage.AllUserFields;
         }
 
-        public void DeleteCookies()
+        internal void DeleteCookies()
         {
             auth.DeleteCookies();
         }
@@ -34,15 +37,6 @@ namespace rcsir.net.ok.importer.Controllers
                 return false;
             getToken();
             return true;
-        }
-
-        private void getToken()
-        {
-            string postedData = parametersStorage.TokenParameters;
-// Valid response string, f.e.: "{\"token_type\":\"session\",\"refresh_token\":\"e19530afe4f7c094d20f966078e2d0a16896a5_561692396161_138785\",\"access_token\":\"63ipa.949evrsa14g4i039194d1f3bh3kd\"}"
-            string responseString = postRequests.MakeRequest(postedData, false);
-            var token = JObject.Parse(responseString);
-            parametersStorage.UpdateAuthTokens(token["access_token"], token["refresh_token"]);
         }
 
         internal JArray GetFriends()
@@ -70,5 +64,15 @@ namespace rcsir.net.ok.importer.Controllers
         {
             return JArray.Parse(postRequests.MakeApiRequest("method=friends.getMutualFriends&target_id=" + friendId));  //  &source_id=160539089447
         }
+
+        private void getToken()
+        {
+            string postedData = parametersStorage.TokenParameters;
+            // Valid response string, f.e.: "{\"token_type\":\"session\",\"refresh_token\":\"e19530afe4f7c094d20f966078e2d0a16896a5_561692396161_138785\",\"access_token\":\"63ipa.949evrsa14g4i039194d1f3bh3kd\"}"
+            string responseString = postRequests.MakeRequest(postedData, false);
+            var token = JObject.Parse(responseString);
+            parametersStorage.UpdateAuthTokens(token["access_token"], token["refresh_token"]);
+        }
+
     }
 }

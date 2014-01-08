@@ -37,6 +37,7 @@ namespace rcsir.net.ok.importer.Dialogs
             loginDialog = new OKLoginDialog();
             analyzer.Controller = new OkController(this);
             addAttributes(dialogAttributes);
+            FormUtil.ApplicationName = "OK Network Importer";
         }
 
         public void OnData(object obj, GraphEventArgs graphEvent)
@@ -61,11 +62,11 @@ namespace rcsir.net.ok.importer.Dialogs
                     break;
             }
         }
-        // main error handler
-        private void OnError(object obj, ErrorEventArgs onErrorArgs)
+
+        public void OnRequestError(object obj, ErrorEventArgs onErrorArgs)
         {
-            // TODO: notify user about the error
-            Debug.WriteLine("Function " + onErrorArgs.Type + ", returned error: " + onErrorArgs.Error);
+            ShowError("Error type: " + onErrorArgs.Type + "\nReturned error: " + onErrorArgs.Description);
+            Debug.WriteLine("Error type: " + onErrorArgs.Type + ", returned error: " + onErrorArgs.Description);
         }
 
         private void onLoadUserInfo(string id)
@@ -169,16 +170,12 @@ namespace rcsir.net.ok.importer.Dialogs
             AssertValid();
             m_oGraphMLXmlDocument = null;
 
-            try
-            {
+            try {
                 List<NetworkType> oEdgeType = new List<NetworkType>();
                 analyzer.GetNetworkAsync(oEdgeType, chkIncludeMe.Checked, DateTime.Now, DateTime.Now);
-            }
-            catch (NullReferenceException e)
-            {
+            } catch (NullReferenceException e) {
                 MessageBox.Show(e.Message);
             }
-//            DispatchCommandEvent(CommandEventArgs.Commands.GenerateGraph);
         }
 
         protected virtual void DispatchCommandEvent(CommandEventArgs.Commands command, bool[] rows = null, bool isMeIncluding = false)

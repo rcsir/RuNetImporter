@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿using System;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -9,6 +9,8 @@ namespace rcsir.net.ok.importer.Api
     class PostRequests
     {
         private RequestParametersStorage parametersStorage;
+
+        internal event EventHandler<Events.ErrorEventArgs> OnError;
 
         internal PostRequests(RequestParametersStorage storage)
         {
@@ -32,77 +34,60 @@ namespace rcsir.net.ok.importer.Api
             return responseToString;
         }
 
-        private static HttpWebResponse PostMethod(string postedData, string postUrl)
+        protected virtual void DispatchErrorEvent(string type, string description)
+        {
+            var evnt = new Events.ErrorEventArgs(type, description);
+            var handler = OnError;
+            if (handler != null)
+                handler(this, evnt);
+        }
+
+        private HttpWebResponse PostMethod(string postedData, string postUrl)
         {
             UTF8Encoding encoding = new UTF8Encoding();
             var bytes = encoding.GetBytes(postedData);
+            try {
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(postUrl);
+                request.Method = "POST";
+                request.Credentials = CredentialCache.DefaultCredentials;
+                request.ContentType = "application/x-www-form-urlencoded";
+                request.ContentLength = bytes.Length;
 
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(postUrl);
-            request.Method = "POST";
-            request.Credentials = CredentialCache.DefaultCredentials;
-            request.ContentType = "application/x-www-form-urlencoded";
-            request.ContentLength = bytes.Length;
+                return handleValidResponse(request, bytes);
+            } catch (WebException e) {
+                handleWebException(e);
+                return null;
+            }
+        }
 
+        private HttpWebResponse handleValidResponse(HttpWebRequest request, byte[] bytes)
+        {
             using (var newStream = request.GetRequestStream()) {
                 newStream.Write(bytes, 0, bytes.Length);
                 newStream.Close();
             }
-            return (HttpWebResponse)request.GetResponse();
+            return (HttpWebResponse) request.GetResponse();
         }
 
-        private void HandleWebException(WebException Ex)
+        private void handleWebException(WebException exception)
         {
-            if (Ex.Status == WebExceptionStatus.ProtocolError) {
-                int StatusCode = (int)((HttpWebResponse)Ex.Response).StatusCode;
+            try {
+                int StatusCode = (int)((HttpWebResponse)exception.Response).StatusCode;
                 Stream ResponseStream = null;
-                ResponseStream = ((HttpWebResponse)Ex.Response).GetResponseStream();
+                ResponseStream = ((HttpWebResponse)exception.Response).GetResponseStream();
                 string responseText = (new StreamReader(ResponseStream)).ReadToEnd();
-                if (StatusCode == 500) {
-                    Debug.WriteLine("Error 500 - " + responseText);
-                } else {
-                    // Do Something for other status codes
-                    Debug.WriteLine("Error " + StatusCode);
-                }
-            } else {
-                throw (Ex); // Or check for other WebExceptionStatus
+                if (exception.Status == WebExceptionStatus.ProtocolError) {
+                    DispatchErrorEvent("Server Error: " + StatusCode, responseText);
+/*                    if (StatusCode == 500) {
+                        Debug.WriteLine("Error 500 - " + responseText);
+                    } else {
+                        Debug.WriteLine("Error " + StatusCode);
+                    }*/
+                } else
+                    DispatchErrorEvent("Client Error: " + StatusCode, responseText);
+            } catch (Exception e) {
+                DispatchErrorEvent("Unknown Error", "");
             }
         }
-
-        /*
-        private void handleWebException(OKFunction function, WebException Ex)
-        {
-            if (Ex.Status == WebExceptionStatus.ProtocolError)
-            {
-                int StatusCode = (int)((HttpWebResponse)Ex.Response).StatusCode;
-                Stream ResponseStream = null;
-                ResponseStream = ((HttpWebResponse)Ex.Response).GetResponseStream();
-                string responseText = (new StreamReader(ResponseStream)).ReadToEnd();
-
-                if (StatusCode == 500)
-                {
-                    Debug.WriteLine("Error 500 - " + responseText);
-                }
-                else
-                {
-                    // Do Something for other status codes
-                    Debug.WriteLine("Error " + StatusCode);
-                }
-
-                // Error - notify listeners
-                if (OnError != null)
-                {
-                    StringBuilder errorsb = new StringBuilder();
-                    errorsb.Append("StatusCode: ").Append(StatusCode).Append(',');
-                    errorsb.Append("Error: \'").Append(responseText).Append("\'");
-                    OnErrorEventArgs args = new OnErrorEventArgs(function, errorsb.ToString());
-                    OnError(this, args);
-                }
-            }
-            else
-            {
-                throw (Ex); // Or check for other WebExceptionStatus
-            }
-        }
-    }*/
     }
 }

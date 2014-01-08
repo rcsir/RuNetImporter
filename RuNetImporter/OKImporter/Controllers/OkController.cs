@@ -48,6 +48,7 @@ namespace rcsir.net.ok.importer.Controllers
             main.CommandEventHandler += commandHandler;
             main.LoginDialog.CommandEventHandler += commandHandler;
             graphDataManager.OnData += main.OnData;
+            requestController.RequestsHelper.OnError += main.OnRequestError;
         }
 
         private void commandHandler(object sender, CommandEventArgs e)

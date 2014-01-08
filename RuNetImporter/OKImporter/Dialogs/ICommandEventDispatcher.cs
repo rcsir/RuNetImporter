@@ -12,5 +12,6 @@ namespace rcsir.net.ok.importer.Dialogs
         event EventHandler<CommandEventArgs> CommandEventHandler;
 
         void OnData(object obj, GraphEventArgs graphEvent = null);
+        void OnRequestError(object obj, ErrorEventArgs graphEvent = null);
     }
 }
