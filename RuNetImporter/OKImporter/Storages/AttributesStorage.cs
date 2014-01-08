@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 using Smrf.AppLib;
 
 namespace rcsir.net.ok.importer.Storages
 {
-    public class AttributesStorage
+    internal class AttributesStorage
     {
 /*
         private static Dictionary<Attribute, bool> OkAttributes = new Dictionary<Attribute, bool> 
@@ -97,22 +98,16 @@ namespace rcsir.net.ok.importer.Storages
             MakeGraphAttributes();
         }
 
-        public void MakeGraphAttributes()
+        internal void UpdateAllAttributes(bool[] rows)
         {
-//            OkDialogAttributes["name"] = true;
-            graphAttributes = new AttributesDictionary<string>();
-            List<AttributeUtils.Attribute> keys = new List<AttributeUtils.Attribute>(graphAttributes.Keys);
-            foreach (AttributeUtils.Attribute key in keys)
-                if (!OkDialogAttributes.ContainsKey(key) || !OkDialogAttributes[key])
-                    graphAttributes.Remove(key);
+            for (var i = 0; i < OkDialogAttributes.Count; i++ ) {
+                var sKey = OkDialogAttributes.Keys.ElementAt(i);
+                OkDialogAttributes[sKey] = rows[i];
+            }
+            MakeGraphAttributes();
         }
 
-        public void UpdateDialogAttributes(string key, bool value)
-        {
-            OkDialogAttributes[key] = value;
-        }
-        
-        public string CreateRequiredFieldsString()
+        internal string CreateRequiredFieldsString()
         {
             string permissionsString = "";
             foreach (KeyValuePair<AttributeUtils.Attribute, bool> kvp in OkDialogAttributes) {
@@ -123,7 +118,7 @@ namespace rcsir.net.ok.importer.Storages
             return permissionsString;
         }
 
-        public AttributesDictionary<string> CreateVertexAttributes(JToken obj)
+        internal AttributesDictionary<string> CreateVertexAttributes(JToken obj)
         {
             AttributesDictionary<string> attributes = new AttributesDictionary<string>();
             List<AttributeUtils.Attribute> keys = new List<AttributeUtils.Attribute>(attributes.Keys);
@@ -139,6 +134,16 @@ namespace rcsir.net.ok.importer.Storages
                 }
             }
             return attributes;
+        }
+
+        private void MakeGraphAttributes()
+        {
+//            OkDialogAttributes["name"] = true;
+            graphAttributes = new AttributesDictionary<string>();
+            List<AttributeUtils.Attribute> keys = new List<AttributeUtils.Attribute>(graphAttributes.Keys);
+            foreach (AttributeUtils.Attribute key in keys)
+                if (!OkDialogAttributes.ContainsKey(key) || !OkDialogAttributes[key])
+                    graphAttributes.Remove(key);
         }
 
         private static string convertKey(string keyValue)
@@ -166,11 +171,11 @@ namespace rcsir.net.ok.importer.Storages
         }
     }
 
-    public struct Attribute
+    internal struct Attribute
     {
-        public string Name, Value;
+        internal string Name, Value;
 
-        public Attribute(string name, string value)
+        internal Attribute(string name, string value)
         {
             Name = name;
             Value = value;

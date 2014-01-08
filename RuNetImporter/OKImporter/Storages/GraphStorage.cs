@@ -28,13 +28,13 @@ namespace rcsir.net.ok.importer.Storages
 
         internal void MakeEgoVertex(JToken ego, AttributesDictionary<String> attributes)
         {
-            egoVertex = MakeVertex(ego, attributes, "Ego");    //  new Vertex(ego["uid"].ToString(), ego["name"].ToString(), "Ego", attributes);
+            egoVertex = MakeVertex(ego, attributes, "Ego");
             includeEgo = true;
         }
 
         internal void AddFriendVertex(JToken friend, AttributesDictionary<String> attributes)
         {
-            vertices.Add(MakeVertex(friend, attributes, "Friend"));    //  new Vertex(friend["uid"].ToString(), friend["name"].ToString(), "Friend", attributes)); ;
+            vertices.Add(MakeVertex(friend, attributes, "Friend"));
         }
 
         internal void AddEdge(string vertex1Id, string vertex2Id)

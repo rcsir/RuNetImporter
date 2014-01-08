@@ -1,26 +1,25 @@
 ﻿using System;
-using System.Windows.Forms;
 
 namespace rcsir.net.ok.importer.Events
 {
     public class CommandEventArgs : EventArgs
     {
-        public enum Commands { GetAccessToken, LoadFriends, GetGraphByAreFriends, GetGraphByMutualFriends, GenerateGraphByAreFriends, GenerateGraphByMutualFriends, GenerateGraph, MakeAttributes };
+        public enum Commands { GetAccessToken, LoadFriends, GetGraphByAreFriends, GetGraphByMutualFriends, GenerateGraphByAreFriends, GenerateGraphByMutualFriends, UpdateAllAttributes };
 
         public readonly Commands CommandName;
         public readonly string Parameter;
-        public readonly DataGridViewRow[] Rows;
+        public readonly bool[] Rows;
         public readonly bool IsMeIncluding;
 
         public CommandEventArgs(Commands name, string parameter = null)
         {
-            CommandName = name; //    (Commands)Enum.Parse(typeof(Commands), name);
+            CommandName = name;
             Parameter = parameter;
         }
 
-        public CommandEventArgs(Commands name, DataGridViewRow[] rows, bool isMeIncluding)
+        public CommandEventArgs(Commands name, bool[] rows, bool isMeIncluding)
         {
-            CommandName = name; //    (Commands)Enum.Parse(typeof(Commands), name);
+            CommandName = name;
             Rows = rows;
             IsMeIncluding = isMeIncluding;
         }

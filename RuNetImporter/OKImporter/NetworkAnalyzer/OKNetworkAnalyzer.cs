@@ -8,20 +8,16 @@ using rcsir.net.common.Network;
 using Smrf.AppLib;
 using Smrf.NodeXL.GraphDataProviders;
 using Smrf.SocialNetworkLib;
+using rcsir.net.ok.importer.Controllers;
 
 namespace rcsir.net.ok.importer.NetworkAnalyzer
 {
     public class OKNetworkAnalyzer : HttpNetworkAnalyzerBase
     {
-/*
-        private System.Timers.Timer oTimer = new System.Timers.Timer();
-        private int iSecondsToWait = 600;
-        private string sTimerProgress;
-        private GraphMLXmlDocument oGraphMLXmlDocument;
-*/
-        private int NrOfSteps = 4;
-        private int CurrentStep = 0;
+        public OkController controller;
 
+        public OkController Controller { set { controller = value; } }
+        
         private VertexCollection vertices;
         private EdgeCollection edges;
         private AttributesDictionary<bool> dialogAttributes;
@@ -37,21 +33,6 @@ namespace rcsir.net.ok.importer.NetworkAnalyzer
             dialogAttributes = okDialogAttributes;
             graphAttributes = okDraphAttributes;
         }
-/*
-        void oTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            iSecondsToWait--;
-            string sProgress = sTimerProgress;
-            if (iSecondsToWait < 0)
-            {
-                //oTimer.Enabled = false;
-                oTimer.Stop();
-            }
-
-            ReportProgress(sProgress + string.Format(" - Resuming in {0} seconds", iSecondsToWait));
-        }
-*/
-
         //*************************************************************************
         //  Method: GetNetworkAsync()
         //
@@ -382,12 +363,7 @@ namespace rcsir.net.ok.importer.NetworkAnalyzer
 
         public XmlDocument Analyze()
         {
- /*        
-            // wait for the friends data
-            readyEvent.WaitOne();
-
-            CheckCancellationPending();
-            ReportProgress("Generating graph document...");*/
+            controller.generateGraph();
             var graph = GenerateNetworkDocument(vertices, edges, graphAttributes);
 //  TEMP
             if (graph != null)

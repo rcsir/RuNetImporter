@@ -35,7 +35,7 @@ namespace rcsir.net.ok.importer.Dialogs
         {
             InitializeComponent();
             loginDialog = new OKLoginDialog();
-            new OkController(this);
+            analyzer.Controller = new OkController(this);
             addAttributes(dialogAttributes);
         }
 
@@ -94,12 +94,6 @@ namespace rcsir.net.ok.importer.Dialogs
         private void onGenerateGraph(GraphEventArgs graphEvent)
         {
             analyzer.SetGraph(graphEvent.Vertices, graphEvent.Edges, graphEvent.DialogAttributes, graphEvent.GraphAttributes);
-            try {
-                List<NetworkType> oEdgeType = new List<NetworkType>();
-                analyzer.GetNetworkAsync(oEdgeType, chkIncludeMe.Checked, DateTime.Now, DateTime.Now);
-            } catch (NullReferenceException e) {
-                MessageBox.Show(e.Message);
-            }
             Enabled = true;
             showProgress("Generating graph document...");
         }
@@ -174,10 +168,20 @@ namespace rcsir.net.ok.importer.Dialogs
         {
             AssertValid();
             m_oGraphMLXmlDocument = null;
-            DispatchCommandEvent(CommandEventArgs.Commands.GenerateGraph);
+
+            try
+            {
+                List<NetworkType> oEdgeType = new List<NetworkType>();
+                analyzer.GetNetworkAsync(oEdgeType, chkIncludeMe.Checked, DateTime.Now, DateTime.Now);
+            }
+            catch (NullReferenceException e)
+            {
+                MessageBox.Show(e.Message);
+            }
+//            DispatchCommandEvent(CommandEventArgs.Commands.GenerateGraph);
         }
 
-        protected virtual void DispatchCommandEvent(CommandEventArgs.Commands command, DataGridViewRow[] rows = null, bool isMeIncluding = false)
+        protected virtual void DispatchCommandEvent(CommandEventArgs.Commands command, bool[] rows = null, bool isMeIncluding = false)
         {
             var evnt = new CommandEventArgs(command, rows, isMeIncluding);
             EventHandler<CommandEventArgs> handler = CommandEventHandler;
@@ -289,9 +293,11 @@ namespace rcsir.net.ok.importer.Dialogs
 */
         private void readAttributes()
         {
-            var rows = new DataGridViewRow[dgAttributes.Rows.Count];
+/*            var rows = new DataGridViewRow[dgAttributes.Rows.Count];
             dgAttributes.Rows.CopyTo(rows, 0);
-            DispatchCommandEvent(CommandEventArgs.Commands.MakeAttributes, rows, chkIncludeMe.Checked);
+            makeAttributesValue(dgAttributes.Rows);
+            DispatchCommandEvent(CommandEventArgs.Commands.MakeAttributes, rows, chkIncludeMe.Checked);*/
+            DispatchCommandEvent(CommandEventArgs.Commands.UpdateAllAttributes, makeAttributesValue(dgAttributes.Rows), chkIncludeMe.Checked);
         }
 
         private void chkSelectAll_CheckedChanged(object sender, EventArgs e)
@@ -326,6 +332,14 @@ namespace rcsir.net.ok.importer.Dialogs
         private void showProgress(string message)
         {
             ToolStripStatusLabel.Text = "Stage " + ++currentStage + " / " + stageCount + ": " + message;
+        }
+
+        private bool[] makeAttributesValue(DataGridViewRowCollection rows)
+        {
+            var result = new bool[rows.Count];
+            for (var i = 0; i < rows.Count; i++)
+                result[i] = (bool) rows[i].Cells[1].Value;
+            return result;
         }
     }
 }

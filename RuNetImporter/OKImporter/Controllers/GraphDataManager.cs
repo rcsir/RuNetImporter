@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Windows.Forms;
 using Newtonsoft.Json.Linq;
 using rcsir.net.ok.importer.Events;
 using rcsir.net.ok.importer.Storages;
@@ -60,7 +59,6 @@ namespace rcsir.net.ok.importer.Controllers
                     graphStorage.AddEdge(friend["uid1"].ToString(), friend["uid2"].ToString());
                     Debug.WriteLine(friend["uid1"] + " AreFriends: " + friend["uid2"]);
                 }
-
         }
 
         internal void AddFriends(string userId, JArray friendsDict)
@@ -88,11 +86,9 @@ namespace rcsir.net.ok.importer.Controllers
             DispatchEvent(evnt);
         }
 
-        internal void MakeGraphAttributes(DataGridViewRow[] rows)
+        internal void UpdateAllAttributes(bool[] rows)
         {
-            foreach (DataGridViewRow row in rows)
-                attributeStorage.UpdateDialogAttributes(row.Cells[2].Value.ToString(), (bool)row.Cells[1].Value);
-            attributeStorage.MakeGraphAttributes();
+            attributeStorage.UpdateAllAttributes(rows);
         }
 
         internal string CreateRequiredFieldsString()

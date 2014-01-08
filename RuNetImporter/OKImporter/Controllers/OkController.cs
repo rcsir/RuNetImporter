@@ -25,6 +25,18 @@ namespace rcsir.net.ok.importer.Controllers
             configureListeners(main);
         }
 
+        internal void generateGraph(bool isTest = false, bool isMutual = true)
+        {
+            loadFriends();
+            if (!isTest)
+                isMutual = graphDataManager.FriendsCount > areFriendsPerStep / 2;
+            if (isMutual)
+                getMutualGraph();
+            else
+                getAreGraph();
+            graphDataManager.AddMeIfNeeded();
+        }
+
         private void updateMainForm(ICommandEventDispatcher main)
         {
             main.LoginDialog.AuthUri = requestController.AuthUri;
@@ -59,13 +71,9 @@ namespace rcsir.net.ok.importer.Controllers
                 case CommandEventArgs.Commands.GenerateGraphByMutualFriends:
                     generateGraph(true);
                     break;
-                case CommandEventArgs.Commands.GenerateGraph:
-                    generateGraph();
-                    break;
-                case CommandEventArgs.Commands.MakeAttributes:
-                    graphDataManager.MakeGraphAttributes(e.Rows);
+                case CommandEventArgs.Commands.UpdateAllAttributes:
+                    graphDataManager.UpdateAllAttributes(e.Rows);
                     makeEgoIfNeeded(e.IsMeIncluding);
-//                    graphDataManager.IsMeIncluding = e.IsMeIncluding;
                     break;
             }
         }
@@ -119,18 +127,6 @@ namespace rcsir.net.ok.importer.Controllers
 /*
             if (friend.Integer > subFriend.Integer)
                 addEdge(friend.String, subFriend.String);*/
-        }
-
-        private void generateGraph(bool isTest = false, bool isMutual = true)
-        {
-            loadFriends();
-            if (!isTest)
-                isMutual = graphDataManager.FriendsCount > areFriendsPerStep / 2;
-            if (isMutual)
-                getMutualGraph();
-            else
-                getAreGraph();
-            graphDataManager.AddMeIfNeeded();
         }
 
         private void loadEgoInfo()

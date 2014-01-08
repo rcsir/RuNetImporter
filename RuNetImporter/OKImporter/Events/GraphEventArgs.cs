@@ -14,8 +14,6 @@ namespace rcsir.net.ok.importer.Events
             FriendsLoaded,
             AreGraphLoaded,
             MutualGraphLoaded,
-//            GenerateAreGraph,
-//            GenerateMutualGraph,
             GraphGenerated
         };
 
