@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json.Linq;
 using rcsir.net.common.Network;
 using Smrf.AppLib;
+using rcsir.net.common.Utilities;
 
 namespace rcsir.net.ok.importer.Storages
 {
@@ -26,15 +26,15 @@ namespace rcsir.net.ok.importer.Storages
             friendIds.Add(id);
         }
 
-        internal void MakeEgoVertex(JToken ego, AttributesDictionary<String> attributes)
+        internal void MakeEgoVertex(JSONObject ego, AttributesDictionary<String> attributes)
         {
-            egoVertex = MakeVertex(ego, attributes, "Ego");
+            egoVertex = makeVertex(ego, attributes, "Ego");
             includeEgo = true;
         }
 
-        internal void AddFriendVertex(JToken friend, AttributesDictionary<String> attributes)
+        internal void AddFriendVertex(JSONObject friend, AttributesDictionary<String> attributes)
         {
-            vertices.Add(MakeVertex(friend, attributes, "Friend"));
+            vertices.Add(makeVertex(friend, attributes, "Friend"));
         }
 
         internal void AddEdge(string vertex1Id, string vertex2Id)
@@ -67,9 +67,9 @@ namespace rcsir.net.ok.importer.Storages
             vertices.Clear();
         }
 
-        private Vertex MakeVertex(JToken token, AttributesDictionary<String> attributes, string type)
+        private Vertex makeVertex(JSONObject token, AttributesDictionary<String> attributes, string type)
         {
-            return new Vertex(token["uid"].ToString(), token["name"].ToString(), type, attributes);
+            return new Vertex(token.Dictionary["uid"].String, token.Dictionary["name"].String, type, attributes);
         }
     }
 }

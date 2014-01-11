@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Newtonsoft.Json.Linq;
+using rcsir.net.common.Utilities;
 using rcsir.net.ok.importer.Events;
 using rcsir.net.ok.importer.Storages;
 using Smrf.AppLib;
@@ -32,18 +32,18 @@ namespace rcsir.net.ok.importer.Controllers
             graphStorage.AddFriendId(id);
         }
 
-        internal void SendEgo(JObject ego)
+        internal void SendEgo(JSONObject ego)
         {
             GraphEventArgs evnt = new GraphEventArgs(GraphEventArgs.Types.UserInfoLoaded, ego);
             DispatchEvent(evnt);
         }
 
-        internal void MakeEgo(JToken ego)
+        internal void MakeEgo(JSONObject ego)
         {
             graphStorage.MakeEgoVertex(ego, attributeStorage.CreateVertexAttributes(ego));
         }
 
-        internal void AddFriends(JArray friends)
+        internal void AddFriends(JSONObject[] friends)
         {
             foreach (var friend in friends)
                 graphStorage.AddFriendVertex(friend, attributeStorage.CreateVertexAttributes(friend));
@@ -52,20 +52,20 @@ namespace rcsir.net.ok.importer.Controllers
             DispatchEvent(evnt);
         }
 
-        internal void AddAreFriends(JArray friendsDict)
+        internal void AddAreFriends(JSONObject[] friendsDict)
         {
             foreach (var friend in friendsDict)
-                if (friend["are_friends"].ToString().ToLower() == "true") {
-                    graphStorage.AddEdge(friend["uid1"].ToString(), friend["uid2"].ToString());
-                    Debug.WriteLine(friend["uid1"] + " AreFriends: " + friend["uid2"]);
+                if (friend.Dictionary["are_friends"].Boolean) {
+                    graphStorage.AddEdge(friend.Dictionary["uid1"].String, friend.Dictionary["uid2"].String);
+                    Debug.WriteLine(friend.Dictionary["uid1"].String + " AreFriends: " + friend.Dictionary["uid2"].String);
                 }
         }
 
-        internal void AddFriends(string userId, JArray friendsDict)
+        internal void AddFriends(string userId, JSONObject[] friendsDict)
         {
             foreach (var subFriend in friendsDict) {
-                graphStorage.AddEdge(userId, subFriend.ToString());
-                Debug.WriteLine("Mutual: " + subFriend);
+                graphStorage.AddEdge(userId, subFriend.String);
+                Debug.WriteLine("Mutual: " + subFriend.ToDisplayableString());
             }
         }
 

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json.Linq;
 using Smrf.AppLib;
+using rcsir.net.common.Utilities;
 
 namespace rcsir.net.ok.importer.Storages
 {
@@ -95,7 +95,7 @@ namespace rcsir.net.ok.importer.Storages
         public AttributesStorage()
         {
             makeOkDialogAttributes();
-            MakeGraphAttributes();
+            makeGraphAttributes();
         }
 
         internal void UpdateAllAttributes(bool[] rows)
@@ -104,7 +104,7 @@ namespace rcsir.net.ok.importer.Storages
                 var sKey = OkDialogAttributes.Keys.ElementAt(i);
                 OkDialogAttributes[sKey] = rows[i];
             }
-            MakeGraphAttributes();
+            makeGraphAttributes();
         }
 
         internal string CreateRequiredFieldsString()
@@ -118,7 +118,7 @@ namespace rcsir.net.ok.importer.Storages
             return permissionsString;
         }
 
-        internal AttributesDictionary<string> CreateVertexAttributes(JToken obj)
+        internal AttributesDictionary<string> CreateVertexAttributes(JSONObject obj)
         {
             AttributesDictionary<string> attributes = new AttributesDictionary<string>();
             List<AttributeUtils.Attribute> keys = new List<AttributeUtils.Attribute>(attributes.Keys);
@@ -128,15 +128,15 @@ namespace rcsir.net.ok.importer.Storages
                     continue;
                 }
                 string name = convertKey(key.value);
-                if (obj[name] != null) {
-                    string value = name != "location" ? obj[name].ToString() : obj[name]["city"] + ", " + obj[name]["country"];
+                if (obj.Dictionary.ContainsKey(name)) {
+                    string value = name.Contains("location") ? calcLocation(obj, name) : obj.Dictionary[name].String;
                     attributes[key] = value;
                 }
             }
             return attributes;
         }
 
-        private void MakeGraphAttributes()
+        private void makeGraphAttributes()
         {
 //            OkDialogAttributes["name"] = true;
             graphAttributes = new AttributesDictionary<string>();
@@ -144,6 +144,22 @@ namespace rcsir.net.ok.importer.Storages
             foreach (AttributeUtils.Attribute key in keys)
                 if (!OkDialogAttributes.ContainsKey(key) || !OkDialogAttributes[key])
                     graphAttributes.Remove(key);
+        }
+
+        private void makeOkDialogAttributes()
+        {
+            okDialogAttributes = new AttributesDictionary<bool>();
+            foreach (KeyValuePair<AttributeUtils.Attribute, bool> kvp in dialogAttributes)
+                if (!isNeeded(kvp.Key.value))
+                    okDialogAttributes.Remove(kvp.Key);
+                else
+                    okDialogAttributes[kvp.Key] = dialogAttributes[kvp.Key];
+        }
+
+        private string calcLocation(JSONObject obj, string name)
+        {
+            return name == "location" ? obj.Dictionary[name].Dictionary["city"].String + ", " + obj.Dictionary[name].Dictionary["country"].String :
+                obj.Dictionary[name].Dictionary["latitude"].String + ", " + obj.Dictionary[name].Dictionary["longitude"].String;
         }
 
         private static string convertKey(string keyValue)
@@ -158,27 +174,6 @@ namespace rcsir.net.ok.importer.Storages
         {
             bool result = !attributeCommonOkMapping.ContainsKey(keyValue) || attributeCommonOkMapping[keyValue] != string.Empty;
             return result;
-        }
-
-        private void makeOkDialogAttributes()
-        {
-            okDialogAttributes = new AttributesDictionary<bool>();
-            foreach (KeyValuePair<AttributeUtils.Attribute, bool> kvp in dialogAttributes)
-                if (!isNeeded(kvp.Key.value))
-                    okDialogAttributes.Remove(kvp.Key);
-                else
-                    okDialogAttributes[kvp.Key] = dialogAttributes[kvp.Key];
-        }
-    }
-
-    internal struct Attribute
-    {
-        internal string Name, Value;
-
-        internal Attribute(string name, string value)
-        {
-            Name = name;
-            Value = value;
         }
     }
 }

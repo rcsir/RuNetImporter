@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Smrf.AppLib;
+//using rcsir.net.common.Utilities;
 
 namespace rcsir.net.ok.importer.Storages
 {
@@ -68,10 +69,10 @@ namespace rcsir.net.ok.importer.Storages
             return postPrefix + requestString + "&sig=" + sig;
         }
 
-        internal void UpdateAuthTokens(object auth_token, object refresh_token)
+        internal void UpdateAuthTokens(string auth_token, string refresh_token)
         {
-            authToken = auth_token.ToString();
-            refreshToken = refresh_token.ToString();
+            authToken = auth_token;
+            refreshToken = refresh_token;
         }
 
     }

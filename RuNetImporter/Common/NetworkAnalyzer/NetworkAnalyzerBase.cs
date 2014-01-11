@@ -9,7 +9,6 @@ using Smrf.XmlLib;
 using Smrf.AppLib;
 using Smrf.SocialNetworkLib;
 using rcsir.net.common.Network;
-using Newtonsoft.Json.Linq;
 
 
 namespace rcsir.net.common.NetworkAnalyzer

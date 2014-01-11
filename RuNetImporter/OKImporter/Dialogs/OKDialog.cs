@@ -44,8 +44,8 @@ namespace rcsir.net.ok.importer.Dialogs
         {
             switch (graphEvent.Type) {
                 case GraphEventArgs.Types.UserInfoLoaded:
-                    userName = graphEvent.JData["name"].ToString();
-                    onLoadUserInfo(graphEvent.JData["uid"].ToString());
+                    userName = graphEvent.JData.Dictionary["name"].String;
+                    onLoadUserInfo(graphEvent.JData.Dictionary["uid"].String);
                     break;
                 case GraphEventArgs.Types.FriendsListLoaded:
                     onLoadFriendsList(graphEvent.Count);

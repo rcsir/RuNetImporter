@@ -93,8 +93,8 @@ namespace rcsir.net.ok.importer.Controllers
             string friendUids = ""; // userId;
             foreach (var friend in friends) {
 //  JObject friendDict = JObject.Parse(MakeRequest("method=friends.getMutualFriends&target_id=" + friend));  //  &source_id=160539089447
-                friendUids += "," + friend;
-                graphDataManager.AddFriendId(friend.ToString());
+                friendUids += "," + friend.String;
+                graphDataManager.AddFriendId(friend.String);
             }
             graphDataManager.ResumeFriendsList();
             loadFriendsInfo(friendUids);
@@ -133,7 +133,7 @@ namespace rcsir.net.ok.importer.Controllers
         private void loadEgoInfo()
         {
             var ego = requestController.GetEgoInfo();
-            egoId = ego["uid"].ToString();
+            egoId = ego.Dictionary["uid"].String;
             graphDataManager.SendEgo(ego);
        }
 

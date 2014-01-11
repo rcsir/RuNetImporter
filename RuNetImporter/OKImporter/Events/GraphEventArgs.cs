@@ -1,7 +1,7 @@
 ﻿using System;
-using Newtonsoft.Json.Linq;
 using Smrf.AppLib;
 using rcsir.net.common.Network;
+using rcsir.net.common.Utilities;
 
 namespace rcsir.net.ok.importer.Events
 {
@@ -18,7 +18,7 @@ namespace rcsir.net.ok.importer.Events
         };
 
         public readonly Types Type;
-        public readonly JObject JData;
+        public readonly JSONObject JData;
 
         public readonly VertexCollection Vertices;
         public readonly EdgeCollection Edges;
@@ -26,7 +26,7 @@ namespace rcsir.net.ok.importer.Events
         public readonly AttributesDictionary<string> GraphAttributes;
         public readonly int Count;
 
-        public GraphEventArgs(Types type, JObject data = null)
+        public GraphEventArgs(Types type, JSONObject data = null)
         {
             Type = type;
             JData = data;
