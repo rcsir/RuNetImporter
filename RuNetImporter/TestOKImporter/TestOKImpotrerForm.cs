@@ -2,8 +2,8 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
-using Newtonsoft.Json.Linq;
 using Smrf.AppLib;
+using rcsir.net.common.Utilities;
 using rcsir.net.ok.importer.Controllers;
 using rcsir.net.ok.importer.Dialogs;
 using rcsir.net.ok.importer.Events;
@@ -33,16 +33,17 @@ namespace TestOKImporter
         public TestOKImpotrerForm()
         {
             InitializeComponent();
-            AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
+//            AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
             analyzer = new OKNetworkAnalyzer();
             okLoginDialog = new OKLoginDialog();
             new OkController(this);
         }
-
+/*
         void CurrentDomain_FirstChanceException(object sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
         {
             Debug.WriteLine(e);
         }
+*/
        
         protected virtual void DispatchEvent(CommandEventArgs e)
         {
@@ -78,21 +79,22 @@ namespace TestOKImporter
             Debug.WriteLine("Error type: " + onErrorArgs.Type + ", returned error: " + onErrorArgs.Description);
         }
 
-        private void onLoadUserInfo(JObject ego)
+        private void onLoadUserInfo(JSONObject ego)
         {
             userInfoTextBox.Clear();
-            userInfoTextBox.AppendText(ego["name"] + "\n");
-            userInfoTextBox.AppendText(ego["age"] + "лет; ");
-            userInfoTextBox.AppendText("д.р.: " +ego["birthday"] + "\n");
-            userInfoTextBox.AppendText(ego["gender"] + "\n");
-            userInfoTextBox.AppendText(ego["location"]["country"] + ": ");
-            userInfoTextBox.AppendText(ego["location"]["city"] + "\n");
-            userInfoTextBox.AppendText(ego["pic_1"] + "\n");
-            userInfoTextBox.AppendText("Статус: " + ego["current_status"]);
+            userInfoTextBox.AppendText(ego.Dictionary["name"].String + "\n");
+            userInfoTextBox.AppendText(ego.Dictionary["age"].String + "лет; ");
+            userInfoTextBox.AppendText("д.р.: " + ego.Dictionary["birthday"].String + "\n");
+            userInfoTextBox.AppendText(ego.Dictionary["gender"].String + "\n");
+            userInfoTextBox.AppendText(ego.Dictionary["location"].Dictionary["country"].String + ": ");
+            userInfoTextBox.AppendText(ego.Dictionary["location"].Dictionary["city"].String + "\n");
+            userInfoTextBox.AppendText(ego.Dictionary["pic_1"].String + "\n");
+            if (ego.Dictionary.ContainsKey("current_status"))
+            userInfoTextBox.AppendText("Статус: " + ego.Dictionary["current_status"].String);
 
-            pictureBox.ImageLocation = ego["pic_2"].ToString();
+            pictureBox.ImageLocation = ego.Dictionary["pic_2"].String;
             userIdTextBox.Clear();
-            userIdTextBox.Text = analyzer.EgoId = ego["uid"].ToString();
+            userIdTextBox.Text = analyzer.EgoId = ego.Dictionary["uid"].String;
 
             LoginDialog.Close();
             ActivateAuthControls(true);

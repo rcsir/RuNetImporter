@@ -36,12 +36,10 @@
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Social Media Research Foundation\NodeXL Excel Template\Microsoft.NodeXL.ExcelTemplatePlugIns.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualBasic" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\Json.NET\Bin\Net35\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -79,6 +77,7 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Utilities\GraphMLXmlDocument.cs" />
+    <Compile Include="Utilities\JSONObject.cs" />
     <Compile Include="Utilities\MathUtil.cs" />
     <Compile Include="Utilities\NetworkDescriber.cs" />
     <Compile Include="Utilities\NetworkLevel.cs" />

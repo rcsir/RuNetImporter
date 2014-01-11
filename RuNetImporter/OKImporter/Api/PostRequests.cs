@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Text;
+using rcsir.net.common.Utilities;
 using rcsir.net.ok.importer.Storages;
 
 namespace rcsir.net.ok.importer.Api
@@ -17,13 +18,13 @@ namespace rcsir.net.ok.importer.Api
             parametersStorage = storage;
         }
 
-        internal string MakeApiRequest(string requestString)
+        internal JSONObject MakeApiRequest(string requestString)
         {
             string postedData = parametersStorage.MakePostedData(requestString);
             return MakeRequest(postedData);
         }
 
-        internal string MakeRequest(string postedData, bool isApiRequest = true)
+        internal JSONObject MakeRequest(string postedData, bool isApiRequest = true)
         {
             var response = PostMethod(postedData, isApiRequest ? parametersStorage.ApiUrl : parametersStorage.TokenUrl);
             if (response == null)
@@ -31,7 +32,7 @@ namespace rcsir.net.ok.importer.Api
 
             var strreader = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
             string responseToString = strreader.ReadToEnd();
-            return responseToString;
+            return JSONObject.CreateFromString(responseToString);
         }
 
         protected virtual void DispatchErrorEvent(string type, string description)
@@ -86,7 +87,7 @@ namespace rcsir.net.ok.importer.Api
                 } else
                     DispatchErrorEvent("Client Error: " + StatusCode, responseText);
             } catch (Exception e) {
-                DispatchErrorEvent("Unknown Error", "");
+                DispatchErrorEvent("Unknown Error", e.ToString());
             }
         }
     }
