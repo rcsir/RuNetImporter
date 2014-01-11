@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("VKImporter")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("NodeXL plugins to help capture and import networks from VK.com")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Resource Center For Sociological and Internet Research, SPBU, Russia")]
 [assembly: AssemblyProduct("VKImporter")]
 [assembly: AssemblyCopyright("Copyright ©  2013")]
 [assembly: AssemblyTrademark("")]

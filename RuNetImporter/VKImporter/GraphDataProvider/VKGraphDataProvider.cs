@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Diagnostics;
 using Smrf.NodeXL.GraphDataProviders;
 using rcsir.net.vk.importer.Dialogs;
@@ -85,9 +86,16 @@ namespace rcsir.net.vk.importer.GraphDataProvider
 
         /// Value of the Name property.
 
-        public const String GraphDataProviderName =
-            "VK Network Importer (v.0.0.1)";
-
+        public static String GraphDataProviderName
+        {
+            get 
+            {
+                Assembly assembly = Assembly.GetExecutingAssembly();
+                FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+                string version = fvi.FileVersion;
+                return String.Format("VK Network Importer ({0})", version); ;  
+            }
+        }
 
         //*************************************************************************
         //  Protected fields

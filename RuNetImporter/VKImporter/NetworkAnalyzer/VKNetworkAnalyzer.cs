@@ -31,6 +31,7 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         private VertexCollection vertices = new VertexCollection();
         private EdgeCollection edges = new EdgeCollection();
         private Exception error;
+        private RequestStatistics requestStatistics;
 
         private static List<AttributeUtils.Attribute> VKAttributes = new List<AttributeUtils.Attribute>()
         {
@@ -75,6 +76,9 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
                     break;
             }
 
+            // 
+            this.requestStatistics.OnSuccessfulRequest();
+
             // indicate that data is ready and we can continue
             readyEvent.Set();
         }
@@ -85,7 +89,8 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
             // TODO: notify user about the error
             Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
 
-            this.error = new Exception("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
+            // this.error = new Exception("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
+            this.requestStatistics.OnUnexpectedException(new Exception("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error));
 
             // indicate that we can continue
             readyEvent.Set();
@@ -302,10 +307,13 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
             Debug.Assert(e.Argument is NetworkAsyncArgs);
             NetworkAsyncArgs args = e.Argument as NetworkAsyncArgs;
 
+            this.requestStatistics = new RequestStatistics();
+            this.error = null;
+
             try
             {
                 CheckCancellationPending();
-                ReportProgress("Startting");
+                ReportProgress("Starting");
 
                 // shell include ego node in the graph
                 this.includeEgo = args.includeMe;
@@ -372,14 +380,20 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
                 // create default attributes (values will be empty)
                 AttributesDictionary<String> attributes = new AttributesDictionary<String>(VKAttributes);
 
-                if (this.error != null)
+                // build the file
+                XmlDocument graph = GenerateNetworkDocument(vertices, edges, attributes);
+
+                if (this.requestStatistics.UnexpectedExceptions > 0)
                 {
-                    // there was an error - throw it
-                    throw this.error;
+                    // there was errors - pop up partial network dialog
+                    throw new PartialNetworkException(graph, this.requestStatistics);
+                }
+                else
+                {
+                    // all good
+                    e.Result = graph;
                 }
 
-                // All good, save the result
-                e.Result = GenerateNetworkDocument(vertices, edges, attributes);
             }
             catch (CancellationPendingException)
             {

@@ -47,8 +47,6 @@ namespace rcsir.net.vk.importer.Dialogs
         public VKLoginDialog()
         {
             InitializeComponent();
-            // TODO: enable when not testing
-            deleteCookies();
         }
 
         /// <summary>
@@ -57,6 +55,9 @@ namespace rcsir.net.vk.importer.Dialogs
         /// <param name="permissions">VK access permissions, comma separated</param>
         public void Login(String permissions)
         {
+            // TODO: enable when not testing
+            deleteCookies();
+
             Debug.WriteLine("Navigate");
 
             StringBuilder sb = new StringBuilder(Secret.auth_url);
@@ -76,6 +77,9 @@ namespace rcsir.net.vk.importer.Dialogs
 
         public void Logout()
         {
+            // TODO: enable when not testing
+            deleteCookies();
+            
             webBrowserLogin.Navigate("http://vk.com/");
             this.ShowDialog();
 

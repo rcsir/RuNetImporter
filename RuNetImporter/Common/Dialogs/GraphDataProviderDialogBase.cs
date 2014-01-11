@@ -405,10 +405,9 @@ public class GraphDataProviderDialogBase : FormPlus
                 OnAnalysisSuccess(oPartialNetworkException.PartialNetwork);
             }
         }
-        else //if (oException is FacebookAPIException ||
-        //         oException is KeyNotFoundException)
+        else
         {
-            // TODO: change report text
+            // TODO: localyze report text
             this.ShowWarning(
                 "The network couldn't be obtained. If the problem persists please copy the following message "+
                 "and report it to RCSIR. \r\n\r\n Details:"
@@ -418,14 +417,6 @@ public class GraphDataProviderDialogBase : FormPlus
                 oException.StackTrace
                 );
         }
-        //else
-        //{
-        //    this.ShowWarning(
-        //        "The network couldn't be obtained.  Details:"
-        //        + "\r\n\r\n"
-        //        + m_oHttpNetworkAnalyzer.ExceptionToMessage(oException)
-        //        );
-        //}
     }
 
     //*************************************************************************

@@ -15,11 +15,59 @@ namespace rcsir.net.vk.importer.Dialogs
 {
     public partial class VKDialog : GraphDataProviderDialogBase
     {
+
+        //*************************************************************************
+        //  Protected fields
+        //*************************************************************************
+
+        // These are static so that the dialog's controls will retain their values
+        // between dialog invocations.  Most NodeXL dialogs persist control values
+        // via ApplicationSettingsBase, but this plugin does not have access to
+        // that and so it resorts to static fields.
+
+        /// Tag to get the related tags for.  Can be empty but not null.
+
+        protected static String m_sTag = "sociology";
+
+        /// Network level to include.
+        //protected static NetworkLevel m_eNetworkLevel = NetworkLevel.OnePointFive;
+
+        private VKLoginDialog loginDialog;
+        
+        // list of network vertices attributes to inlcude
+        private List<AttributeUtils.Attribute> attributes;
+
+        // comma separated permissions
+        private String permissions;
+
+        // commma separated list of fields to query
+        private String fields;
+
         public VKDialog(): 
             base(new VKNetworkAnalyzer())
         {
             InitializeComponent();
+            loginDialog = new VKLoginDialog();
+            loginDialog.OnUserLogin += new VKLoginDialog.UserLoginHandler(UserLogin);
+            this.EnableControls();
             addAttributes();
+        }
+
+        /// <summary>
+        /// Login event handler
+        /// </summary>
+        /// <param name="loginDialog"></param>
+        /// <param name="loginArgs"></param>
+        public void UserLogin(object loginDialog, UserLoginEventArgs loginArgs)
+        {
+            this.loggedInUser.Clear();
+            StringBuilder sb = new StringBuilder("User is logged in.").AppendLine().AppendLine();
+            sb.Append("User id: ").AppendLine(loginArgs.userId).AppendLine();
+            DateTime expiresAt = DateTime.Now;
+            expiresAt.AddSeconds(loginArgs.expiersIn);
+            sb.Append("Session expires in ").Append(loginArgs.expiersIn).AppendLine(" seconds.");
+            this.loggedInUser.Text = sb.ToString();
+            this.EnableControls();
         }
 
         private void CancelButton_Click(object sender, EventArgs e)
@@ -114,10 +162,6 @@ namespace rcsir.net.vk.importer.Dialogs
 
             try
             {
-                //accessToken = loginDialog.authToken;
-                //String userId = loginDialog.userId;
-                //((VKNetworkAnalyzer)m_oHttpNetworkAnalyzer).analyze(userId, accessToken);
-
                 VKNetworkAnalyzer.NetworkAsyncArgs arguments = new VKNetworkAnalyzer.NetworkAsyncArgs();
                 arguments.accessToken = loginDialog.authToken;
                 arguments.userId = loginDialog.userId;
@@ -148,11 +192,25 @@ namespace rcsir.net.vk.importer.Dialogs
         {
             AssertValid();
 
-            Boolean bIsBusy = m_oHttpNetworkAnalyzer.IsBusy;
-
-            //EnableControls(!bIsBusy, pnlUserInputs);
-            btnOK.Enabled = !bIsBusy;
-            this.UseWaitCursor = bIsBusy;
+            if (loginDialog.authToken == null)
+            {
+                // user is not logged in
+                btnLogin.Enabled = true;
+                btnLogout.Enabled = false;
+                btnOK.Enabled = false;
+                btnCancel.Enabled = false;
+                this.UseWaitCursor = false;
+            }  
+            else
+            {
+                // check if analyses is running
+                Boolean bIsBusy = m_oHttpNetworkAnalyzer.IsBusy;
+                btnLogin.Enabled = !bIsBusy;
+                btnLogout.Enabled = !bIsBusy;
+                btnOK.Enabled = !bIsBusy;
+                btnCancel.Enabled = bIsBusy;
+                this.UseWaitCursor = bIsBusy;
+            }
         }
 
         //*************************************************************************
@@ -193,8 +251,8 @@ namespace rcsir.net.vk.importer.Dialogs
         )
         {
             AssertValid();
-
             OnOKClick();
+            this.EnableControls();
         }
 
 
@@ -214,36 +272,6 @@ namespace rcsir.net.vk.importer.Dialogs
             base.AssertValid();
         }
 
-
-        //*************************************************************************
-        //  Protected constants
-        //*************************************************************************
-
-
-        //*************************************************************************
-        //  Protected fields
-        //*************************************************************************
-
-        // These are static so that the dialog's controls will retain their values
-        // between dialog invocations.  Most NodeXL dialogs persist control values
-        // via ApplicationSettingsBase, but this plugin does not have access to
-        // that and so it resorts to static fields.
-
-        /// Tag to get the related tags for.  Can be empty but not null.
-
-        protected static String m_sTag = "sociology";
-
-        /// Network level to include.
-        //protected static NetworkLevel m_eNetworkLevel = NetworkLevel.OnePointFive;
-
-        private VKLoginDialog loginDialog;
-
-        private List<AttributeUtils.Attribute> attributes;
-
-        private String permissions;
-
-        private String fields;
-
         private void addAttributes()
         {
             attributes = new List<AttributeUtils.Attribute>(this.m_oHttpNetworkAnalyzer.GetDefaultNetworkAttributes());
@@ -261,7 +289,6 @@ namespace rcsir.net.vk.importer.Dialogs
         private void btnLogin_Click(object sender, EventArgs e)
         {
             readAttributes();
-            loginDialog = new VKLoginDialog();
             loginDialog.Login(this.permissions);
         }
 
@@ -350,10 +377,8 @@ namespace rcsir.net.vk.importer.Dialogs
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            if (loginDialog == null)
-                loginDialog = new VKLoginDialog();
-
             loginDialog.Logout();
+            this.EnableControls();
         }
 
         private void chkIncludeMe_CheckedChanged(object sender, EventArgs e)
@@ -380,6 +405,12 @@ namespace rcsir.net.vk.importer.Dialogs
 
             //Add the CheckBox into the DataGridView
             this.dgAttributes.Controls.Add(chkSelectAll);
+        }
+
+        private void btnLogout_Click(object sender, EventArgs e)
+        {
+            loginDialog.Logout();
+            this.EnableControls();
         }    
     }
 }
