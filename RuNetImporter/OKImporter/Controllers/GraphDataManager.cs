@@ -47,9 +47,6 @@ namespace rcsir.net.ok.importer.Controllers
         {
             foreach (var friend in friends)
                 graphStorage.AddFriendVertex(friend, attributeStorage.CreateVertexAttributes(friend));
-
-            var evnt = new GraphEventArgs(GraphEventArgs.Types.FriendsLoaded);
-            DispatchEvent(evnt);
         }
 
         internal void AddAreFriends(JSONObject[] friendsDict)
@@ -99,6 +96,12 @@ namespace rcsir.net.ok.importer.Controllers
         internal void ResumeFriendsList()
         {
             var evnt = new GraphEventArgs(GraphEventArgs.Types.FriendsListLoaded, FriendsCount);
+            DispatchEvent(evnt);
+        }
+
+        internal void ResumeFriendsLoaded()
+        {
+            var evnt = new GraphEventArgs(GraphEventArgs.Types.FriendsLoaded);
             DispatchEvent(evnt);
         }
 

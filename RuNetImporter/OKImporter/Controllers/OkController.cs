@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using rcsir.net.ok.importer.Dialogs;
 using rcsir.net.ok.importer.Events;
@@ -8,7 +9,7 @@ namespace rcsir.net.ok.importer.Controllers
 {
     public class OkController
     {
-        private const int areFriendsPerStep = 100;
+        private const int friendsPerStep = 100;
         private const int sleepTimeout = 100;
 
         private readonly GraphDataManager graphDataManager;
@@ -29,7 +30,7 @@ namespace rcsir.net.ok.importer.Controllers
         {
             loadFriends();
             if (!isTest)
-                isMutual = graphDataManager.FriendsCount > areFriendsPerStep / 2;
+                isMutual = graphDataManager.FriendsCount > friendsPerStep / 2;
             if (isMutual)
                 getMutualGraph();
             else
@@ -90,10 +91,12 @@ namespace rcsir.net.ok.importer.Controllers
         {
             graphDataManager.ClearVertices();
             var friends = requestController.GetFriends(); // fid=160539089447&fid=561967133371&fid=561692396161&
-            string friendUids = ""; // userId;
+            var dim = friends.Length % friendsPerStep == 0 ? friends.Length / friendsPerStep : friends.Length / friendsPerStep + 1;
+            var friendUids = new string[dim];
+            var cnt = 0;
             foreach (var friend in friends) {
 //  JObject friendDict = JObject.Parse(MakeRequest("method=friends.getMutualFriends&target_id=" + friend));  //  &source_id=160539089447
-                friendUids += "," + friend.String;
+                friendUids[cnt++ / friendsPerStep] += "," + friend.String;
                 graphDataManager.AddFriendId(friend.String);
             }
             graphDataManager.ResumeFriendsList();
@@ -106,9 +109,9 @@ namespace rcsir.net.ok.importer.Controllers
             var pares = MathUtil.GeneratePares(graphDataManager.FriendIds.ToArray());
             string[] uidsArr1 = pares[0].Split(',');
             string[] uidsArr2 = pares[1].Split(',');
-            for (var i = 0; i < uidsArr1.Length; i += areFriendsPerStep) {
-                string uids1 = string.Join(",", uidsArr1.Skip(i).Take(areFriendsPerStep).ToArray());
-                string uids2 = string.Join(",", uidsArr2.Skip(i).Take(areFriendsPerStep).ToArray());
+            for (var i = 0; i < uidsArr1.Length; i += friendsPerStep) {
+                string uids1 = string.Join(",", uidsArr1.Skip(i).Take(friendsPerStep).ToArray());
+                string uids2 = string.Join(",", uidsArr2.Skip(i).Take(friendsPerStep).ToArray());
                 var friendsDict = requestController.GetAreFriends(uids1, uids2);
                 graphDataManager.AddAreFriends(friendsDict);
                 Thread.Sleep(sleepTimeout);
@@ -137,11 +140,12 @@ namespace rcsir.net.ok.importer.Controllers
             graphDataManager.SendEgo(ego);
        }
 
-        private void loadFriendsInfo(string uids)
+        private void loadFriendsInfo(string[] uidsArray)
         {
             updateRequiredFields();
-            var friends = requestController.GetUsersInfo(uids);
-            graphDataManager.AddFriends(friends);
+            foreach (var uids in uidsArray)
+                graphDataManager.AddFriends(requestController.GetUsersInfo(uids));
+            graphDataManager.ResumeFriendsLoaded();
         }
 
         private void makeEgoIfNeeded(bool isMeIncluding)
