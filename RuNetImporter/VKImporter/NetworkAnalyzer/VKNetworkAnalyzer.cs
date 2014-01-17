@@ -30,7 +30,6 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         private List<string> friendIds = new List<string>();
         private VertexCollection vertices = new VertexCollection();
         private EdgeCollection edges = new EdgeCollection();
-        private Exception error;
         private RequestStatistics requestStatistics;
 
         private static List<AttributeUtils.Attribute> VKAttributes = new List<AttributeUtils.Attribute>()
@@ -167,6 +166,8 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         public XmlDocument analyze(String userId, String authToken)
         {
             VKRestContext context = new VKRestContext(userId, authToken);
+
+            this.requestStatistics = new RequestStatistics();
 
             vkRestApi.CallVKFunction(VKFunction.LoadUserInfo, context);
 
@@ -308,7 +309,6 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
             NetworkAsyncArgs args = e.Argument as NetworkAsyncArgs;
 
             this.requestStatistics = new RequestStatistics();
-            this.error = null;
 
             try
             {

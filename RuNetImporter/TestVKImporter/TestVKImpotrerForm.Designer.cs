@@ -103,6 +103,7 @@
             this.testVkDialogButton.TabIndex = 8;
             this.testVkDialogButton.Text = "Test VKDialog";
             this.testVkDialogButton.UseVisualStyleBackColor = true;
+            this.testVkDialogButton.Visible = false;
             this.testVkDialogButton.Click += new System.EventHandler(this.testVkDialogButton_Click);
             // 
             // TestVKImpotrerForm

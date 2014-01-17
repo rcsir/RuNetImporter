@@ -87,9 +87,9 @@ namespace rcsir.net.vk.importer.Dialogs
             // btnCancel
             // 
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(186, 42);
+            this.btnCancel.Location = new System.Drawing.Point(153, 42);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(92, 29);
+            this.btnCancel.Size = new System.Drawing.Size(122, 29);
             this.btnCancel.TabIndex = 0;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
@@ -133,9 +133,9 @@ namespace rcsir.net.vk.importer.Dialogs
             // 
             // btnLogout
             // 
-            this.btnLogout.Location = new System.Drawing.Point(186, 19);
+            this.btnLogout.Location = new System.Drawing.Point(153, 19);
             this.btnLogout.Name = "btnLogout";
-            this.btnLogout.Size = new System.Drawing.Size(92, 29);
+            this.btnLogout.Size = new System.Drawing.Size(122, 29);
             this.btnLogout.TabIndex = 12;
             this.btnLogout.Text = "Logout";
             this.btnLogout.UseVisualStyleBackColor = true;
@@ -154,9 +154,9 @@ namespace rcsir.net.vk.importer.Dialogs
             // 
             // btnLogin
             // 
-            this.btnLogin.Location = new System.Drawing.Point(6, 19);
+            this.btnLogin.Location = new System.Drawing.Point(13, 19);
             this.btnLogin.Name = "btnLogin";
-            this.btnLogin.Size = new System.Drawing.Size(92, 29);
+            this.btnLogin.Size = new System.Drawing.Size(122, 29);
             this.btnLogin.TabIndex = 2;
             this.btnLogin.Text = "Login";
             this.btnLogin.UseVisualStyleBackColor = true;
@@ -221,7 +221,7 @@ namespace rcsir.net.vk.importer.Dialogs
             // chkIncludeMe
             // 
             this.chkIncludeMe.AutoSize = true;
-            this.chkIncludeMe.Location = new System.Drawing.Point(11, 19);
+            this.chkIncludeMe.Location = new System.Drawing.Point(19, 19);
             this.chkIncludeMe.Name = "chkIncludeMe";
             this.chkIncludeMe.Size = new System.Drawing.Size(79, 17);
             this.chkIncludeMe.TabIndex = 11;
@@ -231,9 +231,9 @@ namespace rcsir.net.vk.importer.Dialogs
             // 
             // btnOK
             // 
-            this.btnOK.Location = new System.Drawing.Point(6, 42);
+            this.btnOK.Location = new System.Drawing.Point(15, 42);
             this.btnOK.Name = "btnOK";
-            this.btnOK.Size = new System.Drawing.Size(92, 29);
+            this.btnOK.Size = new System.Drawing.Size(122, 29);
             this.btnOK.TabIndex = 1;
             this.btnOK.Text = "Download";
             this.btnOK.UseVisualStyleBackColor = true;
