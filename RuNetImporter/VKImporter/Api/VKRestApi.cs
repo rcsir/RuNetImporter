@@ -18,8 +18,65 @@ namespace rcsir.net.vk.importer.api
     {
         LoadUserInfo,
         LoadFriends,
-        GetMutual
+        GetMutual,
+        UsersSearch
 
+    };
+
+    // VK enum for sex field
+    public enum VKSexField
+    {
+        any = 0,
+        female = 1,
+        male = 2
+    };
+
+    // VK enum for status (relationship)
+    public enum VKRelationshipStatus
+    {
+        NotMarried = 1, 
+        InRelationship = 2, 
+        Engaged = 3, 
+        Married = 4,
+        ItsComplicated = 5, 
+        ActivelySearching = 6,
+        InLove = 7 
+    };
+
+    // VK city
+    public class VKCity
+    {
+        public string Name { get; set; }
+        public int Value { get; set; }
+
+        public VKCity(String name, int value)
+        {
+            this.Name = name;
+            this.Value = value;
+        }
+        
+        public override string ToString()
+        {
+            return Name;
+        }
+    };
+
+    // VK sex
+    public class VKSex
+    {
+        public string Sex { get; set; }
+        public int Value { get; set; }
+
+        public VKSex(String sex, int value)
+        {
+            this.Sex = sex;
+            this.Value = value;
+        }
+
+        public override string ToString()
+        {
+            return Sex;
+        }
     };
 
     // onData event arguments
@@ -60,19 +117,16 @@ namespace rcsir.net.vk.importer.api
             this.cookie = null;
         }
 
-        public VKRestContext(String userId, String authToken, String parameters)
+        public VKRestContext(String userId, String authToken, String parameters) : 
+            this(userId, authToken)
         {
-            this.userId = userId;
-            this.authToken = authToken;
             this.parameters = parameters;
             this.cookie = null;
         }
 
-        public VKRestContext(String userId, String authToken, String parameters, String cookie)
+        public VKRestContext(String userId, String authToken, String parameters, String cookie) :
+            this(userId, authToken, parameters)
         {
-            this.userId = userId;
-            this.authToken = authToken;
-            this.parameters = parameters;
             this.cookie = cookie;
         }
 
@@ -124,13 +178,16 @@ namespace rcsir.net.vk.importer.api
             switch (function)
             {
                 case VKFunction.LoadUserInfo:
-                    LoadUserInfo(context.userId, context.authToken);
+                    LoadUserInfo(function, context.userId, context.authToken);
                     break;
                 case VKFunction.LoadFriends:
-                    LoadFriends(context.userId, context.parameters);
+                    LoadFriends(function, context.userId, context.parameters);
                     break;
                 case VKFunction.GetMutual:
-                    GetMutual(context.userId, context.authToken, context.parameters, context.cookie);
+                    GetMutual(function, context.userId, context.authToken, context.parameters, context.cookie);
+                    break;
+                case VKFunction.UsersSearch:
+                    UsersSearch(function, context.authToken, context.parameters);
                     break;
                 default:
                     break;
@@ -138,7 +195,7 @@ namespace rcsir.net.vk.importer.api
         }
 
 
-        private void LoadUserInfo(String userId, String authToken)
+        private void LoadUserInfo(VKFunction function, String userId, String authToken)
         {
             StringBuilder sb = new StringBuilder(api_url);
             sb.Append("/method/getProfiles");
@@ -146,10 +203,10 @@ namespace rcsir.net.vk.importer.api
             sb.Append("uid=").Append(userId).Append('&');
             sb.Append("access_token=").Append(authToken);
 
-            makeRestCall(VKFunction.LoadUserInfo, sb.ToString());
+            makeRestCall(function, sb.ToString());
         }
 
-        private void LoadFriends(String userId, String parameters)
+        private void LoadFriends(VKFunction function, String userId, String parameters)
         {
             StringBuilder sb = new StringBuilder(api_url);
             sb.Append("/method/friends.get");
@@ -157,11 +214,11 @@ namespace rcsir.net.vk.importer.api
             sb.Append("user_id=").Append(userId).Append('&');
             sb.Append(parameters);
 
-            makeRestCall(VKFunction.LoadFriends, sb.ToString());
+            makeRestCall(function, sb.ToString());
             
         }
 
-        private void GetMutual(String userId, String authToken, String parameters, String cookie)
+        private void GetMutual(VKFunction function, String userId, String authToken, String parameters, String cookie)
         {
             StringBuilder sb = new StringBuilder(api_url);
             sb.Append("/method/friends.getMutual");
@@ -170,7 +227,19 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
 
-            makeRestCall(VKFunction.GetMutual, sb.ToString(), cookie);
+            makeRestCall(function, sb.ToString(), cookie);
+        }
+
+
+        private void UsersSearch(VKFunction function, String authToken, String parameters)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/users.search");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+
+            makeRestCall(function, sb.ToString());
         }
 
         private void makeRestCall(VKFunction function, String uri, String cookie = null)

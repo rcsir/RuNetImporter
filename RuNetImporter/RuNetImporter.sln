@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+# Visual C# Express 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VKImporter", "VKImporter\VKImporter.csproj", "{B8C66AD6-57EA-4C74-B47E-DCF4682B7F18}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestVKImporter", "TestVKImporter\TestVKImporter.csproj", "{9A7BCF1F-0432-4073-B7B5-C688273822A3}"
@@ -10,6 +10,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OKImporter", "OKImporter\OKImporter.csproj", "{B2092DD7-0FC3-473C-8FD6-D8355E14FF03}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestOKImporter", "TestOKImporter\TestOKImporter.csproj", "{01F75CF8-16B5-4801-9A20-F877FA166B4C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VKFinder", "VKFinder\VKFinder.csproj", "{DDE12AA1-025F-4919-B127-1698BFE70665}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -72,6 +74,16 @@ Global
 		{01F75CF8-16B5-4801-9A20-F877FA166B4C}.Release|Mixed Platforms.Build.0 = Release|x86
 		{01F75CF8-16B5-4801-9A20-F877FA166B4C}.Release|x86.ActiveCfg = Release|x86
 		{01F75CF8-16B5-4801-9A20-F877FA166B4C}.Release|x86.Build.0 = Release|x86
+		{DDE12AA1-025F-4919-B127-1698BFE70665}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{DDE12AA1-025F-4919-B127-1698BFE70665}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{DDE12AA1-025F-4919-B127-1698BFE70665}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{DDE12AA1-025F-4919-B127-1698BFE70665}.Debug|x86.ActiveCfg = Debug|x86
+		{DDE12AA1-025F-4919-B127-1698BFE70665}.Debug|x86.Build.0 = Debug|x86
+		{DDE12AA1-025F-4919-B127-1698BFE70665}.Release|Any CPU.ActiveCfg = Release|x86
+		{DDE12AA1-025F-4919-B127-1698BFE70665}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{DDE12AA1-025F-4919-B127-1698BFE70665}.Release|Mixed Platforms.Build.0 = Release|x86
+		{DDE12AA1-025F-4919-B127-1698BFE70665}.Release|x86.ActiveCfg = Release|x86
+		{DDE12AA1-025F-4919-B127-1698BFE70665}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

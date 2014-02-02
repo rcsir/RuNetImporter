@@ -53,10 +53,11 @@ namespace rcsir.net.vk.importer.Dialogs
         /// Initiates OAuth login process
         /// </summary>
         /// <param name="permissions">VK access permissions, comma separated</param>
-        public void Login(String permissions)
+        /// <param name="startFresh">flag that indicates that cookies should be deleted prior to login, default - false</param>
+        public void Login(String permissions, bool startFresh = false)
         {
-            // TODO: enable when not testing
-            deleteCookies();
+            if(startFresh)
+                deleteCookies();
 
             Debug.WriteLine("Navigate");
 
