@@ -59,7 +59,7 @@
             // OKButton
             // 
             this.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.OKButton.Location = new System.Drawing.Point(292, 277);
+            this.OKButton.Location = new System.Drawing.Point(292, 244);
             this.OKButton.Name = "OKButton";
             this.OKButton.Size = new System.Drawing.Size(75, 23);
             this.OKButton.TabIndex = 0;
@@ -70,7 +70,7 @@
             // CancelButton
             // 
             this.CancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelButton.Location = new System.Drawing.Point(211, 277);
+            this.CancelButton.Location = new System.Drawing.Point(211, 244);
             this.CancelButton.Name = "CancelButton";
             this.CancelButton.Size = new System.Drawing.Size(75, 23);
             this.CancelButton.TabIndex = 1;
@@ -119,6 +119,7 @@
             this.label3.Size = new System.Drawing.Size(52, 13);
             this.label3.TabIndex = 6;
             this.label3.Text = "Age From";
+            this.label3.Visible = false;
             // 
             // label4
             // 
@@ -128,6 +129,7 @@
             this.label4.Size = new System.Drawing.Size(42, 13);
             this.label4.TabIndex = 7;
             this.label4.Text = "Age To";
+            this.label4.Visible = false;
             // 
             // AgeFrom
             // 
@@ -135,6 +137,7 @@
             this.AgeFrom.Name = "AgeFrom";
             this.AgeFrom.Size = new System.Drawing.Size(79, 20);
             this.AgeFrom.TabIndex = 8;
+            this.AgeFrom.Visible = false;
             // 
             // AgeTo
             // 
@@ -142,6 +145,7 @@
             this.AgeTo.Name = "AgeTo";
             this.AgeTo.Size = new System.Drawing.Size(75, 20);
             this.AgeTo.TabIndex = 9;
+            this.AgeTo.Visible = false;
             // 
             // label5
             // 
@@ -167,19 +171,9 @@
             0,
             0,
             0});
-            this.YearFrom.Minimum = new decimal(new int[] {
-            1900,
-            0,
-            0,
-            0});
             this.YearFrom.Name = "YearFrom";
             this.YearFrom.Size = new System.Drawing.Size(79, 20);
             this.YearFrom.TabIndex = 13;
-            this.YearFrom.Value = new decimal(new int[] {
-            1900,
-            0,
-            0,
-            0});
             // 
             // label6
             // 
@@ -199,19 +193,9 @@
             0,
             0,
             0});
-            this.YearTo.Minimum = new decimal(new int[] {
-            1900,
-            0,
-            0,
-            0});
             this.YearTo.Name = "YearTo";
             this.YearTo.Size = new System.Drawing.Size(75, 20);
             this.YearTo.TabIndex = 14;
-            this.YearTo.Value = new decimal(new int[] {
-            1900,
-            0,
-            0,
-            0});
             // 
             // label7
             // 
@@ -239,19 +223,9 @@
             0,
             0,
             0});
-            this.MonthTo.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
             this.MonthTo.Name = "MonthTo";
             this.MonthTo.Size = new System.Drawing.Size(75, 20);
             this.MonthTo.TabIndex = 18;
-            this.MonthTo.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
             // 
             // MonthFrom
             // 
@@ -261,19 +235,9 @@
             0,
             0,
             0});
-            this.MonthFrom.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
             this.MonthFrom.Name = "MonthFrom";
             this.MonthFrom.Size = new System.Drawing.Size(79, 20);
             this.MonthFrom.TabIndex = 17;
-            this.MonthFrom.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
             // 
             // label9
             // 
@@ -289,7 +253,7 @@
             this.AcceptButton = this.OKButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(379, 312);
+            this.ClientSize = new System.Drawing.Size(379, 279);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.MonthTo);
             this.Controls.Add(this.MonthFrom);

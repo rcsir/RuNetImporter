@@ -10,10 +10,9 @@ using rcsir.net.vk.importer.api;
 
 namespace rcsir.net.vk.finder.Dialogs
 {
-
     public partial class UserSearchDialog : Form
     {
-        public String parameters {get;set;}
+        public SearchParameters searchParameters { get; set; }
 
         public UserSearchDialog()
         {
@@ -23,13 +22,13 @@ namespace rcsir.net.vk.finder.Dialogs
             this.CityComboBox.Items.Add(new VKCity("any", 0));
             this.CityComboBox.Items.Add(new VKCity("Санкт-Петербург", 2));
             this.CityComboBox.Items.Add(new VKCity("Москва", 1));
-            this.CityComboBox.SelectedIndex = 0;
+            this.CityComboBox.SelectedIndex = 1; // spb
 
             // sex combo
             this.SexComboBox.Items.Add(new VKSex("any", 0));
             this.SexComboBox.Items.Add(new VKSex("female", 1));
             this.SexComboBox.Items.Add(new VKSex("male", 2));
-            this.SexComboBox.SelectedIndex = 0;
+            this.SexComboBox.SelectedIndex = 2; // male
 
             
         }
@@ -42,49 +41,38 @@ namespace rcsir.net.vk.finder.Dialogs
         private void OKButton_Click(object sender, EventArgs e)
         {
             StringBuilder builder = new StringBuilder();
+            
+            this.searchParameters = new SearchParameters();
 
-            int value;
-
-            if (this.QueryTextBox.Text.Length > 0)
-            {
-                builder.Append("q=").Append(this.QueryTextBox.Text).Append("&");
-            }
+            this.searchParameters.query = this.QueryTextBox.Text.Trim();
 
             if (this.CityComboBox.SelectedItem != null)
             {
-                value = ((VKCity)this.CityComboBox.SelectedItem).Value;
-                if (value > 0)
-                {
-                    builder.Append("city=").Append(value).Append("&");
-                }
+                this.searchParameters.city = (VKCity)this.CityComboBox.SelectedItem;
+            }
+            else
+            {
+                this.searchParameters.city = null;
             }
 
             if (this.SexComboBox.SelectedItem != null)
             {
-                value = ((VKSex)this.SexComboBox.SelectedItem).Value;
-                builder.Append("sex=").Append(value).Append("&");
+                this.searchParameters.sex = (VKSex)this.SexComboBox.SelectedItem;
+            }
+            else
+            {
+                this.searchParameters.sex = null;
             }
 
-            if (this.YearFrom.Value > 1900)
-            {
-                builder.Append("birth_year=").Append(this.YearFrom.Value).Append("&");
-            }
+            this.searchParameters.yearStart = this.YearFrom.Value;
 
-            if (this.YearTo.Value > 1900)
-            {
-               // builder.Append("=").Append(this.YearTo.Value).Append("&");
-            }
+            this.searchParameters.yearEnd = this.YearTo.Value;
 
-            if (this.MonthFrom.Value > 0)
-            {
-                builder.Append("birth_month=").Append(this.MonthFrom.Value).Append("&");
-            }
+            this.searchParameters.monthStart = this.MonthFrom.Value;
 
-            if (this.MonthTo.Value > 0)
-            {
-                // builder.Append("=").Append(this.MonthTo.Value).Append("&");
-            } 
+            this.searchParameters.monthEnd = this.MonthTo.Value;
             
+            /*
             if (this.AgeFrom.Value > 0)
             {
                 builder.Append("age_from=").Append(this.AgeFrom.Value).Append("&");
@@ -94,9 +82,7 @@ namespace rcsir.net.vk.finder.Dialogs
             {
                 builder.Append("age_to=").Append(this.AgeTo.Value).Append("&");
             }
-
-            // set parameters
-            this.parameters = builder.ToString();
+            */
         }
 
         private void label6_Click(object sender, EventArgs e)
@@ -104,4 +90,16 @@ namespace rcsir.net.vk.finder.Dialogs
 
         }
     }
+
+    public class SearchParameters
+    {
+        public String query;
+        public VKCity city;
+        public VKSex sex;
+        public decimal yearStart;
+        public decimal yearEnd;
+        public decimal monthStart;
+        public decimal monthEnd;
+    };
+
 }
