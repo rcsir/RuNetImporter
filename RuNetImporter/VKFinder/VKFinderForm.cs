@@ -72,8 +72,11 @@ namespace VKFinder
             InitializeComponent();
 
             this.userIdTextBox.Text = "Please authorize";
+            this.FindProgressBar.Minimum = 1;
+            this.FindProgressBar.Maximum = 10000;
+            this.FindProgressBar.Step = 1;
 
-            updateStatus("Ready");
+            updateStatus(0, "Ready");
 
             vkLoginDialog = new VKLoginDialog();
             // subscribe for login events
@@ -94,7 +97,167 @@ namespace VKFinder
             // this.folderBrowserDialog1.RootFolder = Environment.SpecialFolder.MyComputer;
             this.WorkingFolderTextBox.Text = this.folderBrowserDialog1.SelectedPath;
 
+            // set up background worker handlers
+            this.backgroundFinderWorker.DoWork 
+                += new DoWorkEventHandler(findWork);
+
+            this.backgroundFinderWorker.ProgressChanged 
+                += new ProgressChangedEventHandler(findWorkProgressChanged);
+
+            this.backgroundFinderWorker.RunWorkerCompleted 
+                += new RunWorkerCompletedEventHandler(findWorkCompleted);
         }
+
+        private void findWork(Object sender, DoWorkEventArgs args)
+        {
+            // Do not access the form's BackgroundWorker reference directly. 
+            // Instead, use the reference provided by the sender parameter.
+            BackgroundWorker bw = sender as BackgroundWorker;
+
+            // Extract the argument. 
+            SearchParameters searchParameters = args.Argument as SearchParameters;
+
+            string parameters = parseSearchParameters(searchParameters);
+
+            decimal startYear = searchParameters.yearStart;
+            decimal stopYear = searchParameters.yearEnd;
+            decimal startMonth = searchParameters.monthStart;
+            decimal stopMonth = searchParameters.monthEnd;
+
+            if (stopYear < startYear)
+            {
+                stopYear = startYear;
+            }
+
+            if (startYear > 1900)
+            {
+                if (startMonth == 0)
+                {
+                    startMonth = 1;
+                }
+
+                if (stopMonth == 0)
+                {
+                    stopMonth = 12;
+                }
+            }
+
+            // step = 
+            int step = (int)(10000 / (((int)stopYear - (int)startYear + 1) * 12) + 0.5);
+
+            // create stream writer
+            String fileName = generateFileName(searchParameters);
+            writer = File.CreateText(fileName);
+            printHeader(writer);
+
+            VKRestContext context = new VKRestContext(this.userId, this.authToken);
+
+            // loop by birth year and month to maximize number of matches (1000 at a time)
+            StringBuilder sb = new StringBuilder();
+            for (decimal y = startYear; y <= stopYear; y++)
+            {
+                if (bw.CancellationPending)
+                    break;
+
+                decimal realStartMonth = startMonth;
+                if (y > startYear)
+                    realStartMonth = 1;
+
+                decimal realStopMonth = stopMonth;
+                if (y < stopYear)
+                    realStopMonth = 12;
+
+                for (decimal m = realStartMonth; m <= realStopMonth; m++)
+                {
+                    if (bw.CancellationPending)
+                        break;
+
+                    bw.ReportProgress(step, "Searching"); 
+
+                    this.run = true;
+                    this.totalCount = 0;
+                    this.currentOffset = 0;
+
+                    while (this.run)
+                    {
+
+                        if (bw.CancellationPending)
+                            break;
+
+                        sb.Length = 0;
+                        sb.Append("offset=").Append(currentOffset).Append("&");
+                        sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
+                        sb.Append(parameters);
+                        // append year if any
+                        if (y > 1900)
+                        {
+                            sb.Append("birth_year=").Append(y).Append("&");
+
+                            if (m > 0 && m < 13)
+                            {
+                                sb.Append("birth_month=").Append(m).Append("&");
+                            }
+                        }
+                        // append required fields
+                        sb.Append(REQUIRED_FIELDS);
+
+                        context.parameters = sb.ToString();
+                        Debug.WriteLine("Search parameters: " + context.parameters);
+
+                        context.cookie = this.currentOffset.ToString();
+                        vkRestApi.CallVKFunction(VKFunction.UsersSearch, context);
+
+                        // wait for the user data
+                        readyEvent.WaitOne();
+
+                        // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                        // TODO: account for time spent in processing
+                        Thread.Sleep(333);
+                        this.currentOffset += ITEMS_PER_REQUEST;
+                    }
+                }
+            }
+
+            writer.Close();
+
+            //args.Result = TimeConsumingOperation(bw, arg);
+
+            // If the operation was canceled by the user,  
+            // set the DoWorkEventArgs.Cancel property to true. 
+            if (bw.CancellationPending)
+            {
+                args.Cancel = true;
+            }
+
+        }
+
+        private void findWorkProgressChanged(Object sender, ProgressChangedEventArgs args)
+        {
+            String status = args.UserState as String;
+            int progress = args.ProgressPercentage;
+            updateStatus(progress, status);
+        }
+
+        private void findWorkCompleted(object sender, RunWorkerCompletedEventArgs args)
+        {
+            if (args.Error != null)
+            {
+                MessageBox.Show(args.Error.Message);
+                updateStatus(0, "Error");
+            }
+            else if (args.Cancelled)
+            {
+                MessageBox.Show("Search canceled!");
+                updateStatus(0, "Canceled");
+            }
+            else
+            {
+                //MessageBox.Show("Search complete!");
+                updateStatus(100, "Done");
+            }
+        }
+
+
 
         private void AuthorizeButton_Click(object sender, EventArgs e)
         {
@@ -151,13 +314,14 @@ namespace VKFinder
             {
                 // enable user controls
                 this.FindUsersButton.Enabled = true;
+                this.CancelButton.Enabled = true;
             }
             else
             {
                 // disable user controls
                 this.FindUsersButton.Enabled = false;
+                this.CancelButton.Enabled = false;
             }
-
         }
 
         private void FindUsersButton_Click(object sender, EventArgs e)
@@ -167,102 +331,13 @@ namespace VKFinder
             if (searchDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 SearchParameters searchParameters = searchDialog.searchParameters;
-                string parameters = parseSearchParameters(searchParameters);
-
-                decimal startYear = searchParameters.yearStart;
-                decimal stopYear = searchParameters.yearEnd;
-                decimal startMonth = searchParameters.monthStart;
-                decimal stopMonth = searchParameters.monthEnd;
-
-                if (stopYear < startYear)
-                {
-                    stopYear = startYear;
-                }
-
-                if (startYear > 1900)
-                {
-                    if (startMonth == 0)
-                    {
-                        startMonth = 1;
-                    }
-
-                    if (stopMonth == 0)
-                    {
-                        stopMonth = 12;
-                    }
-                }
-
-                // create stream writer
-                String fileName = generateFileName(searchParameters);
-                writer = File.CreateText(fileName);
-                printHeader(writer);
-
-                VKRestContext context = new VKRestContext(this.userId, this.authToken);
-
-                // loop by birth year and month to maximize number of matches (1000 at a time)
-                StringBuilder sb = new StringBuilder();
-                for (decimal y = startYear; y <= stopYear; y++)
-                {
-                    decimal realStartMonth = startMonth;
-                    if (y > startYear)
-                        realStartMonth = 1;
-
-                    decimal realStopMonth = stopMonth;
-                    if (y < stopYear)
-                        realStopMonth = 12;
-
-                    for (decimal m = realStartMonth; m <= realStopMonth; m++)
-                    {
-                        this.run = true;
-                        this.totalCount = 0;
-                        this.currentOffset = 0;
-
-                        while (this.run)
-                        {
-                            updateStatus("Searching");
-
-                            sb.Length = 0;
-                            sb.Append("offset=").Append(currentOffset).Append("&");
-                            sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
-                            sb.Append(parameters);
-                            // append year if any
-                            if (y > 1900)
-                            {
-                                sb.Append("birth_year=").Append(y).Append("&");
-
-                                if (m > 0 && m < 13)
-                                {
-                                    sb.Append("birth_month=").Append(m).Append("&");
-                                }
-                            }
-                            // append required fields
-                            sb.Append(REQUIRED_FIELDS);
-
-                            context.parameters = sb.ToString();
-                            Debug.WriteLine("Search parameters: " + context.parameters);
-
-                            context.cookie = this.currentOffset.ToString();
-                            vkRestApi.CallVKFunction(VKFunction.UsersSearch, context);
-
-                            // wait for the user data
-                            readyEvent.WaitOne();
-
-                            // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                            // TODO: account for time spent in processing
-                            Thread.Sleep(333);
-                            this.currentOffset += ITEMS_PER_REQUEST;
-                        }
-                    }
-                }
-
-                updateStatus("Done");
-
-                writer.Close();
+                this.backgroundFinderWorker.RunWorkerAsync(searchParameters);
             }
             else
             {
                 Debug.WriteLine("Search canceled");
             }
+
         }
 
         //================================
@@ -273,7 +348,7 @@ namespace VKFinder
         {
             int count = data[VKRestApi.RESPONSE_BODY].Count();
 
-            updateStatus("Processing " + count.ToString() + " records.");
+            this.backgroundFinderWorker.ReportProgress(0, "Processing " + count.ToString() + " records.");
 
             if (count <= 1)
             {
@@ -429,9 +504,20 @@ namespace VKFinder
             }
         }
 
-        private void updateStatus(String status)
+        private void updateStatus(int progress, String status)
         {
+            if (progress > 0)
+            {
+                this.FindProgressBar.Increment(progress);
+
+            }
+
             this.toolStripStatusLabel1.Text = status;
+        }
+
+        private void CancelButton_Click(object sender, EventArgs e)
+        {
+            this.backgroundFinderWorker.CancelAsync();
         }
     }
 }
