@@ -19,7 +19,8 @@ namespace rcsir.net.vk.importer.api
         LoadUserInfo,
         LoadFriends,
         GetMutual,
-        UsersSearch
+        UsersSearch,
+        WallGet
 
     };
 
@@ -189,6 +190,9 @@ namespace rcsir.net.vk.importer.api
                 case VKFunction.UsersSearch:
                     UsersSearch(function, context.authToken, context.parameters);
                     break;
+                case VKFunction.WallGet:
+                    WallGet(function, context.authToken, context.parameters);
+                    break;
                 default:
                     break;
             }
@@ -238,6 +242,19 @@ namespace rcsir.net.vk.importer.api
             sb.Append('?');
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
+
+            makeRestCall(function, sb.ToString());
+        }
+
+        // WALL GET v 5.11
+        private void WallGet(VKFunction function, String authToken, String parameters)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/wall.get");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+            sb.Append('&').Append("v=5.11");
 
             makeRestCall(function, sb.ToString());
         }

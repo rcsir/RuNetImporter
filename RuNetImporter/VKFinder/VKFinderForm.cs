@@ -142,7 +142,7 @@ namespace VKFinder
                 }
             }
 
-            // step = 
+            // figure out step
             int step = (int)(10000 / (((int)stopYear - (int)startYear + 1) * 12) + 0.5);
 
             // create stream writer
@@ -282,9 +282,6 @@ namespace VKFinder
         {
             switch (onDataArgs.function)
             {
-                case VKFunction.LoadUserInfo:
-                    //OnLoadUserInfo(onDataArgs.data);
-                    break;
                 case VKFunction.UsersSearch:
                     OnUsersSearch(onDataArgs.data);
                     break;
@@ -314,13 +311,13 @@ namespace VKFinder
             {
                 // enable user controls
                 this.FindUsersButton.Enabled = true;
-                this.CancelButton.Enabled = true;
+                this.CancelFindButton.Enabled = true;
             }
             else
             {
                 // disable user controls
                 this.FindUsersButton.Enabled = false;
-                this.CancelButton.Enabled = false;
+                this.CancelFindButton.Enabled = false;
             }
         }
 
@@ -337,7 +334,6 @@ namespace VKFinder
             {
                 Debug.WriteLine("Search canceled");
             }
-
         }
 
         //================================

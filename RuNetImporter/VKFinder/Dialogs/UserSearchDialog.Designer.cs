@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.OKButton = new System.Windows.Forms.Button();
-            this.CancelButton = new System.Windows.Forms.Button();
+            this.CancelSearchButton = new System.Windows.Forms.Button();
             this.CityComboBox = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
@@ -67,15 +67,16 @@
             this.OKButton.UseVisualStyleBackColor = true;
             this.OKButton.Click += new System.EventHandler(this.OKButton_Click);
             // 
-            // CancelButton
+            // CancelSearchButton
             // 
-            this.CancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelButton.Location = new System.Drawing.Point(211, 244);
-            this.CancelButton.Name = "CancelButton";
-            this.CancelButton.Size = new System.Drawing.Size(75, 23);
-            this.CancelButton.TabIndex = 1;
-            this.CancelButton.Text = "Cancel";
-            this.CancelButton.UseVisualStyleBackColor = true;
+            this.CancelSearchButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.CancelSearchButton.Location = new System.Drawing.Point(211, 244);
+            this.CancelSearchButton.Name = "CancelSearchButton";
+            this.CancelSearchButton.Size = new System.Drawing.Size(75, 23);
+            this.CancelSearchButton.TabIndex = 1;
+            this.CancelSearchButton.Text = "Cancel";
+            this.CancelSearchButton.UseVisualStyleBackColor = true;
+            this.CancelSearchButton.Click += new System.EventHandler(this.CancelSearchButton_Click);
             // 
             // CityComboBox
             // 
@@ -272,7 +273,7 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.CityComboBox);
-            this.Controls.Add(this.CancelButton);
+            this.Controls.Add(this.CancelSearchButton);
             this.Controls.Add(this.OKButton);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.KeyPreview = true;
@@ -295,7 +296,7 @@
         #endregion
 
         private System.Windows.Forms.Button OKButton;
-        private System.Windows.Forms.Button CancelButton;
+        private System.Windows.Forms.Button CancelSearchButton;
         private System.Windows.Forms.ComboBox CityComboBox;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;

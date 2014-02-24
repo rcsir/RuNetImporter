@@ -37,7 +37,7 @@
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.backgroundFinderWorker = new System.ComponentModel.BackgroundWorker();
-            this.CancelButton = new System.Windows.Forms.Button();
+            this.CancelFindButton = new System.Windows.Forms.Button();
             this.FindProgressBar = new System.Windows.Forms.ProgressBar();
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -113,14 +113,14 @@
             // 
             // CancelButton
             // 
-            this.CancelButton.Enabled = false;
-            this.CancelButton.Location = new System.Drawing.Point(199, 145);
-            this.CancelButton.Name = "CancelButton";
-            this.CancelButton.Size = new System.Drawing.Size(161, 30);
-            this.CancelButton.TabIndex = 6;
-            this.CancelButton.Text = "Cancel";
-            this.CancelButton.UseVisualStyleBackColor = true;
-            this.CancelButton.Click += new System.EventHandler(this.CancelButton_Click);
+            this.CancelFindButton.Enabled = false;
+            this.CancelFindButton.Location = new System.Drawing.Point(199, 145);
+            this.CancelFindButton.Name = "CancelButton";
+            this.CancelFindButton.Size = new System.Drawing.Size(161, 30);
+            this.CancelFindButton.TabIndex = 6;
+            this.CancelFindButton.Text = "Cancel";
+            this.CancelFindButton.UseVisualStyleBackColor = true;
+            this.CancelFindButton.Click += new System.EventHandler(this.CancelButton_Click);
             // 
             // FindProgressBar
             // 
@@ -136,7 +136,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(371, 260);
             this.Controls.Add(this.FindProgressBar);
-            this.Controls.Add(this.CancelButton);
+            this.Controls.Add(this.CancelFindButton);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.WorkingFolderTextBox);
             this.Controls.Add(this.button1);
@@ -164,7 +164,7 @@
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
         private System.ComponentModel.BackgroundWorker backgroundFinderWorker;
-        private System.Windows.Forms.Button CancelButton;
+        private System.Windows.Forms.Button CancelFindButton;
         private System.Windows.Forms.ProgressBar FindProgressBar;
     }
 }

@@ -89,6 +89,11 @@ namespace rcsir.net.vk.finder.Dialogs
         {
 
         }
+
+        private void CancelSearchButton_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 
     public class SearchParameters
