@@ -519,5 +519,15 @@ namespace VKFinder
         {
             this.backgroundFinderWorker.CancelAsync();
         }
+
+        private void VKFinderForm_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void userIdTextBox_TextChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }

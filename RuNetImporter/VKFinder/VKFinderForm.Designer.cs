@@ -59,6 +59,7 @@
             this.userIdTextBox.ReadOnly = true;
             this.userIdTextBox.Size = new System.Drawing.Size(348, 20);
             this.userIdTextBox.TabIndex = 1;
+            this.userIdTextBox.TextChanged += new System.EventHandler(this.userIdTextBox_TextChanged);
             // 
             // FindUsersButton
             // 
@@ -144,6 +145,7 @@
             this.Controls.Add(this.AuthorizeButton);
             this.Name = "VKFinderForm";
             this.Text = "VKFinder";
+            this.Load += new System.EventHandler(this.VKFinderForm_Load);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
             this.ResumeLayout(false);
