@@ -79,7 +79,7 @@ namespace rcsir.net.vk.importer.Dialogs
         public void Logout()
         {
             // TODO: enable when not testing
-            deleteCookies();
+            //deleteCookies();
             
             webBrowserLogin.Navigate("http://vk.com/");
             this.ShowDialog();

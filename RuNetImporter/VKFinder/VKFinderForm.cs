@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Threading;
@@ -21,7 +22,7 @@ namespace VKFinder
 {
     public partial class VKFinderForm : Form
     {
-        private static readonly string REQUIRED_FIELDS = "fields=photo,screen_name,sex,bdate,contacts,status";
+        private static readonly string REQUIRED_FIELDS = "fields=photo,screen_name,sex,bdate,contacts,relation,status";
 
         private static readonly int ITEMS_PER_REQUEST = 1000;
         private long currentOffset;
@@ -34,6 +35,7 @@ namespace VKFinder
         private long expiresAt;
         private static AutoResetEvent readyEvent = new AutoResetEvent(false);
         private volatile bool run;
+        private bool withPhone = false;
 
         // document
         StreamWriter writer;
@@ -42,7 +44,7 @@ namespace VKFinder
         {
             public Person()
             {
-                uid = "";
+                id = "";
                 firstName = "";
                 lastName = "";
                 screenName = "";
@@ -51,10 +53,11 @@ namespace VKFinder
                 photo = "";
                 mobilePhone = "";
                 homePhone = "";
+                relation = "";
                 status = "";
 
             }
-            public String uid { get; set; }
+            public String id { get; set; }
             public String firstName { get; set; }
             public String lastName { get; set; }
             public String screenName { get; set; }
@@ -63,6 +66,7 @@ namespace VKFinder
             public String photo { get; set; }
             public String mobilePhone { get; set; }
             public String homePhone { get; set; }
+            public String relation { get; set; }
             public String status { get; set; }
 
         };
@@ -72,7 +76,7 @@ namespace VKFinder
             InitializeComponent();
 
             this.userIdTextBox.Text = "Please authorize";
-            this.FindProgressBar.Minimum = 1;
+            this.FindProgressBar.Minimum = 0;
             this.FindProgressBar.Maximum = 10000;
             this.FindProgressBar.Step = 1;
 
@@ -119,10 +123,10 @@ namespace VKFinder
 
             string parameters = parseSearchParameters(searchParameters);
 
-            decimal startYear = searchParameters.yearStart;
-            decimal stopYear = searchParameters.yearEnd;
-            decimal startMonth = searchParameters.monthStart;
-            decimal stopMonth = searchParameters.monthEnd;
+            Int32 startYear = (Int32)searchParameters.yearStart;
+            Int32 stopYear = (Int32)searchParameters.yearEnd;
+            Int32 startMonth = (Int32)searchParameters.monthStart;
+            Int32 stopMonth = (Int32)searchParameters.monthEnd;
 
             if (stopYear < startYear)
             {
@@ -140,10 +144,39 @@ namespace VKFinder
                 {
                     stopMonth = 12;
                 }
+            } 
+            else
+            {
+                startYear = stopYear = 1900;
+                startMonth = stopMonth = 1;
+                searchParameters.useSlowSearch = false;
+            }
+
+            DateTime startDate = new DateTime(startYear, startMonth, 1);
+            DateTime stopDate = new DateTime(stopYear, stopMonth, 1);
+
+            if(searchParameters.useSlowSearch)
+            {
+                // set stop date to the last day of the stop month
+                stopDate = stopDate.AddMonths(1).AddDays(-1); 
             }
 
             // figure out step
-            int step = (int)(10000 / (((int)stopYear - (int)startYear + 1) * 12) + 0.5);
+            int step = 10000;
+                
+            if( startYear > 1900)
+            {
+                if(searchParameters.useSlowSearch)
+                {
+                    // calculate number of days
+                    step = (int)(10000 / ((stopDate - startDate).TotalDays) + 0.5);
+                }
+                else
+                {
+                    // calculate number of months 
+                    step = (int)(10000 / ((stopDate.Year - startDate.Year) * 12  + stopDate.Month - startDate.Month + 1));
+                }
+            }
 
             // create stream writer
             String fileName = generateFileName(searchParameters);
@@ -154,68 +187,57 @@ namespace VKFinder
 
             // loop by birth year and month to maximize number of matches (1000 at a time)
             StringBuilder sb = new StringBuilder();
-            for (decimal y = startYear; y <= stopYear; y++)
+            while(startDate <= stopDate)
             {
                 if (bw.CancellationPending)
                     break;
 
-                decimal realStartMonth = startMonth;
-                if (y > startYear)
-                    realStartMonth = 1;
+                bw.ReportProgress(step, "Searching"); 
 
-                decimal realStopMonth = stopMonth;
-                if (y < stopYear)
-                    realStopMonth = 12;
+                this.run = true;
+                this.totalCount = 0;
+                this.currentOffset = 0;
 
-                for (decimal m = realStartMonth; m <= realStopMonth; m++)
+                while (this.run &&
+                    this.currentOffset <= this.totalCount)
                 {
                     if (bw.CancellationPending)
                         break;
 
-                    bw.ReportProgress(step, "Searching"); 
-
-                    this.run = true;
-                    this.totalCount = 0;
-                    this.currentOffset = 0;
-
-                    while (this.run)
+                    sb.Length = 0;
+                    sb.Append("offset=").Append(currentOffset).Append("&");
+                    sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
+                    sb.Append(parameters);
+                    // append bdate 
+                    if (startYear > 1900)
                     {
-
-                        if (bw.CancellationPending)
-                            break;
-
-                        sb.Length = 0;
-                        sb.Append("offset=").Append(currentOffset).Append("&");
-                        sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
-                        sb.Append(parameters);
-                        // append year if any
-                        if (y > 1900)
+                        sb.Append("birth_year=").Append(startDate.Year).Append("&");
+                        sb.Append("birth_month=").Append(startDate.Month).Append("&");
+                        if(searchParameters.useSlowSearch)
                         {
-                            sb.Append("birth_year=").Append(y).Append("&");
-
-                            if (m > 0 && m < 13)
-                            {
-                                sb.Append("birth_month=").Append(m).Append("&");
-                            }
+                            sb.Append("birth_day=").Append(startDate.Day).Append("&");
                         }
-                        // append required fields
-                        sb.Append(REQUIRED_FIELDS);
-
-                        context.parameters = sb.ToString();
-                        Debug.WriteLine("Search parameters: " + context.parameters);
-
-                        context.cookie = this.currentOffset.ToString();
-                        vkRestApi.CallVKFunction(VKFunction.UsersSearch, context);
-
-                        // wait for the user data
-                        readyEvent.WaitOne();
-
-                        // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                        // TODO: account for time spent in processing
-                        Thread.Sleep(333);
-                        this.currentOffset += ITEMS_PER_REQUEST;
                     }
+                    // append required fields
+                    sb.Append(REQUIRED_FIELDS);
+
+                    context.parameters = sb.ToString();
+                    Debug.WriteLine("Search parameters: " + context.parameters);
+
+                    context.cookie = this.currentOffset.ToString();
+                    vkRestApi.CallVKFunction(VKFunction.UsersSearch, context);
+
+                    // wait for the user data
+                    readyEvent.WaitOne();
+
+                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                    // TODO: account for time spent in processing
+                    Thread.Sleep(333);
+                    this.currentOffset += ITEMS_PER_REQUEST;
                 }
+
+                // increment date
+                startDate = searchParameters.useSlowSearch ? startDate.AddDays(1) : startDate.AddMonths(1);
             }
 
             writer.Close();
@@ -253,15 +275,13 @@ namespace VKFinder
             else
             {
                 //MessageBox.Show("Search complete!");
-                updateStatus(100, "Done");
+                updateStatus(10000, "Done");
             }
         }
 
-
-
         private void AuthorizeButton_Click(object sender, EventArgs e)
         {
-            bool reLogin = true; // if true - will delete cookies and relogin, use false for dev.
+            bool reLogin = false; // if true - will delete cookies and relogin, use false for dev.
             vkLoginDialog.Login("friends", reLogin); // default permission - friends
         }
 
@@ -299,7 +319,8 @@ namespace VKFinder
         {
             // TODO: notify user about the error
             Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
-            // indicate that data is ready and we can continue
+            this.backgroundFinderWorker.CancelAsync();
+            // indicate that we can continue
             readyEvent.Set();
         }
 
@@ -328,6 +349,9 @@ namespace VKFinder
             if (searchDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 SearchParameters searchParameters = searchDialog.searchParameters;
+                this.withPhone = searchParameters.withPhone;
+
+                updateStatus(-1, "Start");
                 this.backgroundFinderWorker.RunWorkerAsync(searchParameters);
             }
             else
@@ -342,54 +366,64 @@ namespace VKFinder
         // process users search response
         private void OnUsersSearch(JObject data)
         {
-            int count = data[VKRestApi.RESPONSE_BODY].Count();
-
-            this.backgroundFinderWorker.ReportProgress(0, "Processing " + count.ToString() + " records.");
-
-            if (count <= 1)
+            if (data[VKRestApi.RESPONSE_BODY] == null)
             {
                 this.run = false;
+                return;
             }
 
             if (totalCount <= 0)
             {
-                totalCount = data[VKRestApi.RESPONSE_BODY][0].ToObject<long>();
+                totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
             }
+
+            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+
+            if (count <= 0)
+            {
+                this.run = false;
+                return;
+            }
+
+            this.backgroundFinderWorker.ReportProgress(0, "Processing " + count + " records out of " + totalCount);
 
             List<Person> persons = new List<Person>();
             // process response body
-            for (int i = 1; i < count; ++i)
+            for (int i = 0; i < count; ++i)
             {
-                JObject personObj = data[VKRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+                JObject personObj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
 
-                if (personObj["mobile_phone"] != null ||
-                    personObj["home_phone"] != null)
+
+                // TODO: check phone with regex.
+                String t1, t2;
+                t1 = personObj["mobile_phone"] != null ? parsePhone(personObj["mobile_phone"].ToString()) : "";
+                t2 = personObj["home_phone"] != null ? parsePhone(personObj["home_phone"].ToString()) : "";
+
+                if (withPhone &&
+                    t1.Length < 7 &&
+                    t2.Length < 7)
                 {
-                    Person person = new Person();
-
-                    // TODO: check phone with regex.
-                    String tmp;
-                    tmp = parsePhone(personObj["mobile_phone"] != null ? personObj["mobile_phone"].ToString() : "");
-                    person.mobilePhone = tmp.Length >= 7 ? tmp : "";
-                    tmp = parsePhone(personObj["home_phone"] != null ? personObj["home_phone"].ToString() : "");
-                    person.homePhone = tmp.Length >= 7 ? tmp : "";
-
-                    if (person.mobilePhone.Length == 0 &&
-                        person.homePhone.Length == 0)
-                    {
-                        continue; // invalid phone number
-                    }
-
-                    person.uid = personObj["uid"].ToString();
-                    person.firstName = personObj["first_name"].ToString();
-                    person.lastName = personObj["last_name"].ToString();
-                    person.screenName = personObj["screen_name"] != null ? personObj["screen_name"].ToString() : "";
-                    person.sex = personObj["sex"] != null ? personObj["sex"].ToString() : "";
-                    person.bdate = personObj["bdate"] != null ? personObj["bdate"].ToString() : "";
-                    person.photo = personObj["photo"] != null ? personObj["photo"].ToString() : "";
-                    person.status = personObj["status"] != null ? personObj["status"].ToString() : "";
-                    persons.Add(person);
+                    continue; // invalid phone number
                 }
+
+                Person person = new Person();
+                person.mobilePhone = t1;
+                person.homePhone = t2;
+                person.id = personObj["id"].ToString();
+                person.firstName = personObj["first_name"].ToString();
+                person.lastName = personObj["last_name"].ToString();
+                person.screenName = personObj["screen_name"] != null ? personObj["screen_name"].ToString() : "";
+                person.sex = personObj["sex"] != null ? personObj["sex"].ToString() : "";
+                person.bdate = personObj["bdate"] != null ? personObj["bdate"].ToString() : "";
+                person.photo = personObj["photo"] != null ? personObj["photo"].ToString() : "";
+                person.relation = personObj["relation"] != null ? personObj["relation"].ToString() : "";
+                string t = personObj["status"] != null ? personObj["status"].ToString() : "";
+                if (t.Length > 0)
+                {
+                    person.status = Regex.Replace(t, @"\r\n?|\n", "");
+                }
+            
+                persons.Add(person);
             }
 
             if (persons.Count > 0)
@@ -477,16 +511,16 @@ namespace VKFinder
 
         private void printHeader(StreamWriter writer)
         {
-            writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"",
-                    "uid", "Имя", "Фамилия", "Псевдоним", "пол", "д.рождения", "мобильный", "домашний", "фото", "статус");
+            writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"",
+                    "id", "Имя", "Фамилия", "Псевдоним", "пол", "д.рождения", "мобильный", "домашний", "фото", "отношения", "статус");
         }
 
         private void UpdateFile(List<Person> persons)
         {
             foreach (Person p in persons)
             {
-                writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"",
-                    p.uid, p.firstName, p.lastName, p.screenName, p.sex, p.bdate, p.mobilePhone, p.homePhone, p.photo, p.status);
+                writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"",
+                    p.id, p.firstName, p.lastName, p.screenName, p.sex, p.bdate, p.mobilePhone, p.homePhone, p.photo, p.relation, p.status);
             }
         }
 
@@ -506,6 +540,11 @@ namespace VKFinder
             {
                 this.FindProgressBar.Increment(progress);
 
+            } 
+            else if (progress < 0)
+            {
+                // reset 
+                this.FindProgressBar.Value = 0;
             }
 
             this.toolStripStatusLabel1.Text = status;

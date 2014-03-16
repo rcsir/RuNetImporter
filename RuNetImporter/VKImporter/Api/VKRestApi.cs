@@ -115,6 +115,8 @@ namespace rcsir.net.vk.importer.api
             this.userId = userId;
             this.authToken = authToken;
             this.parameters = null;
+            this.offset = 0;
+            this.count = 1000;
             this.cookie = null;
         }
 
@@ -122,19 +124,26 @@ namespace rcsir.net.vk.importer.api
             this(userId, authToken)
         {
             this.parameters = parameters;
-            this.cookie = null;
         }
 
-        public VKRestContext(String userId, String authToken, String parameters, String cookie) :
+        public VKRestContext(String userId, String authToken, String parameters, long offset, long count) :
             this(userId, authToken, parameters)
+        {
+            this.offset = offset;
+            this.count = count;
+        }
+
+        public VKRestContext(String userId, String authToken, String parameters, long offset, long count, String cookie) :
+            this(userId, authToken, parameters, offset, count)
         {
             this.cookie = cookie;
         }
 
         public readonly String userId;
         public readonly String authToken;
-
         public String parameters {get; set;}
+        public long offset { get; set; } // commonly used in lookup api
+        public long count { get; set; } // commonly used in lookup api 
         public String cookie { get; set; }
     }
 
@@ -242,6 +251,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append('?');
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
+            sb.Append('&').Append("v=5.12");
 
             makeRestCall(function, sb.ToString());
         }
@@ -288,7 +298,7 @@ namespace rcsir.net.vk.importer.api
                         JObject o = JObject.Parse(responseBody);
                         if (o[RESPONSE_BODY] != null)
                         {
-                            Debug.WriteLine("REST response: " + o[RESPONSE_BODY].ToString());
+                            // Debug.WriteLine("REST response: " + o[RESPONSE_BODY].ToString());
                             // OK - notify listeners
                             if (OnData != null)
                             {
@@ -298,8 +308,7 @@ namespace rcsir.net.vk.importer.api
                         }
                         else if (o[ERROR_BODY] != null)
                         {
-                            Debug.WriteLine("REST error: " + o[ERROR_BODY].ToString());
-
+                            // Debug.WriteLine("REST error: " + o[ERROR_BODY].ToString());
                             // Error - notify listeners
                             if (OnError != null)
                             {

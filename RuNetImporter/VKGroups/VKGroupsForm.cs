@@ -332,6 +332,7 @@ namespace VKGroups
             if (data[VKRestApi.RESPONSE_BODY] == null)
             {
                 this.isRunning = false;
+                return;
             }
 
             if(this.totalCount == 0)
@@ -360,7 +361,6 @@ namespace VKGroups
                 {
                     post.text = Regex.Replace(t, @"\r\n?|\n", "");
                 }
-                //post. = postObj[""] != null ? postObj[""].ToString() : "";
             
                 posts.Add(post);
             }

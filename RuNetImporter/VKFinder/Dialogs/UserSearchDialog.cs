@@ -71,7 +71,11 @@ namespace rcsir.net.vk.finder.Dialogs
             this.searchParameters.monthStart = this.MonthFrom.Value;
 
             this.searchParameters.monthEnd = this.MonthTo.Value;
-            
+
+            this.searchParameters.withPhone = this.withPhone.Checked;
+
+            this.searchParameters.useSlowSearch = this.useSlowSearch.Checked;
+
             /*
             if (this.AgeFrom.Value > 0)
             {
@@ -105,6 +109,8 @@ namespace rcsir.net.vk.finder.Dialogs
         public decimal yearEnd;
         public decimal monthStart;
         public decimal monthEnd;
+        public bool withPhone;
+        public bool useSlowSearch;
     };
 
 }

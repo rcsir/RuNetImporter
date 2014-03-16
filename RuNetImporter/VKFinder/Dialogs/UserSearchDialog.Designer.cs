@@ -48,6 +48,8 @@
             this.MonthTo = new System.Windows.Forms.NumericUpDown();
             this.MonthFrom = new System.Windows.Forms.NumericUpDown();
             this.label9 = new System.Windows.Forms.Label();
+            this.withPhone = new System.Windows.Forms.CheckBox();
+            this.useSlowSearch = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.AgeFrom)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.AgeTo)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.YearFrom)).BeginInit();
@@ -59,7 +61,7 @@
             // OKButton
             // 
             this.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.OKButton.Location = new System.Drawing.Point(292, 244);
+            this.OKButton.Location = new System.Drawing.Point(292, 269);
             this.OKButton.Name = "OKButton";
             this.OKButton.Size = new System.Drawing.Size(75, 23);
             this.OKButton.TabIndex = 0;
@@ -70,7 +72,7 @@
             // CancelSearchButton
             // 
             this.CancelSearchButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelSearchButton.Location = new System.Drawing.Point(211, 244);
+            this.CancelSearchButton.Location = new System.Drawing.Point(211, 269);
             this.CancelSearchButton.Name = "CancelSearchButton";
             this.CancelSearchButton.Size = new System.Drawing.Size(75, 23);
             this.CancelSearchButton.TabIndex = 1;
@@ -249,12 +251,38 @@
             this.label9.TabIndex = 16;
             this.label9.Text = "Month From";
             // 
+            // withPhone
+            // 
+            this.withPhone.AutoSize = true;
+            this.withPhone.Checked = true;
+            this.withPhone.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.withPhone.Location = new System.Drawing.Point(285, 235);
+            this.withPhone.Name = "withPhone";
+            this.withPhone.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.withPhone.Size = new System.Drawing.Size(82, 17);
+            this.withPhone.TabIndex = 20;
+            this.withPhone.Text = "With Phone";
+            this.withPhone.UseVisualStyleBackColor = true;
+            // 
+            // useSlowSearch
+            // 
+            this.useSlowSearch.AutoSize = true;
+            this.useSlowSearch.Location = new System.Drawing.Point(97, 235);
+            this.useSlowSearch.Name = "useSlowSearch";
+            this.useSlowSearch.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.useSlowSearch.Size = new System.Drawing.Size(108, 17);
+            this.useSlowSearch.TabIndex = 21;
+            this.useSlowSearch.Text = "Use Slow Search";
+            this.useSlowSearch.UseVisualStyleBackColor = true;
+            // 
             // UserSearchDialog
             // 
             this.AcceptButton = this.OKButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(379, 279);
+            this.ClientSize = new System.Drawing.Size(379, 306);
+            this.Controls.Add(this.useSlowSearch);
+            this.Controls.Add(this.withPhone);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.MonthTo);
             this.Controls.Add(this.MonthFrom);
@@ -315,5 +343,7 @@
         private System.Windows.Forms.NumericUpDown MonthTo;
         private System.Windows.Forms.Label label9;
         internal System.Windows.Forms.NumericUpDown MonthFrom;
+        private System.Windows.Forms.CheckBox withPhone;
+        private System.Windows.Forms.CheckBox useSlowSearch;
     }
 }
