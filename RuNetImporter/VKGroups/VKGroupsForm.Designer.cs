@@ -33,13 +33,13 @@
             this.backgroundGroupsWorker = new System.ComponentModel.BackgroundWorker();
             this.groupsStatusStrip = new System.Windows.Forms.StatusStrip();
             this.groupsStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.groupsStripProgressBar = new System.Windows.Forms.ToolStripProgressBar();
             this.button1 = new System.Windows.Forms.Button();
             this.WorkingFolderTextBox = new System.Windows.Forms.TextBox();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             this.FindGroupsButton = new System.Windows.Forms.Button();
             this.DownloadGroupPosts = new System.Windows.Forms.Button();
             this.CancelJobBurron = new System.Windows.Forms.Button();
+            this.GroupsProgressBar = new System.Windows.Forms.ProgressBar();
             this.groupsStatusStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -69,8 +69,7 @@
             // groupsStatusStrip
             // 
             this.groupsStatusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.groupsStripStatusLabel,
-            this.groupsStripProgressBar});
+            this.groupsStripStatusLabel});
             this.groupsStatusStrip.Location = new System.Drawing.Point(0, 334);
             this.groupsStatusStrip.Name = "groupsStatusStrip";
             this.groupsStatusStrip.Size = new System.Drawing.Size(375, 22);
@@ -82,13 +81,6 @@
             this.groupsStripStatusLabel.Name = "groupsStripStatusLabel";
             this.groupsStripStatusLabel.Size = new System.Drawing.Size(39, 17);
             this.groupsStripStatusLabel.Text = "Status";
-            // 
-            // groupsStripProgressBar
-            // 
-            this.groupsStripProgressBar.Name = "groupsStripProgressBar";
-            this.groupsStripProgressBar.Size = new System.Drawing.Size(300, 16);
-            this.groupsStripProgressBar.Step = 1;
-            this.groupsStripProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             // 
             // button1
             // 
@@ -131,7 +123,7 @@
             // CancelJobBurron
             // 
             this.CancelJobBurron.Enabled = false;
-            this.CancelJobBurron.Location = new System.Drawing.Point(12, 292);
+            this.CancelJobBurron.Location = new System.Drawing.Point(12, 263);
             this.CancelJobBurron.Name = "CancelJobBurron";
             this.CancelJobBurron.Size = new System.Drawing.Size(348, 30);
             this.CancelJobBurron.TabIndex = 9;
@@ -139,11 +131,20 @@
             this.CancelJobBurron.UseVisualStyleBackColor = true;
             this.CancelJobBurron.Click += new System.EventHandler(this.CancelJobBurron_Click);
             // 
+            // GroupsProgressBar
+            // 
+            this.GroupsProgressBar.Location = new System.Drawing.Point(12, 302);
+            this.GroupsProgressBar.Name = "GroupsProgressBar";
+            this.GroupsProgressBar.Size = new System.Drawing.Size(348, 22);
+            this.GroupsProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+            this.GroupsProgressBar.TabIndex = 10;
+            // 
             // VKGroupsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(375, 356);
+            this.Controls.Add(this.GroupsProgressBar);
             this.Controls.Add(this.CancelJobBurron);
             this.Controls.Add(this.DownloadGroupPosts);
             this.Controls.Add(this.FindGroupsButton);
@@ -168,13 +169,13 @@
         private System.ComponentModel.BackgroundWorker backgroundGroupsWorker;
         private System.Windows.Forms.StatusStrip groupsStatusStrip;
         private System.Windows.Forms.ToolStripStatusLabel groupsStripStatusLabel;
-        private System.Windows.Forms.ToolStripProgressBar groupsStripProgressBar;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.TextBox WorkingFolderTextBox;
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
         private System.Windows.Forms.Button FindGroupsButton;
         private System.Windows.Forms.Button DownloadGroupPosts;
         private System.Windows.Forms.Button CancelJobBurron;
+        private System.Windows.Forms.ProgressBar GroupsProgressBar;
     }
 }
 

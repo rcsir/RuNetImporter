@@ -79,7 +79,7 @@ namespace rcsir.net.vk.importer.Dialogs
         public void Logout()
         {
             // TODO: enable when not testing
-            deleteCookies();
+            // deleteCookies();
             
             webBrowserLogin.Navigate("http://vk.com/");
             this.ShowDialog();
@@ -103,26 +103,32 @@ namespace rcsir.net.vk.importer.Dialogs
                 String[] tokens = System.Text.RegularExpressions.Regex.Split(stringUrl, "[=&#]");
                 for(int i = 0; i < tokens.Length; ++i)
                 {
-                    Debug.WriteLine("Token = " + tokens[i]);
+                    Debug.Write("Token = " + tokens[i]);
                     switch (tokens[i])
                     {
                         case "access_token":
                             if (i < tokens.Length)
                             {
                                 this.authToken = tokens[++i];
+                                Debug.WriteLine(" Value = " + tokens[i]);
                             }
                         break;
                         case "expires_in":
                             if (i < tokens.Length)
                             {
                                 this.expiresIn = Convert.ToInt64(tokens[++i]);
+                                Debug.WriteLine(" Value = " + tokens[i]);
                             }
                         break;
                         case "user_id":
                             if (i < tokens.Length)
                             {
                                 this.userId = tokens[++i];
+                                Debug.WriteLine(" Value = " + tokens[i]);
                             }
+                        break;
+                        default:
+                                Debug.WriteLine(" No Value");
                         break;
                     }
                 }

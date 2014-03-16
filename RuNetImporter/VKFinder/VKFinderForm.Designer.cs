@@ -111,11 +111,11 @@
             this.backgroundFinderWorker.WorkerReportsProgress = true;
             this.backgroundFinderWorker.WorkerSupportsCancellation = true;
             // 
-            // CancelButton
+            // CancelFindButton
             // 
             this.CancelFindButton.Enabled = false;
             this.CancelFindButton.Location = new System.Drawing.Point(199, 145);
-            this.CancelFindButton.Name = "CancelButton";
+            this.CancelFindButton.Name = "CancelFindButton";
             this.CancelFindButton.Size = new System.Drawing.Size(161, 30);
             this.CancelFindButton.TabIndex = 6;
             this.CancelFindButton.Text = "Cancel";

@@ -20,7 +20,8 @@ namespace rcsir.net.vk.importer.api
         LoadFriends,
         GetMutual,
         UsersSearch,
-        WallGet
+        WallGet,
+        WallGetComments
 
     };
 
@@ -202,6 +203,9 @@ namespace rcsir.net.vk.importer.api
                 case VKFunction.WallGet:
                     WallGet(function, context.authToken, context.parameters);
                     break;
+                case VKFunction.WallGetComments:
+                    WallGetComments(function, context.authToken, context.parameters, context.cookie);
+                    break;
                 default:
                     break;
             }
@@ -251,12 +255,12 @@ namespace rcsir.net.vk.importer.api
             sb.Append('?');
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
-            sb.Append('&').Append("v=5.12");
+            sb.Append('&').Append("v=5.14");
 
             makeRestCall(function, sb.ToString());
         }
 
-        // WALL GET v 5.11
+        // WALL GET v 5.14
         private void WallGet(VKFunction function, String authToken, String parameters)
         {
             StringBuilder sb = new StringBuilder(api_url);
@@ -264,9 +268,22 @@ namespace rcsir.net.vk.importer.api
             sb.Append('?');
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
-            sb.Append('&').Append("v=5.11");
+            sb.Append('&').Append("v=5.14");
 
             makeRestCall(function, sb.ToString());
+        }
+
+        // WALL GET Comments v 5.14
+        private void WallGetComments(VKFunction function, String authToken, String parameters, String cookie)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/wall.getComments");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+            sb.Append('&').Append("v=5.14");
+
+            makeRestCall(function, sb.ToString(), cookie);
         }
 
         private void makeRestCall(VKFunction function, String uri, String cookie = null)
