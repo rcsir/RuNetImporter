@@ -9,11 +9,11 @@ using System.Windows.Forms;
 
 namespace rcsir.net.vk.groups.Dialogs
 {
-    public partial class DownloadGroupPostsDialog : Form
+    public partial class DownloadGroupMembersDialog : Form
     {
         public decimal groupId { get; set; }
 
-        public DownloadGroupPostsDialog()
+        public DownloadGroupMembersDialog()
         {
             InitializeComponent();
             this.groupIdNumeric.Value = groupId;

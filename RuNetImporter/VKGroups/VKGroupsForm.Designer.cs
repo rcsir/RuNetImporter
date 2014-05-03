@@ -40,6 +40,8 @@
             this.DownloadGroupPosts = new System.Windows.Forms.Button();
             this.CancelJobBurron = new System.Windows.Forms.Button();
             this.GroupsProgressBar = new System.Windows.Forms.ProgressBar();
+            this.DownloadGroupMembers = new System.Windows.Forms.Button();
+            this.backgroundMembersWorker = new System.ComponentModel.BackgroundWorker();
             this.groupsStatusStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -112,7 +114,7 @@
             // 
             // DownloadGroupPosts
             // 
-            this.DownloadGroupPosts.Location = new System.Drawing.Point(12, 183);
+            this.DownloadGroupPosts.Location = new System.Drawing.Point(12, 179);
             this.DownloadGroupPosts.Name = "DownloadGroupPosts";
             this.DownloadGroupPosts.Size = new System.Drawing.Size(348, 30);
             this.DownloadGroupPosts.TabIndex = 8;
@@ -139,11 +141,27 @@
             this.GroupsProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.GroupsProgressBar.TabIndex = 10;
             // 
+            // DownloadGroupMembers
+            // 
+            this.DownloadGroupMembers.Location = new System.Drawing.Point(15, 219);
+            this.DownloadGroupMembers.Name = "DownloadGroupMembers";
+            this.DownloadGroupMembers.Size = new System.Drawing.Size(348, 30);
+            this.DownloadGroupMembers.TabIndex = 11;
+            this.DownloadGroupMembers.Text = "Download Group Members...";
+            this.DownloadGroupMembers.UseVisualStyleBackColor = true;
+            this.DownloadGroupMembers.Click += new System.EventHandler(this.DownloadGroupMembers_Click);
+            // 
+            // backgroundMembersWorker
+            // 
+            this.backgroundMembersWorker.WorkerReportsProgress = true;
+            this.backgroundMembersWorker.WorkerSupportsCancellation = true;
+            // 
             // VKGroupsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(375, 356);
+            this.Controls.Add(this.DownloadGroupMembers);
             this.Controls.Add(this.GroupsProgressBar);
             this.Controls.Add(this.CancelJobBurron);
             this.Controls.Add(this.DownloadGroupPosts);
@@ -176,6 +194,8 @@
         private System.Windows.Forms.Button DownloadGroupPosts;
         private System.Windows.Forms.Button CancelJobBurron;
         private System.Windows.Forms.ProgressBar GroupsProgressBar;
+        private System.Windows.Forms.Button DownloadGroupMembers;
+        private System.ComponentModel.BackgroundWorker backgroundMembersWorker;
     }
 }
 

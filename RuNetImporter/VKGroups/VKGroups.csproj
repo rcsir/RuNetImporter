@@ -12,6 +12,22 @@
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <PublishUrl>C:\Users\Dmitri\Documents\MyApps\VKGroups\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>3</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -32,6 +48,18 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ManifestCertificateThumbprint>5635948912853CB01FADF156474BEA9369E1DEA2</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestKeyFile>VKGroups_TemporaryKey.pfx</ManifestKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateManifests>true</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>true</SignManifests>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\Json.NET\Bin\Net35\Newtonsoft.Json.dll</HintPath>
@@ -47,6 +75,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Dialogs\DownloadGroupMembersDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\DownloadGroupMembersDialog.Designer.cs">
+      <DependentUpon>DownloadGroupMembersDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\DownloadGroupPostsDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -59,6 +93,7 @@
     <Compile Include="Dialogs\FindGroupsDialog.Designer.cs">
       <DependentUpon>FindGroupsDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="NetworkAnalyzer\GroupNetworkAnalyzer.cs" />
     <Compile Include="VKGroupsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -67,6 +102,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Dialogs\DownloadGroupMembersDialog.resx">
+      <DependentUpon>DownloadGroupMembersDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\DownloadGroupPostsDialog.resx">
       <DependentUpon>DownloadGroupPostsDialog.cs</DependentUpon>
     </EmbeddedResource>
@@ -95,15 +133,32 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="VKGroups_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Project>{7baa550d-ea10-462d-9922-1a1e4245fb8d}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
     <ProjectReference Include="..\VKImporter\VKImporter.csproj">
       <Project>{b8c66ad6-57ea-4c74-b47e-dcf4682b7f18}</Project>
       <Name>VKImporter</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

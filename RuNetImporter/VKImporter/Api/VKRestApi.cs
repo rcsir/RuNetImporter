@@ -18,11 +18,12 @@ namespace rcsir.net.vk.importer.api
     {
         LoadUserInfo,
         LoadFriends,
+        GetFriends,
         GetMutual,
         UsersSearch,
         WallGet,
-        WallGetComments
-
+        WallGetComments,
+        GroupsGetMembers
     };
 
     // VK enum for sex field
@@ -194,6 +195,9 @@ namespace rcsir.net.vk.importer.api
                 case VKFunction.LoadFriends:
                     LoadFriends(function, context.userId, context.parameters);
                     break;
+                case VKFunction.GetFriends:
+                    GetFriends(function, context.parameters, context.cookie);
+                    break;
                 case VKFunction.GetMutual:
                     GetMutual(function, context.userId, context.authToken, context.parameters, context.cookie);
                     break;
@@ -205,6 +209,9 @@ namespace rcsir.net.vk.importer.api
                     break;
                 case VKFunction.WallGetComments:
                     WallGetComments(function, context.authToken, context.parameters, context.cookie);
+                    break;
+                case VKFunction.GroupsGetMembers:
+                    GroupsGetMembers(function, context.authToken, context.parameters, context.cookie);
                     break;
                 default:
                     break;
@@ -232,7 +239,17 @@ namespace rcsir.net.vk.importer.api
             sb.Append(parameters);
 
             makeRestCall(function, sb.ToString());
-            
+        }
+
+        // just like LoadFriends, but for any user, provided via parameters's [user_id] field
+        private void GetFriends(VKFunction function, String parameters, String cookie)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/friends.get");
+            sb.Append('?');
+            sb.Append(parameters);
+
+            makeRestCall(function, sb.ToString(), cookie);
         }
 
         private void GetMutual(VKFunction function, String userId, String authToken, String parameters, String cookie)
@@ -243,10 +260,10 @@ namespace rcsir.net.vk.importer.api
             sb.Append("source_uid=").Append(userId).Append('&');
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
+            sb.Append('&').Append("v=5.21");
 
             makeRestCall(function, sb.ToString(), cookie);
         }
-
 
         private void UsersSearch(VKFunction function, String authToken, String parameters)
         {
@@ -282,6 +299,19 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.14");
+
+            makeRestCall(function, sb.ToString(), cookie);
+        }
+
+        // Groups GET Members v 5.21
+        private void GroupsGetMembers(VKFunction function, String authToken, String parameters, String cookie)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/groups.getMembers");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+            sb.Append('&').Append("v=5.21");
 
             makeRestCall(function, sb.ToString(), cookie);
         }

@@ -1,6 +1,6 @@
 ﻿namespace rcsir.net.vk.groups.Dialogs
 {
-    partial class DownloadGroupPostsDialog
+    partial class DownloadGroupMembersDialog
     {
         /// <summary>
         /// Required designer variable.

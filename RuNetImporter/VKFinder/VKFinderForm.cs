@@ -281,7 +281,7 @@ namespace VKFinder
 
         private void AuthorizeButton_Click(object sender, EventArgs e)
         {
-            bool reLogin = false; // if true - will delete cookies and relogin, use false for dev.
+            bool reLogin = true; // if true - will delete cookies and relogin, use false for dev.
             vkLoginDialog.Login("friends", reLogin); // default permission - friends
         }
 
