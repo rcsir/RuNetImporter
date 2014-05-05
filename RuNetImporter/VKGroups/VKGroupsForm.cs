@@ -27,6 +27,7 @@ namespace VKGroups
         private static readonly int POSTS_PER_REQUEST = 100;
         private static readonly int MEMBERS_PER_REQUEST = 1000;
         private static readonly string MEMBER_FIELDS = "first_name,last_name,screen_name,bdate,city,country,photo_50,sex,relation,status,education";
+        private static readonly string GROUP_FIELDS = "members_count,city,country,description,status";
 
         private VKLoginDialog vkLoginDialog;
         private VKRestApi vkRestApi;
@@ -34,16 +35,23 @@ namespace VKGroups
         private String authToken;
         private long expiresAt;
         private decimal groupId;
+        private bool isGroup;
+        private bool isWorkingFolderSet;
+        private bool isAuthorized;
         private static AutoResetEvent readyEvent = new AutoResetEvent(false);
         private volatile bool isRunning;
         private volatile bool isMembersRunning;
+        private volatile bool isNetworkRunning;
 
         // document
         StreamWriter groupPostsWriter;
         StreamWriter groupProfilesWriter;
         StreamWriter groupCommentsWriter;
         StreamWriter groupMembersWriter;
+        // error log
+        StreamWriter errorLogWriter;
 
+        // network analyzer document
         GroupNetworkAnalyzer groupNetworkAnalyzer;
 
         // progress
@@ -165,15 +173,50 @@ namespace VKGroups
             public string text { get; set; }
         };
 
+        // group's info
+        private class Group
+        {
+            public Group()
+            {
+                id = "";
+                name = "";
+                screen_name = "";
+                is_closed = "";
+                type = "";
+                members_count = "";
+                city = "";
+                country = "";
+                photo = "";
+                description = "";
+                status = "";
+            }
+
+            public string id { get; set; }
+            public string name { get; set; }
+            public string screen_name { get; set; }
+            public string is_closed { get; set; }
+            public string type { get; set; }
+            public string members_count { get; set; }
+            public string city { get; set; }
+            public string country { get; set; }
+            public string photo { get; set; }
+            public string description { get; set; }
+            public string status { get; set; }
+        };
+
+        // Constructor
+
         public VKGroupsForm()
         {
             InitializeComponent();
             this.userIdTextBox.Text = "Please authorize";
             this.groupId = 0;
+            this.isAuthorized = false;
+            this.isWorkingFolderSet = false;
         
             vkLoginDialog = new VKLoginDialog();
             // subscribe for login events
-            vkLoginDialog.OnUserLogin += new VKLoginDialog.UserLoginHandler(UserLogin);
+            vkLoginDialog.OnUserLogin += new VKLoginDialog.UserLoginHandler(OnUserLogin);
 
             vkRestApi = new VKRestApi();
             // set up data handler
@@ -201,6 +244,17 @@ namespace VKGroups
             this.backgroundMembersWorker.RunWorkerCompleted
                 += new RunWorkerCompletedEventHandler(membersWorkCompleted);
 
+
+            // setup background group network worker handlers
+            this.backgroundNetworkWorker.DoWork
+                += new DoWorkEventHandler(networkWork);
+
+            this.backgroundNetworkWorker.ProgressChanged
+                += new ProgressChangedEventHandler(networkWorkProgressChanged);
+
+            this.backgroundNetworkWorker.RunWorkerCompleted
+                += new RunWorkerCompletedEventHandler(networkWorkCompleted);
+
             // this.folderBrowserDialog1.ShowNewFolderButton = false;
             // Default to the My Documents folder. 
             this.folderBrowserDialog1.RootFolder = Environment.SpecialFolder.Personal;
@@ -214,36 +268,208 @@ namespace VKGroups
             ActivateControls();
         }
 
+        // form load
+        private void VKGroupsForm_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        // form closing
+        private void VKGroupsForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (errorLogWriter != null)
+            {
+                errorLogWriter.Flush();
+                errorLogWriter.Close();
+            }
+        }
+
         private void AuthorizeButton_Click(object sender, EventArgs e)
         {
             bool reLogin = false; // TODO: if true - will delete cookies and relogin, use false for dev.
             vkLoginDialog.Login("friends", reLogin); // default permission - friends
         }
 
-        private void UserLogin(object loginDialog, UserLoginEventArgs loginArgs)
+        private void button1_Click(object sender, EventArgs e)
         {
-            Debug.WriteLine("User Logged In: " + loginArgs.ToString());
+            // Show the FolderBrowserDialog.
+            DialogResult result = folderBrowserDialog1.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                this.WorkingFolderTextBox.Text = folderBrowserDialog1.SelectedPath;
+                isWorkingFolderSet = true;
+                
+                // if error log exists - close it and create new one
+                if (errorLogWriter != null)
+                {
+                    errorLogWriter.Close();
+                    errorLogWriter = null;
+                }
+                String fileName = generateErrorLogFileName();
+                errorLogWriter = File.CreateText(fileName);
+                printErrorLogHeader(errorLogWriter);
 
-            this.userId = loginArgs.userId;
-            this.authToken = loginArgs.authToken;
-            this.expiresAt = loginArgs.expiersIn; // todo: calc expiration time
 
-            this.userIdTextBox.Clear();
-            this.userIdTextBox.Text = "Authorized " + loginArgs.userId;
-            this.ActivateControls();
+                ActivateControls();
+            }
+        }
+
+        private void FindGroupsButton_Click(object sender, EventArgs e)
+        {
+            FindGroupsDialog groupsDialog = new FindGroupsDialog();
+
+            if (groupsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                //SearchParameters searchParameters = groupsDialog.searchParameters;
+                //this.backgroundFinderWorker.RunWorkerAsync(searchParameters);
+                decimal gid = groupsDialog.groupId;
+                isGroup = groupsDialog.isGroup;
+
+                if (isGroup)
+                {
+                    // lookup a group by id
+                    VKRestContext context = new VKRestContext(this.userId, this.authToken);
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append("group_id=").Append(gid).Append("&");
+                    sb.Append("fields=").Append(GROUP_FIELDS).Append("&");
+                    context.parameters = sb.ToString();
+                    context.cookie = groupsDialog.groupId.ToString();
+                    Debug.WriteLine("Download parameters: " + context.parameters);
+
+                    // call VK REST API
+                    vkRestApi.CallVKFunction(VKFunction.GroupsGetById, context);
+
+                    // wait for the user data
+                    readyEvent.WaitOne();
+
+                } 
+                else
+                {
+                    // look up a wall by id
+                    // TODO:
+                }
+            }
+            else
+            {
+                Debug.WriteLine("Search canceled");
+            }
+        }
+
+        private void DownloadGroupPosts_Click(object sender, EventArgs e)
+        {
+            DownloadGroupPostsDialog postsDialog = new DownloadGroupPostsDialog();
+            postsDialog.groupId = this.groupId; // pass saved groupId
+            postsDialog.isGroup = this.isGroup; 
+
+            if (postsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                updateStatus(-1, "Start");
+                decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
+
+                isRunning = true;
+                this.backgroundGroupsWorker.RunWorkerAsync(gid);
+                ActivateControls();
+            }
+            else
+            {
+                Debug.WriteLine("Download posts canceled");
+            }
+        }
+
+        private void DownloadGroupMembers_Click(object sender, EventArgs e)
+        {
+            DownloadGroupMembersDialog membersDialog = new DownloadGroupMembersDialog();
+            membersDialog.groupId = this.groupId; // pass saved groupId
+            membersDialog.isGroup = this.isGroup;
+
+            if (membersDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                updateStatus(-1, "Start");
+                decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
+
+                isMembersRunning = true;
+                this.backgroundMembersWorker.RunWorkerAsync(gid);
+                ActivateControls();
+            }
+            else
+            {
+                Debug.WriteLine("Download members canceled");
+            }
+        }
+
+        private void DownloadMembersNetwork_Click(object sender, EventArgs e)
+        {
+            DownloadMembersNetworkDialog networkDialog = new DownloadMembersNetworkDialog();
+            networkDialog.groupId = this.groupId; // pass saved groupId
+            networkDialog.isGroup = this.isGroup;
+
+            if (networkDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                updateStatus(-1, "Start");
+                decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
+
+                isNetworkRunning = true;
+                this.backgroundNetworkWorker.RunWorkerAsync(gid);
+                ActivateControls();
+            }
+            else
+            {
+                Debug.WriteLine("Download members network canceled");
+            }
+        }
+
+        private void DownloadPostersNetwork_Click(object sender, EventArgs e)
+        {
+            DownloadPostersNetworkDialog postersDialog = new DownloadPostersNetworkDialog();
+            postersDialog.groupId = this.groupId; // pass saved groupId
+            postersDialog.isGroup = this.isGroup;
+
+            if (postersDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                updateStatus(-1, "Start");
+                decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
+                
+                isNetworkRunning = true;
+                this.backgroundNetworkWorker.RunWorkerAsync(gid);
+                ActivateControls();
+            }
+            else
+            {
+                Debug.WriteLine("Download members network canceled");
+            }
+        }
+
+        private void CancelJobBurron_Click(object sender, EventArgs e)
+        {
+            if (isRunning)
+                this.backgroundGroupsWorker.CancelAsync();
+
+            if (isMembersRunning)
+                this.backgroundMembersWorker.CancelAsync();
+
+            if (isNetworkRunning)
+                this.backgroundNetworkWorker.CancelAsync();
         }
 
         private void ActivateControls()
         {
-            bool isAuthorized = (this.userId != null && this.userId.Length > 0);
-
             if (isAuthorized)
             {
                 // enable user controls
-                this.FindGroupsButton.Enabled = false; //TODO: disable for now
-                this.DownloadGroupPosts.Enabled = true;
-                this.DownloadGroupMembers.Enabled = true;
-                this.CancelJobBurron.Enabled = true;
+                if (isWorkingFolderSet)
+                {
+                    bool shouldActivate = this.groupId != 0;
+                    bool isBusy = this.isRunning || this.isMembersRunning || this.isNetworkRunning;
+
+                    this.FindGroupsButton.Enabled = true && !isBusy;
+
+                    // activate group buttons
+                    this.DownloadGroupPosts.Enabled = shouldActivate && !isBusy;
+                    this.DownloadGroupMembers.Enabled = shouldActivate && !isBusy;
+                    this.DownloadMembersNetwork.Enabled = shouldActivate && !isBusy;
+                    this.DownloadPostersNetwork.Enabled = shouldActivate && !isBusy;
+                    this.CancelJobBurron.Enabled = isBusy; // todo: activate only when running
+                }
             }
             else
             {
@@ -251,8 +477,26 @@ namespace VKGroups
                 this.FindGroupsButton.Enabled = false;
                 this.DownloadGroupPosts.Enabled = false;
                 this.DownloadGroupMembers.Enabled = false;
+                this.DownloadMembersNetwork.Enabled = false;
+                this.DownloadPostersNetwork.Enabled = false;
                 this.CancelJobBurron.Enabled = false;
             }
+        }
+
+        private void OnUserLogin(object loginDialog, UserLoginEventArgs loginArgs)
+        {
+            Debug.WriteLine("User Logged In: " + loginArgs.ToString());
+
+            this.userId = loginArgs.userId;
+            this.authToken = loginArgs.authToken;
+            this.expiresAt = loginArgs.expiersIn; // todo: calc expiration time
+
+            isAuthorized = true;
+
+            this.userIdTextBox.Clear();
+            this.userIdTextBox.Text = "Authorized " + loginArgs.userId;
+            
+            this.ActivateControls();
         }
 
         private void OnData(object vkRestApi, OnDataEventArgs onDataArgs)
@@ -271,6 +515,9 @@ namespace VKGroups
                 case VKFunction.GetFriends:
                     OnGetFriends(onDataArgs.data, onDataArgs.cookie);
                     break;
+                case VKFunction.GroupsGetById:
+                    OnGroupsGetById(onDataArgs.data, onDataArgs.cookie);
+                    break;
                 default:
                     Debug.WriteLine("Error, unknown function.");
                     break;
@@ -284,12 +531,99 @@ namespace VKGroups
         private void OnError(object vkRestApi, OnErrorEventArgs onErrorArgs)
         {
             // TODO: notify user about the error
-            Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
+            Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.details);
+
+            if (errorLogWriter != null)
+            {
+                updateErrorLogFile(onErrorArgs, errorLogWriter);
+            }
+
+            /*
+             * till we can distinguish between critical errors and warnings, just print errors in ths log file
+            MessageBox.Show(onErrorArgs.error,
+                onErrorArgs.function.ToString() + " Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            */
             // indicate that data is ready and we can continue
             readyEvent.Set();
         }
 
+        private void OnGroupsGetById(JObject data, String cookie)
+        {
+            if (data[VKRestApi.RESPONSE_BODY] == null)
+            {
+                // todo: show err
+                Debug.WriteLine("Group is not found");
+                return;
+            }
 
+            String gId = cookie; // gropu id sent as a cooky
+
+            // now calc items in response
+            int count = data[VKRestApi.RESPONSE_BODY].Count();
+
+            List<Group> groups = new List<Group>();
+            // process response body
+            for (int i = 0; i < count; ++i)
+            {
+                JObject groupObject = data[VKRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+
+                if (groupObject == null)
+                    continue;
+
+                Group g = new Group();
+
+                g.id = getStringField("id", groupObject);
+                g.name = getStringField("name", groupObject);
+                g.screen_name = getStringField("screen_name", groupObject);
+                g.is_closed = getStringField("is_closed", groupObject);
+                g.type = getStringField("type", groupObject);
+                g.members_count = getStringField("members_count", groupObject);
+                g.city = getStringTitleField("city", groupObject);
+                g.country = getStringTitleField("country", groupObject);
+                g.photo = getStringField("photo_50", groupObject);
+                g.description = getTextField("description", groupObject);
+                g.status = getTextField("status", groupObject);
+
+                groups.Add(g);
+            }
+
+            if (groups.Count > 0)
+            {
+                // update group id and group info
+                this.groupId = decimal.Parse(groups[0].id);
+
+                // group members network document
+                String networkDocumentName = generateGroupMembersNetworkFileName(groupId);
+                this.groupNetworkAnalyzer = new GroupNetworkAnalyzer(networkDocumentName);
+
+                String fileName = generateGroupFileName(groupId);
+                StreamWriter writer = File.CreateText(fileName);
+                printGroupHeader(writer);
+                updateGroupFile(groups, writer);
+                writer.Close();
+
+                this.groupId2.Text = this.groupId.ToString();
+                this.groupDescription.Text = groups[0].name;
+                this.groupDescription.AppendText("\r\n type: " + groups[0].type);
+                this.groupDescription.AppendText("\r\n members: " + groups[0].members_count);
+                this.groupDescription.AppendText("\r\n " + groups[0].description);
+            }
+            else
+            {
+                this.groupId = 0;
+                this.groupId2.Text = gId;
+                this.groupDescription.Text = "Not found";
+            }
+
+            ActivateControls();
+
+            readyEvent.Set();
+        }
+
+        // Async workers
+        
         private void groupsWork(Object sender, DoWorkEventArgs args)
         {
             // Do not access the form's BackgroundWorker reference directly. 
@@ -297,7 +631,9 @@ namespace VKGroups
             BackgroundWorker bw = sender as BackgroundWorker;
 
             // Extract the argument. 
-            decimal groupId = (decimal)args.Argument; 
+            decimal groupId = (decimal)args.Argument;
+
+            isRunning = true;
 
             // create stream writers
             // 1) group posts
@@ -312,7 +648,6 @@ namespace VKGroups
             VKRestContext context = new VKRestContext(this.userId, this.authToken);
 
             // get group posts 100 at a time and store them in the file
-            isRunning = true;
             StringBuilder sb = new StringBuilder();
 
             this.postsWithComments.Clear(); // reset comments reference list
@@ -320,6 +655,8 @@ namespace VKGroups
             this.totalCount = 0;
             this.currentOffset = 0;
             this.step = 1;
+
+            long timeLastCall = 0;
 
             // request group posts
             while (this.isRunning)
@@ -345,15 +682,14 @@ namespace VKGroups
 
                 context.cookie = currentOffset.ToString();
 
+                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                timeLastCall = sleepTime(timeLastCall); 
                 // call VK REST API
                 vkRestApi.CallVKFunction(VKFunction.WallGet, context);
 
                 // wait for the user data
                 readyEvent.WaitOne();
 
-                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                // TODO: account for time spent in processing
-                Thread.Sleep(333);
                 currentOffset += POSTS_PER_REQUEST;
             }
 
@@ -370,6 +706,8 @@ namespace VKGroups
                 // request group comments
                 bw.ReportProgress(-1, "Getting comments");
                 this.step = (int)(10000 / this.postsWithComments.Count);
+
+                timeLastCall = 0;
 
                 for (int i = 0; i < this.postsWithComments.Count; i++)
                 {
@@ -400,15 +738,14 @@ namespace VKGroups
                         context.cookie = postsWithComments[i]; // pass post id as a cookie
                         Debug.WriteLine("Request parameters: " + context.parameters);
 
+                        // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                        timeLastCall = sleepTime(timeLastCall);
                         // call VK REST API
                         vkRestApi.CallVKFunction(VKFunction.WallGetComments, context);
 
                         // wait for the user data
                         readyEvent.WaitOne();
 
-                        // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                        // TODO: account for time spent in processing
-                        Thread.Sleep(333);
                         currentOffset += POSTS_PER_REQUEST;
                     }
                 }
@@ -452,6 +789,8 @@ namespace VKGroups
                 //MessageBox.Show("Search complete!");
                 updateStatus(10000, "Done");
             }
+
+            ActivateControls();
         }
 
         // Members work async handlers
@@ -461,30 +800,24 @@ namespace VKGroups
             // Instead, use the reference provided by the sender parameter.
             BackgroundWorker bw = sender as BackgroundWorker;
 
+            isMembersRunning = true;
+
             // Extract the argument. 
             decimal groupId = (decimal)args.Argument;
-
-            VKRestContext context = new VKRestContext(this.userId, this.authToken);
-
-            StringBuilder sb = new StringBuilder();
-
-            this.totalCount = 0;
-            this.currentOffset = 0;
-            this.step = 1;
 
             // process group members
             String fileName = generateGroupMembersFileName(groupId);
             groupMembersWriter = File.CreateText(fileName);
             printGroupMembersHeader(groupMembersWriter);
 
-            // group members network document
-            String networkDocumentName = generateGroupMembersNetworkFileName(groupId);
-            this.groupNetworkAnalyzer = new GroupNetworkAnalyzer(networkDocumentName);
+            VKRestContext context = new VKRestContext(this.userId, this.authToken);
+            StringBuilder sb = new StringBuilder();
 
-            isMembersRunning = true;
             this.totalCount = 0;
             this.currentOffset = 0;
             this.step = 1;
+
+            long timeLastCall = 0;
 
             // request group members
             while (this.isMembersRunning)
@@ -512,56 +845,18 @@ namespace VKGroups
 
                 context.cookie = currentOffset.ToString();
 
+                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                timeLastCall = sleepTime(timeLastCall);
                 // call VK REST API
                 vkRestApi.CallVKFunction(VKFunction.GroupsGetMembers, context);
 
                 // wait for the members data
                 readyEvent.WaitOne();
 
-                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                // TODO: account for time spent in processing
-                Thread.Sleep(333);
                 currentOffset += MEMBERS_PER_REQUEST;
             }
 
             groupMembersWriter.Close();
-
-            // gather the list of all users friends to build the group network
-            isMembersRunning = true;
-            this.totalCount = 0;
-            this.currentOffset = 0;
-            this.step = 1;
-
-            List<string> members = this.groupNetworkAnalyzer.GetMemeberIds();
-
-            // request group comments
-            bw.ReportProgress(-1, "Getting Group friends network");
-            this.step = (int)(10000 / members.Count);
-
-            for (int i = 0; i < members.Count && isMembersRunning; ++i)
-            {
-                if (bw.CancellationPending)
-                    break;
-
-                bw.ReportProgress(step, "Getting member's friends: " + (i+1) + " out of " + members.Count);
-
-                String memberId = members[i];
-
-                sb.Length = 0;
-                sb.Append("user_id=").Append(memberId);
-                context.parameters = sb.ToString();
-                context.cookie = memberId; // pass member id as a cookie
-                Debug.WriteLine("Request parameters: " + context.parameters);
-
-                vkRestApi.CallVKFunction(VKFunction.GetFriends, context);
-
-                // wait for the friends data
-                readyEvent.WaitOne();
-
-                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                // TODO: account for time spent in processing
-                Thread.Sleep(333);
-            }
 
             //args.Result = TimeConsumingOperation(bw, arg);
 
@@ -597,19 +892,114 @@ namespace VKGroups
             else
             {
                 //MessageBox.Show("Search complete!");
-                if (this.groupNetworkAnalyzer != null)
-                {
-                    updateStatus(0, "Generate Network Graph File");
-                    if (this.groupNetworkAnalyzer.SaveGroupNetwork())
-                    {
-                        Debug.WriteLine("Group Network Graph file generated");
-                    }
-                }
-
                 updateStatus(10000, "Done");
+            }
+
+            ActivateControls();
+        }
+
+
+        // Members Network work async handlers
+        private void networkWork(Object sender, DoWorkEventArgs args)
+        {
+            // Do not access the form's BackgroundWorker reference directly. 
+            // Instead, use the reference provided by the sender parameter.
+            BackgroundWorker bw = sender as BackgroundWorker;
+
+            isNetworkRunning = true;
+
+            // Extract the argument. 
+            decimal groupId = (decimal)args.Argument;
+
+            // gather the list of all users friends to build the group network
+            this.totalCount = 0;
+            this.currentOffset = 0;
+            this.step = 1;
+
+            VKRestContext context = new VKRestContext(this.userId, this.authToken);
+            StringBuilder sb = new StringBuilder();
+
+            List<string> members = this.groupNetworkAnalyzer.GetMemeberIds();
+
+            // request group comments
+            bw.ReportProgress(-1, "Getting Group friends network");
+            this.step = (int)(10000 / members.Count);
+
+            long timeLastCall = 0;
+
+            for (int i = 0; i < members.Count && isNetworkRunning; ++i)
+            {
+                if (bw.CancellationPending)
+                    break;
+
+                bw.ReportProgress(step, "Getting member's friends: " + (i + 1) + " out of " + members.Count);
+
+                String memberId = members[i];
+
+                sb.Length = 0;
+                sb.Append("user_id=").Append(memberId);
+                context.parameters = sb.ToString();
+                context.cookie = memberId; // pass member id as a cookie
+                Debug.WriteLine("Request parameters: " + context.parameters);
+
+                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                timeLastCall = sleepTime(timeLastCall);
+                vkRestApi.CallVKFunction(VKFunction.GetFriends, context);
+
+                // wait for the friends data
+                readyEvent.WaitOne();
+            }
+
+            //args.Result = TimeConsumingOperation(bw, arg);
+
+            // If the operation was canceled by the user,  
+            // set the DoWorkEventArgs.Cancel property to true. 
+            if (bw.CancellationPending)
+            {
+                args.Cancel = true;
             }
         }
 
+        private void networkWorkProgressChanged(Object sender, ProgressChangedEventArgs args)
+        {
+            String status = args.UserState as String;
+            int progress = args.ProgressPercentage;
+            updateStatus(progress, status);
+        }
+
+        private void networkWorkCompleted(object sender, RunWorkerCompletedEventArgs args)
+        {
+            isNetworkRunning = false;
+
+            if (args.Error != null)
+            {
+                MessageBox.Show(args.Error.Message);
+                updateStatus(0, "Error");
+            }
+            else if (args.Cancelled)
+            {
+                MessageBox.Show("Memebers Search canceled!");
+                updateStatus(0, "Canceled");
+            }
+            else
+            {
+                //MessageBox.Show("Search complete!");
+                updateStatus(10000, "Done");
+            }
+
+            // save whatever is collected
+            if (this.groupNetworkAnalyzer != null)
+            {
+                updateStatus(0, "Generate Network Graph File");
+                if (this.groupNetworkAnalyzer.SaveGroupNetwork())
+                {
+                    Debug.WriteLine("Group Network Graph file generated");
+                }
+            }
+
+            ActivateControls();
+        }
+ 
         private void updateStatus(int progress, String status)
         {
             // if 0 - ignore progress param
@@ -626,73 +1016,6 @@ namespace VKGroups
             this.groupsStripStatusLabel.Text = status;
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            // Show the FolderBrowserDialog.
-            DialogResult result = folderBrowserDialog1.ShowDialog();
-            if (result == DialogResult.OK)
-            {
-                this.WorkingFolderTextBox.Text = folderBrowserDialog1.SelectedPath;
-            }
-        }
-
-        private void DownloadGroupPosts_Click(object sender, EventArgs e)
-        {
-            DownloadGroupPostsDialog postsDialog = new DownloadGroupPostsDialog();
-            postsDialog.groupId = Math.Abs(this.groupId); // pass saved groupId
-
-            if (postsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                updateStatus(-1, "Start");
-                this.groupId = postsDialog.groupId;
-                this.backgroundGroupsWorker.RunWorkerAsync(this.groupId);
-            }
-            else
-            {
-                Debug.WriteLine("Download posts canceled");
-            }
-        }
-
-        private void DownloadGroupMembers_Click(object sender, EventArgs e)
-        {
-            DownloadGroupMembersDialog membersDialog = new DownloadGroupMembersDialog();
-            membersDialog.groupId = Math.Abs(this.groupId); // pass saved groupId
-
-            if (membersDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                updateStatus(-1, "Start");
-                this.groupId = membersDialog.groupId;
-                this.backgroundMembersWorker.RunWorkerAsync(this.groupId);
-            }
-            else
-            {
-                Debug.WriteLine("Download members canceled");
-            }
-        }
-
-        private void FindGroupsButton_Click(object sender, EventArgs e)
-        {
-            FindGroupsDialog groupsDialog = new FindGroupsDialog();
-
-            if (groupsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                //SearchParameters searchParameters = groupsDialog.searchParameters;
-                //this.backgroundFinderWorker.RunWorkerAsync(searchParameters);
-            }
-            else
-            {
-                Debug.WriteLine("Search canceled");
-            }
-        }
-
-        private void CancelJobBurron_Click(object sender, EventArgs e)
-        {
-            if(isRunning)
-                this.backgroundGroupsWorker.CancelAsync();
-
-            if (isMembersRunning)
-                this.backgroundMembersWorker.CancelAsync();
-        }
 
         // process group posts
         private void OnWallGet(JObject data)
@@ -989,7 +1312,7 @@ namespace VKGroups
         {
             if (data[VKRestApi.RESPONSE_BODY] == null)
             {
-                this.isMembersRunning = false;
+                this.isNetworkRunning = false;
                 return;
             }
 
@@ -1004,6 +1327,32 @@ namespace VKGroups
             {
                 String friendId = data[VKRestApi.RESPONSE_BODY][i].ToString();
                 this.groupNetworkAnalyzer.AddFriendsEdge(memberId, friendId); // if friendship exists, the new edge will be added
+            }
+        }
+
+        // Group file name
+        private string generateGroupFileName(decimal groupId)
+        {
+            StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
+
+            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group");
+            fileName.Append(".txt");
+
+            return fileName.ToString();
+        }
+
+        private void printGroupHeader(StreamWriter writer)
+        {
+            writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"",
+                    "id", "name", "screen_name", "is_closed", "type", "members_count", "city", "country", "photo", "description", "status");
+        }
+
+        private void updateGroupFile(List<Group> groups, StreamWriter writer)
+        {
+            foreach (Group g in groups)
+            {
+                writer.WriteLine("{0}\t{1}\t{2}\t\"{3}\"\t{4}\t{5}\t{6}\t{7}\t\"{8}\"\t\"{9}\"\t\"{10}\"",
+                    g.id, g.name, g.screen_name, g.is_closed, g.type, g.members_count, g.city, g.country, g.photo, g.description, g.status);
             }
         }
 
@@ -1085,7 +1434,6 @@ namespace VKGroups
             }
         }
 
-
         // Group comments file name
         private string generateGroupCommentsFileName(decimal groupId)
         {
@@ -1124,6 +1472,25 @@ namespace VKGroups
         }
 
 
+        // Error log file
+        private string generateErrorLogFileName()
+        {
+            StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
+            return fileName.Append("\\").Append("error-log").Append(".txt").ToString();
+        }
+
+        private void printErrorLogHeader(StreamWriter writer)
+        {
+            writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"",
+                    "function", "error_code", "error");
+        }
+
+        private void updateErrorLogFile(OnErrorEventArgs error, StreamWriter writer)
+        {
+            writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"",
+                error.function, error.code, error.error);
+        }
+
         // Utiliti
         private static DateTime timeToDateTime(long unixTimeStamp)
         {
@@ -1131,6 +1498,55 @@ namespace VKGroups
             System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
             dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
             return dtDateTime;
+        }
+
+        long getTimeNowMillis()
+        {
+            return DateTime.Now.Ticks / 10000;
+        }
+
+        long sleepTime(long timeLastCall)
+        {
+            long timeToSleep = 333 - (getTimeNowMillis() - timeLastCall);
+            if (timeToSleep > 0)
+                Thread.Sleep((Int32)timeToSleep);
+
+            return getTimeNowMillis();
+        }
+
+        // JObject utils
+        private static String getStringField(String name, JObject o)
+        {
+            return o[name] != null ? o[name].ToString() : "";
+        }
+
+        private static String getStringTitleField(String name, JObject o)
+        {
+            if (o[name] != null)
+            {
+                if (o[name]["title"] != null)
+                {
+                   return o[name]["title"].ToString();
+                }
+            }
+            return "";
+        }
+
+        private static String getTextField(String name, JObject o)
+        {
+            String t = o[name] != null ? o[name].ToString() : "";
+            if (t.Length > 0)
+            {
+                return Regex.Replace(t, @"\r\n?|\n", "");
+            }
+            return "";
+        }
+
+        private static String getStringDateField(String name, JObject o)
+        {
+            long l = o[name] != null ? o[name].ToObject<long>() : 0;
+            DateTime d = timeToDateTime(l);
+            return d.ToString("yyyy-MM-dd HH:mm:ss");
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace rcsir.net.vk.groups.Dialogs
 {
-    partial class FindGroupsDialog
+    partial class DownloadPostersNetworkDialog
     {
         /// <summary>
         /// Required designer variable.
@@ -30,8 +30,8 @@
         {
             this.CancelSearchButton = new System.Windows.Forms.Button();
             this.OKButton = new System.Windows.Forms.Button();
-            this.label1 = new System.Windows.Forms.Label();
             this.groupIdNumeric = new System.Windows.Forms.NumericUpDown();
+            this.label1 = new System.Windows.Forms.Label();
             this.isGroupcheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.groupIdNumeric)).BeginInit();
             this.SuspendLayout();
@@ -39,7 +39,7 @@
             // CancelSearchButton
             // 
             this.CancelSearchButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelSearchButton.Location = new System.Drawing.Point(202, 245);
+            this.CancelSearchButton.Location = new System.Drawing.Point(163, 235);
             this.CancelSearchButton.Name = "CancelSearchButton";
             this.CancelSearchButton.Size = new System.Drawing.Size(75, 23);
             this.CancelSearchButton.TabIndex = 3;
@@ -49,7 +49,7 @@
             // OKButton
             // 
             this.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.OKButton.Location = new System.Drawing.Point(283, 245);
+            this.OKButton.Location = new System.Drawing.Point(244, 235);
             this.OKButton.Name = "OKButton";
             this.OKButton.Size = new System.Drawing.Size(75, 23);
             this.OKButton.TabIndex = 2;
@@ -57,53 +57,56 @@
             this.OKButton.UseVisualStyleBackColor = true;
             this.OKButton.Click += new System.EventHandler(this.OKButton_Click);
             // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(43, 37);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(80, 13);
-            this.label1.TabIndex = 7;
-            this.label1.Text = "Group/User ID:";
-            // 
             // groupIdNumeric
             // 
-            this.groupIdNumeric.Location = new System.Drawing.Point(129, 35);
+            this.groupIdNumeric.Location = new System.Drawing.Point(98, 52);
             this.groupIdNumeric.Maximum = new decimal(new int[] {
             1000000000,
             0,
             0,
             0});
             this.groupIdNumeric.Name = "groupIdNumeric";
+            this.groupIdNumeric.ReadOnly = true;
             this.groupIdNumeric.Size = new System.Drawing.Size(219, 20);
-            this.groupIdNumeric.TabIndex = 6;
+            this.groupIdNumeric.TabIndex = 4;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(12, 54);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(80, 13);
+            this.label1.TabIndex = 5;
+            this.label1.Text = "Group/User ID:";
             // 
             // isGroupcheckBox
             // 
+            this.isGroupcheckBox.AutoCheck = false;
             this.isGroupcheckBox.AutoSize = true;
             this.isGroupcheckBox.Checked = true;
             this.isGroupcheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.isGroupcheckBox.Location = new System.Drawing.Point(129, 71);
+            this.isGroupcheckBox.Location = new System.Drawing.Point(98, 78);
             this.isGroupcheckBox.Name = "isGroupcheckBox";
             this.isGroupcheckBox.Size = new System.Drawing.Size(65, 17);
-            this.isGroupcheckBox.TabIndex = 8;
+            this.isGroupcheckBox.TabIndex = 6;
             this.isGroupcheckBox.Text = "is Group";
             this.isGroupcheckBox.UseVisualStyleBackColor = true;
             // 
-            // FindGroupsDialog
+            // DownloadPostersNetworkDialog
             // 
             this.AcceptButton = this.OKButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelSearchButton;
-            this.ClientSize = new System.Drawing.Size(370, 280);
+            this.ClientSize = new System.Drawing.Size(329, 270);
             this.Controls.Add(this.isGroupcheckBox);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.groupIdNumeric);
             this.Controls.Add(this.CancelSearchButton);
             this.Controls.Add(this.OKButton);
-            this.Name = "FindGroupsDialog";
-            this.Text = "Find a Group or a Wall";
+            this.Name = "DownloadPostersNetworkDialog";
+            this.Text = "Download Posters Network";
+            this.Load += new System.EventHandler(this.DownloadPostersNetworkDialog_Load);
             ((System.ComponentModel.ISupportInitialize)(this.groupIdNumeric)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -114,8 +117,8 @@
 
         private System.Windows.Forms.Button CancelSearchButton;
         private System.Windows.Forms.Button OKButton;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.NumericUpDown groupIdNumeric;
+        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox isGroupcheckBox;
     }
 }

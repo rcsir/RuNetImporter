@@ -75,6 +75,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Dialogs\DownloadPostersNetworkDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\DownloadPostersNetworkDialog.Designer.cs">
+      <DependentUpon>DownloadPostersNetworkDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\DownloadMembersNetworkDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\DownloadMembersNetworkDialog.Designer.cs">
+      <DependentUpon>DownloadMembersNetworkDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\DownloadGroupMembersDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -102,6 +114,12 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Dialogs\DownloadPostersNetworkDialog.resx">
+      <DependentUpon>DownloadPostersNetworkDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\DownloadMembersNetworkDialog.resx">
+      <DependentUpon>DownloadMembersNetworkDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\DownloadGroupMembersDialog.resx">
       <DependentUpon>DownloadGroupMembersDialog.cs</DependentUpon>
     </EmbeddedResource>

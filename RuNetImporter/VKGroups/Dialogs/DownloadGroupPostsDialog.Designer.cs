@@ -66,6 +66,7 @@
             0,
             0});
             this.groupIdNumeric.Name = "groupIdNumeric";
+            this.groupIdNumeric.ReadOnly = true;
             this.groupIdNumeric.Size = new System.Drawing.Size(219, 20);
             this.groupIdNumeric.TabIndex = 4;
             // 
@@ -80,6 +81,7 @@
             // 
             // isGroupcheckBox
             // 
+            this.isGroupcheckBox.AutoCheck = false;
             this.isGroupcheckBox.AutoSize = true;
             this.isGroupcheckBox.Checked = true;
             this.isGroupcheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
@@ -92,8 +94,10 @@
             // 
             // DownloadGroupPostsDialog
             // 
+            this.AcceptButton = this.OKButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.CancelButton = this.CancelSearchButton;
             this.ClientSize = new System.Drawing.Size(329, 270);
             this.Controls.Add(this.isGroupcheckBox);
             this.Controls.Add(this.label1);
@@ -102,6 +106,7 @@
             this.Controls.Add(this.OKButton);
             this.Name = "DownloadGroupPostsDialog";
             this.Text = "Download Posts";
+            this.Load += new System.EventHandler(this.DownloadGroupPostsDialog_Load);
             ((System.ComponentModel.ISupportInitialize)(this.groupIdNumeric)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

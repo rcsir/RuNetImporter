@@ -9,12 +9,12 @@ using System.Windows.Forms;
 
 namespace rcsir.net.vk.groups.Dialogs
 {
-    public partial class DownloadGroupPostsDialog : Form
+    public partial class DownloadMembersNetworkDialog : Form
     {
         public decimal groupId { get; set; }
         public bool isGroup { get; set; }
 
-        public DownloadGroupPostsDialog()
+        public DownloadMembersNetworkDialog()
         {
             InitializeComponent();
         }
@@ -23,7 +23,7 @@ namespace rcsir.net.vk.groups.Dialogs
         {   
         }
 
-        private void DownloadGroupPostsDialog_Load(object sender, EventArgs e)
+        private void DownloadMembersNetworkDialog_Load(object sender, EventArgs e)
         {
             this.groupIdNumeric.Value = groupId;
             this.isGroupcheckBox.Checked = isGroup;

@@ -11,6 +11,9 @@ namespace rcsir.net.vk.groups.Dialogs
 {
     public partial class FindGroupsDialog : Form
     {
+        public decimal groupId { get; set; }
+        public bool isGroup { get; set; }
+
         public FindGroupsDialog()
         {
             InitializeComponent();
@@ -18,7 +21,8 @@ namespace rcsir.net.vk.groups.Dialogs
 
         private void OKButton_Click(object sender, EventArgs e)
         {
-
+            groupId = this.groupIdNumeric.Value;
+            isGroup = this.isGroupcheckBox.Checked;
         }
     }
 }

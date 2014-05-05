@@ -42,6 +42,11 @@
             this.GroupsProgressBar = new System.Windows.Forms.ProgressBar();
             this.DownloadGroupMembers = new System.Windows.Forms.Button();
             this.backgroundMembersWorker = new System.ComponentModel.BackgroundWorker();
+            this.groupId2 = new System.Windows.Forms.TextBox();
+            this.groupDescription = new System.Windows.Forms.TextBox();
+            this.DownloadMembersNetwork = new System.Windows.Forms.Button();
+            this.DownloadPostersNetwork = new System.Windows.Forms.Button();
+            this.backgroundNetworkWorker = new System.ComponentModel.BackgroundWorker();
             this.groupsStatusStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -72,7 +77,7 @@
             // 
             this.groupsStatusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.groupsStripStatusLabel});
-            this.groupsStatusStrip.Location = new System.Drawing.Point(0, 334);
+            this.groupsStatusStrip.Location = new System.Drawing.Point(0, 468);
             this.groupsStatusStrip.Name = "groupsStatusStrip";
             this.groupsStatusStrip.Size = new System.Drawing.Size(375, 22);
             this.groupsStatusStrip.TabIndex = 4;
@@ -114,40 +119,40 @@
             // 
             // DownloadGroupPosts
             // 
-            this.DownloadGroupPosts.Location = new System.Drawing.Point(12, 179);
+            this.DownloadGroupPosts.Location = new System.Drawing.Point(12, 287);
             this.DownloadGroupPosts.Name = "DownloadGroupPosts";
             this.DownloadGroupPosts.Size = new System.Drawing.Size(348, 30);
             this.DownloadGroupPosts.TabIndex = 8;
-            this.DownloadGroupPosts.Text = "Download Group Posts...";
+            this.DownloadGroupPosts.Text = "Download Posts and Comments...";
             this.DownloadGroupPosts.UseVisualStyleBackColor = true;
             this.DownloadGroupPosts.Click += new System.EventHandler(this.DownloadGroupPosts_Click);
             // 
             // CancelJobBurron
             // 
             this.CancelJobBurron.Enabled = false;
-            this.CancelJobBurron.Location = new System.Drawing.Point(12, 263);
+            this.CancelJobBurron.Location = new System.Drawing.Point(12, 397);
             this.CancelJobBurron.Name = "CancelJobBurron";
-            this.CancelJobBurron.Size = new System.Drawing.Size(348, 30);
+            this.CancelJobBurron.Size = new System.Drawing.Size(117, 30);
             this.CancelJobBurron.TabIndex = 9;
-            this.CancelJobBurron.Text = "Cancel";
+            this.CancelJobBurron.Text = "Cancel Operation";
             this.CancelJobBurron.UseVisualStyleBackColor = true;
             this.CancelJobBurron.Click += new System.EventHandler(this.CancelJobBurron_Click);
             // 
             // GroupsProgressBar
             // 
-            this.GroupsProgressBar.Location = new System.Drawing.Point(12, 302);
+            this.GroupsProgressBar.Location = new System.Drawing.Point(12, 433);
             this.GroupsProgressBar.Name = "GroupsProgressBar";
-            this.GroupsProgressBar.Size = new System.Drawing.Size(348, 22);
+            this.GroupsProgressBar.Size = new System.Drawing.Size(351, 22);
             this.GroupsProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.GroupsProgressBar.TabIndex = 10;
             // 
             // DownloadGroupMembers
             // 
-            this.DownloadGroupMembers.Location = new System.Drawing.Point(15, 219);
+            this.DownloadGroupMembers.Location = new System.Drawing.Point(12, 251);
             this.DownloadGroupMembers.Name = "DownloadGroupMembers";
             this.DownloadGroupMembers.Size = new System.Drawing.Size(348, 30);
             this.DownloadGroupMembers.TabIndex = 11;
-            this.DownloadGroupMembers.Text = "Download Group Members...";
+            this.DownloadGroupMembers.Text = "Download Members...";
             this.DownloadGroupMembers.UseVisualStyleBackColor = true;
             this.DownloadGroupMembers.Click += new System.EventHandler(this.DownloadGroupMembers_Click);
             // 
@@ -156,11 +161,59 @@
             this.backgroundMembersWorker.WorkerReportsProgress = true;
             this.backgroundMembersWorker.WorkerSupportsCancellation = true;
             // 
+            // groupId2
+            // 
+            this.groupId2.Location = new System.Drawing.Point(12, 172);
+            this.groupId2.Name = "groupId2";
+            this.groupId2.ReadOnly = true;
+            this.groupId2.Size = new System.Drawing.Size(120, 20);
+            this.groupId2.TabIndex = 12;
+            this.groupId2.TabStop = false;
+            // 
+            // groupDescription
+            // 
+            this.groupDescription.Location = new System.Drawing.Point(138, 172);
+            this.groupDescription.Multiline = true;
+            this.groupDescription.Name = "groupDescription";
+            this.groupDescription.ReadOnly = true;
+            this.groupDescription.Size = new System.Drawing.Size(222, 73);
+            this.groupDescription.TabIndex = 13;
+            this.groupDescription.TabStop = false;
+            // 
+            // DownloadMembersNetwork
+            // 
+            this.DownloadMembersNetwork.Location = new System.Drawing.Point(12, 323);
+            this.DownloadMembersNetwork.Name = "DownloadMembersNetwork";
+            this.DownloadMembersNetwork.Size = new System.Drawing.Size(348, 30);
+            this.DownloadMembersNetwork.TabIndex = 14;
+            this.DownloadMembersNetwork.Text = "Download Members Network...";
+            this.DownloadMembersNetwork.UseVisualStyleBackColor = true;
+            this.DownloadMembersNetwork.Click += new System.EventHandler(this.DownloadMembersNetwork_Click);
+            // 
+            // DownloadPostersNetwork
+            // 
+            this.DownloadPostersNetwork.Location = new System.Drawing.Point(12, 359);
+            this.DownloadPostersNetwork.Name = "DownloadPostersNetwork";
+            this.DownloadPostersNetwork.Size = new System.Drawing.Size(348, 30);
+            this.DownloadPostersNetwork.TabIndex = 15;
+            this.DownloadPostersNetwork.Text = "Download Posters Network...";
+            this.DownloadPostersNetwork.UseVisualStyleBackColor = true;
+            this.DownloadPostersNetwork.Click += new System.EventHandler(this.DownloadPostersNetwork_Click);
+            // 
+            // backgroundNetworkWorker
+            // 
+            this.backgroundNetworkWorker.WorkerReportsProgress = true;
+            this.backgroundNetworkWorker.WorkerSupportsCancellation = true;
+            // 
             // VKGroupsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(375, 356);
+            this.ClientSize = new System.Drawing.Size(375, 490);
+            this.Controls.Add(this.DownloadPostersNetwork);
+            this.Controls.Add(this.DownloadMembersNetwork);
+            this.Controls.Add(this.groupDescription);
+            this.Controls.Add(this.groupId2);
             this.Controls.Add(this.DownloadGroupMembers);
             this.Controls.Add(this.GroupsProgressBar);
             this.Controls.Add(this.CancelJobBurron);
@@ -173,6 +226,8 @@
             this.Controls.Add(this.AuthorizeButton);
             this.Name = "VKGroupsForm";
             this.Text = "VKGroups";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.VKGroupsForm_FormClosing);
+            this.Load += new System.EventHandler(this.VKGroupsForm_Load);
             this.groupsStatusStrip.ResumeLayout(false);
             this.groupsStatusStrip.PerformLayout();
             this.ResumeLayout(false);
@@ -196,6 +251,11 @@
         private System.Windows.Forms.ProgressBar GroupsProgressBar;
         private System.Windows.Forms.Button DownloadGroupMembers;
         private System.ComponentModel.BackgroundWorker backgroundMembersWorker;
+        private System.Windows.Forms.TextBox groupId2;
+        private System.Windows.Forms.TextBox groupDescription;
+        private System.Windows.Forms.Button DownloadMembersNetwork;
+        private System.Windows.Forms.Button DownloadPostersNetwork;
+        private System.ComponentModel.BackgroundWorker backgroundNetworkWorker;
     }
 }
 

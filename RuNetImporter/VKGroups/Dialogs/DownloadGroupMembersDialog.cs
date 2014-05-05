@@ -12,21 +12,21 @@ namespace rcsir.net.vk.groups.Dialogs
     public partial class DownloadGroupMembersDialog : Form
     {
         public decimal groupId { get; set; }
+        public bool isGroup { get; set; }
 
         public DownloadGroupMembersDialog()
         {
             InitializeComponent();
-            this.groupIdNumeric.Value = groupId;
         }
 
         private void OKButton_Click(object sender, EventArgs e)
         {   
-            groupId = this.groupIdNumeric.Value;
-            // note: group id is negative in the group's wall get request
-            if (this.isGroupcheckBox.Checked)
-            {
-                groupId *= -1;
-            }
+        }
+
+        private void DownloadGroupMembersDialog_Load(object sender, EventArgs e)
+        {
+            this.groupIdNumeric.Value = groupId;
+            this.isGroupcheckBox.Checked = isGroup;
         }
     }
 }

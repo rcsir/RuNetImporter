@@ -23,7 +23,8 @@ namespace rcsir.net.vk.importer.api
         UsersSearch,
         WallGet,
         WallGetComments,
-        GroupsGetMembers
+        GroupsGetMembers,
+        GroupsGetById
     };
 
     // VK enum for sex field
@@ -100,14 +101,28 @@ namespace rcsir.net.vk.importer.api
     // onError event arguments
     public class OnErrorEventArgs : EventArgs
     {
-        public OnErrorEventArgs(VKFunction function, String error)
+        public OnErrorEventArgs(VKFunction function, String error) :
+            this(function, 0, error)
+        {
+        }
+
+        public OnErrorEventArgs(VKFunction function, long code, String error) :
+            this(function, code, error,  "")
+        {
+        }
+
+        public OnErrorEventArgs(VKFunction function, long code, String error, String details)
         {
             this.function = function;
+            this.code = code;
             this.error = error;
+            this.details = details;
         }
 
         public readonly VKFunction function;
+        public readonly long code;
         public readonly String error;
+        public readonly String details;
     }
 
     public class VKRestContext 
@@ -213,6 +228,9 @@ namespace rcsir.net.vk.importer.api
                 case VKFunction.GroupsGetMembers:
                     GroupsGetMembers(function, context.authToken, context.parameters, context.cookie);
                     break;
+                case VKFunction.GroupsGetById:
+                    GroupsGetById(function, context.authToken, context.parameters, context.cookie);
+                    break;
                 default:
                     break;
             }
@@ -316,6 +334,19 @@ namespace rcsir.net.vk.importer.api
             makeRestCall(function, sb.ToString(), cookie);
         }
 
+        // Groups GET By ID v 5.21
+        private void GroupsGetById(VKFunction function, String authToken, String parameters, String cookie)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/groups.getById");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+            sb.Append('&').Append("v=5.21");
+
+            makeRestCall(function, sb.ToString(), cookie);
+        }
+
         private void makeRestCall(VKFunction function, String uri, String cookie = null)
         {
             try
@@ -359,7 +390,18 @@ namespace rcsir.net.vk.importer.api
                             // Error - notify listeners
                             if (OnError != null)
                             {
-                                OnErrorEventArgs args = new OnErrorEventArgs(function, o[ERROR_BODY].ToString());
+                                long code = 0;
+                                String error = "";
+                                if (o[ERROR_BODY]["error_code"] != null)
+                                {
+                                    code = o[ERROR_BODY]["error_code"].ToObject<long>();
+                                }
+                                if (o[ERROR_BODY]["error_msg"] != null)
+                                {
+                                    error = o[ERROR_BODY]["error_msg"].ToString();
+                                }
+
+                                OnErrorEventArgs args = new OnErrorEventArgs(function, code, error, o[ERROR_BODY].ToString());
                                 OnError(this, args);
                             }
                         }
