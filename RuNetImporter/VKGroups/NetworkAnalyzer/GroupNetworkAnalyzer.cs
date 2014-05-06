@@ -14,11 +14,15 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
 {
     class GroupNetworkAnalyzer : NetworkAnalyzerBase
     {
+        // members network
         private List<string> memberIds = new List<string>();
         private VertexCollection vertices = new VertexCollection();
         private EdgeCollection edges = new EdgeCollection();
 
-        private String documentName {get; set;}
+        // posters network
+        private List<string> posterIds = new List<string>();
+        private VertexCollection posterVertices = new VertexCollection();
+        private EdgeCollection posterEdges = new EdgeCollection();
 
         private static List<AttributeUtils.Attribute> GroupAttributes = new List<AttributeUtils.Attribute>()
         {
@@ -31,12 +35,19 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             new AttributeUtils.Attribute("Relation","relation", "friends", false),
             new AttributeUtils.Attribute("City","city", "friends", false),
             new AttributeUtils.Attribute("Country","country", "friends", false),
-
         };
 
-        public GroupNetworkAnalyzer(String documentName)
+        private static List<AttributeUtils.Attribute> GroupPosterAttributes = new List<AttributeUtils.Attribute>()
         {
-            this.documentName = documentName;
+            new AttributeUtils.Attribute("Name","name", "friends", false),
+            new AttributeUtils.Attribute("First Name","first_name", "friends", true),
+            new AttributeUtils.Attribute("Last Name","last_name", "friends", true),
+            new AttributeUtils.Attribute("Picture","photo_50", "friends", true),
+            new AttributeUtils.Attribute("Sex","sex", "friends", true),
+        };
+
+        public GroupNetworkAnalyzer()
+        {
         }
 
         public override List<AttributeUtils.Attribute> GetDefaultNetworkAttributes()
@@ -112,6 +123,44 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             }
         }
 
+        public void addPosterVertex(JObject poster)
+        {
+            string id = poster["id"].ToString();
+            // add id to the posters list
+            this.posterIds.Add(id);
+
+            // add friend vertex
+            AttributesDictionary<String> attributes = createAttributes(poster);
+
+            String role = "Poster";
+
+            if (vertices[id] != null)
+            {
+                // poster is a member
+                role = "Member";
+            }
+
+            this.posterVertices.Add(new Vertex(id,
+                poster["first_name"].ToString() + " " + poster["last_name"].ToString(),
+                role, attributes));
+        }
+
+        public void AddPostersEdge(String memberId, String friendId)
+        {
+            Vertex poster = posterVertices.FirstOrDefault(x => x.ID == memberId);
+            Vertex postersFriend = posterVertices.FirstOrDefault(x => x.ID == friendId);
+
+            if (poster != null && postersFriend != null)
+            {
+                // check for duplicates first
+                Edge e = posterEdges.FirstOrDefault(x => x.Vertex1.ID == postersFriend.ID && x.Vertex2.ID == poster.ID);
+                if (e == null)
+                {
+                    posterEdges.Add(new Edge(poster, postersFriend, "", "Friend", "", 1));
+                }
+            }
+        }
+
         public VertexCollection GetVertices()
         {
             return this.vertices;
@@ -127,6 +176,7 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             return this.memberIds;
         }
 
+        // Group Network GraphML document
         public XmlDocument GenerateGroupNetwork()
         {
             // create default attributes (values will be empty)
@@ -134,20 +184,18 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             return GenerateNetworkDocument(vertices, edges, attributes);
         }
 
-        // Group Network GraphML document
-        public bool SaveGroupNetwork()
+        // posters network
+        public List<string> GetPosterIds()
         {
-            XmlDocument graph = GenerateGroupNetwork();
-
-            if (graph != null)
-            {
-                graph.Save(documentName);
-                return true;
-            }
-
-            return false;
+            return this.posterIds;
         }
 
-
+        // Group Posters Network GraphML document
+        public XmlDocument GeneratePostersNetwork()
+        {
+            // create default attributes (values will be empty)
+            AttributesDictionary<String> attributes = new AttributesDictionary<String>(GroupPosterAttributes);
+            return GenerateNetworkDocument(posterVertices, posterEdges, attributes);
+        }
     }
 }

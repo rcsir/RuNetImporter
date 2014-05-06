@@ -42,10 +42,11 @@ namespace VKGroups
         private volatile bool isRunning;
         private volatile bool isMembersRunning;
         private volatile bool isNetworkRunning;
+        private volatile bool isPostersNetwork; // todo: do it better
 
         // document
         StreamWriter groupPostsWriter;
-        StreamWriter groupProfilesWriter;
+        StreamWriter groupPostersWriter;
         StreamWriter groupCommentsWriter;
         StreamWriter groupMembersWriter;
         // error log
@@ -345,8 +346,9 @@ namespace VKGroups
                 } 
                 else
                 {
-                    // look up a wall by id
-                    // TODO:
+                    VKRestContext context = new VKRestContext(gid.ToString(), this.authToken);
+                    vkRestApi.CallVKFunction(VKFunction.LoadUserInfo, context);
+                    readyEvent.WaitOne();
                 }
             }
             else
@@ -409,6 +411,7 @@ namespace VKGroups
                 decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
 
                 isNetworkRunning = true;
+                isPostersNetwork = false; // note this flag is FALSE!
                 this.backgroundNetworkWorker.RunWorkerAsync(gid);
                 ActivateControls();
             }
@@ -430,6 +433,7 @@ namespace VKGroups
                 decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
                 
                 isNetworkRunning = true;
+                isPostersNetwork = true; // note this flag is TRUE!
                 this.backgroundNetworkWorker.RunWorkerAsync(gid);
                 ActivateControls();
             }
@@ -518,6 +522,9 @@ namespace VKGroups
                 case VKFunction.GroupsGetById:
                     OnGroupsGetById(onDataArgs.data, onDataArgs.cookie);
                     break;
+                case VKFunction.LoadUserInfo:
+                    OnLoadUserInfo(onDataArgs.data);
+                    break;
                 default:
                     Debug.WriteLine("Error, unknown function.");
                     break;
@@ -595,8 +602,7 @@ namespace VKGroups
                 this.groupId = decimal.Parse(groups[0].id);
 
                 // group members network document
-                String networkDocumentName = generateGroupMembersNetworkFileName(groupId);
-                this.groupNetworkAnalyzer = new GroupNetworkAnalyzer(networkDocumentName);
+                this.groupNetworkAnalyzer = new GroupNetworkAnalyzer();
 
                 String fileName = generateGroupFileName(groupId);
                 StreamWriter writer = File.CreateText(fileName);
@@ -614,6 +620,35 @@ namespace VKGroups
             {
                 this.groupId = 0;
                 this.groupId2.Text = gId;
+                this.groupDescription.Text = "Not found";
+            }
+
+            ActivateControls();
+
+            readyEvent.Set();
+        }
+
+        // process load user info response
+        private void OnLoadUserInfo(JObject data)
+        {
+            if (data[VKRestApi.RESPONSE_BODY].Count() > 0)
+            {
+                JObject ego = data[VKRestApi.RESPONSE_BODY][0].ToObject<JObject>();
+                Console.WriteLine("Ego: " + ego.ToString());
+
+                // group members network document
+                this.groupNetworkAnalyzer = new GroupNetworkAnalyzer();
+
+                // update group id and group info
+                this.groupId = decimal.Parse(ego["uid"].ToString());
+
+                this.groupId2.Text = this.groupId.ToString();
+                this.groupDescription.Text = ego["first_name"].ToString() + " " + ego["last_name"].ToString();
+            }
+            else
+            {
+                this.groupId = 0;
+                this.groupId2.Text = "user";
                 this.groupDescription.Text = "Not found";
             }
 
@@ -641,9 +676,9 @@ namespace VKGroups
             groupPostsWriter = File.CreateText(fileName);
             printGroupPostsHeader(groupPostsWriter);
             // 2) gropu profiles
-            fileName = generateGroupProfilesFileName(groupId);
-            groupProfilesWriter = File.CreateText(fileName);
-            printGroupProfilesHeader(groupProfilesWriter);
+            fileName = generateGroupPostersFileName(groupId);
+            groupPostersWriter = File.CreateText(fileName);
+            printGroupPostersHeader(groupPostersWriter);
 
             VKRestContext context = new VKRestContext(this.userId, this.authToken);
 
@@ -694,7 +729,7 @@ namespace VKGroups
             }
 
             groupPostsWriter.Close();
-            groupProfilesWriter.Close();
+            groupPostersWriter.Close();
 
             if (postsWithComments.Count > 0)
             {
@@ -919,10 +954,19 @@ namespace VKGroups
             VKRestContext context = new VKRestContext(this.userId, this.authToken);
             StringBuilder sb = new StringBuilder();
 
-            List<string> members = this.groupNetworkAnalyzer.GetMemeberIds();
+            List<string> members;
+            
+            if(isPostersNetwork) 
+            {
+                members = this.groupNetworkAnalyzer.GetPosterIds();
+            }
+            else 
+            {
+                members = this.groupNetworkAnalyzer.GetMemeberIds();
+            }
 
             // request group comments
-            bw.ReportProgress(-1, "Getting Group friends network");
+            bw.ReportProgress(-1, "Getting friends network");
             this.step = (int)(10000 / members.Count);
 
             long timeLastCall = 0;
@@ -932,7 +976,7 @@ namespace VKGroups
                 if (bw.CancellationPending)
                     break;
 
-                bw.ReportProgress(step, "Getting member's friends: " + (i + 1) + " out of " + members.Count);
+                bw.ReportProgress(step, "Getting friends: " + (i + 1) + " out of " + members.Count);
 
                 String memberId = members[i];
 
@@ -950,7 +994,14 @@ namespace VKGroups
                 readyEvent.WaitOne();
             }
 
-            //args.Result = TimeConsumingOperation(bw, arg);
+            if (isPostersNetwork)
+            {
+                args.Result = this.groupNetworkAnalyzer.GeneratePostersNetwork();
+            }
+            else
+            {
+                args.Result = this.groupNetworkAnalyzer.GenerateGroupNetwork();
+            }
 
             // If the operation was canceled by the user,  
             // set the DoWorkEventArgs.Cancel property to true. 
@@ -987,14 +1038,23 @@ namespace VKGroups
                 updateStatus(10000, "Done");
             }
 
-            // save whatever is collected
-            if (this.groupNetworkAnalyzer != null)
+            // save network document
+            XmlDocument network = args.Result as XmlDocument;
+            if (network != null)
             {
                 updateStatus(0, "Generate Network Graph File");
-                if (this.groupNetworkAnalyzer.SaveGroupNetwork())
+                if (isPostersNetwork)
                 {
-                    Debug.WriteLine("Group Network Graph file generated");
+                    network.Save(generateGroupPostersNetworkFileName(this.groupId));
                 }
+                else
+                {
+                    network.Save(generateGroupMembersNetworkFileName(this.groupId));
+                }
+            }
+            else
+            {
+                MessageBox.Show("Network document is empty!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 
             ActivateControls();
@@ -1128,12 +1188,15 @@ namespace VKGroups
                         profile.photo = profileObj["photo_50"] != null ? profileObj["photo_50"].ToString() : "";
 
                         profiles.Add(profile);
+
+                        // add graph poster vertex
+                        this.groupNetworkAnalyzer.addPosterVertex(profileObj);
                     }
                 }
 
                 if(profiles.Count > 0)
                 {
-                    updateGroupProfilesFile(profiles, groupProfilesWriter);
+                    updateGroupPostersFile(profiles, groupPostersWriter);
                 }
             }
         }
@@ -1320,7 +1383,14 @@ namespace VKGroups
             for (int i = 0; i < count; ++i)
             {
                 String friendId = data[VKRestApi.RESPONSE_BODY][i].ToString();
-                this.groupNetworkAnalyzer.AddFriendsEdge(memberId, friendId); // if friendship exists, the new edge will be added
+                if (isPostersNetwork)
+                {
+                    this.groupNetworkAnalyzer.AddPostersEdge(memberId, friendId); // if friendship exists, the new edge will be added
+                }
+                else
+                {
+                    this.groupNetworkAnalyzer.AddFriendsEdge(memberId, friendId); // if friendship exists, the new edge will be added
+                }
             }
         }
 
@@ -1376,24 +1446,24 @@ namespace VKGroups
             }
         }
 
-        // Group profiles file name
-        private string generateGroupProfilesFileName(decimal groupId)
+        // Group posters profiles file name
+        private string generateGroupPostersFileName(decimal groupId)
         {
             StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
 
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-profiles");
+            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-posters");
             fileName.Append(".txt");
 
             return fileName.ToString();
         }
 
-        private void printGroupProfilesHeader(StreamWriter writer)
+        private void printGroupPostersHeader(StreamWriter writer)
         {
             writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"",
                     "id", "first_name", "last_name", "screen_name", "sex", "photo");
         }
 
-        private void updateGroupProfilesFile(List<Profile> profiles, StreamWriter writer)
+        private void updateGroupPostersFile(List<Profile> profiles, StreamWriter writer)
         {
             foreach (Profile p in profiles)
             {
@@ -1459,12 +1529,18 @@ namespace VKGroups
         {
             StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
 
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-members-network");
-            fileName.Append(".graphml");
+            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-members-network").Append(".graphml");
 
             return fileName.ToString();
         }
 
+        // Group posters Network file
+        private string generateGroupPostersNetworkFileName(decimal groupId)
+        {
+            StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
+            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-posters-network").Append(".graphml");
+            return fileName.ToString();
+        }
 
         // Error log file
         private string generateErrorLogFileName()
