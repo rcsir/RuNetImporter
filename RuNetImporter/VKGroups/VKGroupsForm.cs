@@ -670,7 +670,7 @@ namespace VKGroups
                     break;
                 }
 
-                bw.ReportProgress(step, "Getting posts");
+                bw.ReportProgress(step, "Getting " + currentOffset + " posts out of " + totalCount);
 
                 sb.Length = 0;
                 sb.Append("owner_id=").Append(groupId.ToString()).Append("&");
@@ -715,6 +715,8 @@ namespace VKGroups
                     this.totalCount = 0;
                     this.currentOffset = 0;
 
+                    bw.ReportProgress(step, "Getting " + (i + 1) + " post comments out of " + this.postsWithComments.Count);
+
                     while (this.isRunning)
                     {
                         if (bw.CancellationPending)
@@ -725,8 +727,6 @@ namespace VKGroups
                             // done
                             break;
                         }
-
-                        bw.ReportProgress(step, "Getting comments");
 
                         sb.Length = 0;
                         sb.Append("owner_id=").Append(groupId.ToString()).Append("&"); // group id
@@ -831,7 +831,7 @@ namespace VKGroups
                     break;
                 }
 
-                bw.ReportProgress(step, "Getting group members");
+                bw.ReportProgress(step, "Getting " + currentOffset + " members out of " + totalCount);
 
                 sb.Length = 0;
                 decimal gid = Math.Abs(groupId); // in this request, group id must be positive
@@ -1035,7 +1035,7 @@ namespace VKGroups
             // now calc items in response
             int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
 
-            this.backgroundGroupsWorker.ReportProgress(0, "Processing next " + count + " posts out of " + totalCount);
+            //this.backgroundGroupsWorker.ReportProgress(0, "Processing next " + count + " posts out of " + totalCount);
 
             List<Post> posts = new List<Post>();
 
@@ -1155,8 +1155,6 @@ namespace VKGroups
             // now calc items in response
             int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
 
-            this.backgroundGroupsWorker.ReportProgress(0, "Processing next " + count + " comments");
-
             List<Comment> comments = new List<Comment>();
 
             String t; // temp string
@@ -1166,8 +1164,6 @@ namespace VKGroups
             for (int i = 0; i < count; ++i)
             {
                 JObject postObj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
-                
-                //    "id", "post_id", "from", "date", "reply_to_user", "reply_to_comment", "likes", "attachments", "text");
                 
                 Comment comment = new Comment();
                 comment.id = postObj["id"].ToString();
@@ -1221,13 +1217,11 @@ namespace VKGroups
             if (this.totalCount == 0)
             {
                 this.totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>();
-                this.step = (int)(10000 * POSTS_PER_REQUEST / this.totalCount);
+                this.step = (int)(10000 * MEMBERS_PER_REQUEST / this.totalCount);
             }
 
             // now calc items in response
             int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
-
-            this.backgroundMembersWorker.ReportProgress(0, "Processing next " + count + " members out of " + totalCount);
 
             List<Member> members = new List<Member>();
 
