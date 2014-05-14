@@ -15,12 +15,10 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
     class GroupNetworkAnalyzer : NetworkAnalyzerBase
     {
         // members network
-        private List<string> memberIds = new List<string>();
         private VertexCollection vertices = new VertexCollection();
         private EdgeCollection edges = new EdgeCollection();
 
         // posters network
-        private List<string> posterIds = new List<string>();
         private VertexCollection posterVertices = new VertexCollection();
         private EdgeCollection posterEdges = new EdgeCollection();
 
@@ -96,8 +94,6 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
         public void addMemberVertex(JObject member)
         {
             string id = member["id"].ToString();
-            // add user id to the friends list
-            this.memberIds.Add(id);
 
             // add friend vertex
             AttributesDictionary<String> attributes = createAttributes(member);
@@ -126,8 +122,6 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
         public void addPosterVertex(JObject poster)
         {
             string id = poster["id"].ToString();
-            // add id to the posters list
-            this.posterIds.Add(id);
 
             // add friend vertex
             AttributesDictionary<String> attributes = createAttributes(poster);
@@ -171,23 +165,12 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             return this.edges;
         }
 
-        public List<string> GetMemeberIds()
-        {
-            return this.memberIds;
-        }
-
         // Group Network GraphML document
         public XmlDocument GenerateGroupNetwork()
         {
             // create default attributes (values will be empty)
             AttributesDictionary<String> attributes = new AttributesDictionary<String>(GroupAttributes);
             return GenerateNetworkDocument(vertices, edges, attributes);
-        }
-
-        // posters network
-        public List<string> GetPosterIds()
-        {
-            return this.posterIds;
         }
 
         // Group Posters Network GraphML document

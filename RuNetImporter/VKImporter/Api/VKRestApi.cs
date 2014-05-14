@@ -24,7 +24,9 @@ namespace rcsir.net.vk.importer.api
         WallGet,
         WallGetComments,
         GroupsGetMembers,
-        GroupsGetById
+        GroupsGetById,
+        LikesGetList,
+        UsersGet
     };
 
     // VK enum for sex field
@@ -231,6 +233,12 @@ namespace rcsir.net.vk.importer.api
                 case VKFunction.GroupsGetById:
                     GroupsGetById(function, context.authToken, context.parameters, context.cookie);
                     break;
+                case VKFunction.LikesGetList:
+                    LikesGetList(function, context.authToken, context.parameters);
+                    break;
+                case VKFunction.UsersGet:
+                    UsersGet(function, context.authToken, context.parameters);
+                    break;
                 default:
                     break;
             }
@@ -345,6 +353,32 @@ namespace rcsir.net.vk.importer.api
             sb.Append('&').Append("v=5.21");
 
             makeRestCall(function, sb.ToString(), cookie);
+        }
+
+        // Likes GET List v 5.21 (get list of ids who has liked the item)
+        private void LikesGetList(VKFunction function, String authToken, String parameters)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/likes.getList");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+            sb.Append('&').Append("v=5.21");
+
+            makeRestCall(function, sb.ToString());
+        }
+
+        // Users GET v 5.21 (get users info)
+        private void UsersGet(VKFunction function, String authToken, String parameters)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/users.get");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+            sb.Append('&').Append("v=5.21");
+
+            makeRestCall(function, sb.ToString());
         }
 
         private void makeRestCall(VKFunction function, String uri, String cookie = null)

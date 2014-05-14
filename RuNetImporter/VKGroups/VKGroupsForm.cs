@@ -26,7 +26,8 @@ namespace VKGroups
     {
         private static readonly int POSTS_PER_REQUEST = 100;
         private static readonly int MEMBERS_PER_REQUEST = 1000;
-        private static readonly string MEMBER_FIELDS = "first_name,last_name,screen_name,bdate,city,country,photo_50,sex,relation,status,education";
+        private static readonly int LIKES_PER_REQUEST = 1000;
+        private static readonly string PROFILE_FIELDS = "first_name,last_name,screen_name,bdate,city,country,photo_50,sex,relation,status,education";
         private static readonly string GROUP_FIELDS = "members_count,city,country,description,status";
 
         private VKLoginDialog vkLoginDialog;
@@ -60,66 +61,50 @@ namespace VKGroups
         long currentOffset;
         int step;
 
-        List<String> postsWithComments = new List<String>();
+        // group's temp collections
+        List<long> postsWithComments = new List<long>();
+        List<Like> likes = new List<Like>();
+        Dictionary<long, Poster> posters = new Dictionary<long, Poster>();
+        HashSet<long> memberIds = new HashSet<long>();
+        HashSet<long> posterIds = new HashSet<long>();
 
         // group's post
         private class Post
         {
             public Post()
             {
-                id = "";
-                owner_id = "";
-                from_id = "";
-                signer_id = "";
+                id = 0;
+                owner_id = 0;
+                from_id = 0;
+                signer_id = 0;
                 date = "";
                 post_type = "";
-                comments = "";
-                likes = "";
-                reposts = "";
-                attachments = "";
+                comments = 0;
+                likes = 0;
+                reposts = 0;
+                attachments = 0;
                 text = "";
             }
 
-            public string id { get; set; }
-            public string owner_id { get; set; }
-            public string from_id { get; set; }
-            public string signer_id { get; set; }
+            public long id { get; set; }
+            public long owner_id { get; set; }
+            public long from_id { get; set; }
+            public long signer_id { get; set; }
             public string date { get; set; }
             public string post_type { get; set; }
-            public string comments { get; set; }
-            public string likes { get; set; }
-            public string reposts { get; set; }
-            public string attachments { get; set; } 
+            public long comments { get; set; }
+            public long likes { get; set; }
+            public long reposts { get; set; }
+            public long attachments { get; set; } 
             public string text { get; set; }
         };
 
-        // group's profile
+        // group's member profile
         private class Profile
         {
             public Profile()
             {
-                id = "";
-                first_name = "";
-                last_name = "";
-                screen_name = "";
-                sex = "";
-                photo = "";
-            }
-
-            public string id { get; set; }
-            public string first_name { get; set; }
-            public string last_name { get; set; }
-            public string screen_name { get; set; }
-            public string sex { get; set; }
-            public string photo { get; set; }
-        };
-
-        // group's member profile
-        private class Member
-        {
-            public Member()
-            {
-                id = "";
+                id = 0;
                 first_name = "";
                 last_name = "";
                 screen_name = "";
@@ -133,7 +118,7 @@ namespace VKGroups
                 status = "";
             }
 
-            public string id { get; set; }
+            public long id { get; set; }
             public string first_name { get; set; }
             public string last_name { get; set; }
             public string screen_name { get; set; }
@@ -152,25 +137,25 @@ namespace VKGroups
         {
             public Comment()
             {
-                id = "";
-                post_id = "";
-                from_id = "";
+                id = 0;
+                post_id = 0;
+                from_id = 0;
                 date = "";
-                reply_to_uid = "";
-                reply_to_cid = "";
-                likes = "";
-                attachments = "";
+                reply_to_uid = 0;
+                reply_to_cid = 0;
+                likes = 0;
+                attachments = 0;
                 text = "";
             }
 
-            public string id { get; set; }
-            public string post_id { get; set; }
-            public string from_id { get; set; }
+            public long id { get; set; }
+            public long post_id { get; set; }
+            public long from_id { get; set; }
             public string date { get; set; }
-            public string reply_to_uid { get; set; } // user id
-            public string reply_to_cid { get; set; } // comment id 
-            public string likes { get; set; }
-            public string attachments { get; set; }
+            public long reply_to_uid { get; set; } // user id
+            public long reply_to_cid { get; set; } // comment id 
+            public long likes { get; set; }
+            public long attachments { get; set; }
             public string text { get; set; }
         };
 
@@ -179,7 +164,7 @@ namespace VKGroups
         {
             public Group()
             {
-                id = "";
+                id = 0;
                 name = "";
                 screen_name = "";
                 is_closed = "";
@@ -192,7 +177,7 @@ namespace VKGroups
                 status = "";
             }
 
-            public string id { get; set; }
+            public long id { get; set; }
             public string name { get; set; }
             public string screen_name { get; set; }
             public string is_closed { get; set; }
@@ -203,6 +188,36 @@ namespace VKGroups
             public string photo { get; set; }
             public string description { get; set; }
             public string status { get; set; }
+        };
+
+        // post's or comment's like info 
+        private class Like
+        {
+            public Like()
+            {
+                type = "";
+                owner_id = 0;
+                item_id = 0;
+            }
+
+            public string type { get; set; } // post, comment etc.
+            public long owner_id { get; set; }
+            public long item_id { get; set; }
+        };
+
+        // poster info 
+        private class Poster
+        {
+            public Poster()
+            {
+                posts = 0;
+                comments = 0;
+                likes = 0;
+            }
+
+            public long posts { get; set; }
+            public long comments { get; set; }
+            public long likes { get; set; }
         };
 
         // Constructor
@@ -525,6 +540,12 @@ namespace VKGroups
                 case VKFunction.LoadUserInfo:
                     OnLoadUserInfo(onDataArgs.data);
                     break;
+                case VKFunction.LikesGetList:
+                    OnLikesGetList(onDataArgs.data);
+                    break;
+                case VKFunction.UsersGet:
+                    OnUsersGet(onDataArgs.data);
+                    break;
                 default:
                     Debug.WriteLine("Error, unknown function.");
                     break;
@@ -581,14 +602,14 @@ namespace VKGroups
 
                 Group g = new Group();
 
-                g.id = getStringField("id", groupObject);
+                g.id = getLongField("id", groupObject);
                 g.name = getStringField("name", groupObject);
                 g.screen_name = getStringField("screen_name", groupObject);
                 g.is_closed = getStringField("is_closed", groupObject);
                 g.type = getStringField("type", groupObject);
                 g.members_count = getStringField("members_count", groupObject);
-                g.city = getStringTitleField("city", groupObject);
-                g.country = getStringTitleField("country", groupObject);
+                g.city = getStringField("city", "title", groupObject);
+                g.country = getStringField("country", "title", groupObject);
                 g.photo = getStringField("photo_50", groupObject);
                 g.description = getTextField("description", groupObject);
                 g.status = getTextField("status", groupObject);
@@ -599,7 +620,7 @@ namespace VKGroups
             if (groups.Count > 0)
             {
                 // update group id and group info
-                this.groupId = decimal.Parse(groups[0].id);
+                this.groupId = groups[0].id;
 
                 // group members network document
                 this.groupNetworkAnalyzer = new GroupNetworkAnalyzer();
@@ -675,10 +696,6 @@ namespace VKGroups
             String fileName = generateGroupPostsFileName(groupId);
             groupPostsWriter = File.CreateText(fileName);
             printGroupPostsHeader(groupPostsWriter);
-            // 2) gropu profiles
-            fileName = generateGroupPostersFileName(groupId);
-            groupPostersWriter = File.CreateText(fileName);
-            printGroupPostersHeader(groupPostersWriter);
 
             VKRestContext context = new VKRestContext(this.userId, this.authToken);
 
@@ -686,6 +703,9 @@ namespace VKGroups
             StringBuilder sb = new StringBuilder();
 
             this.postsWithComments.Clear(); // reset comments reference list
+            this.likes.Clear(); // reset likes
+            this.posters.Clear(); // reset posters
+            this.posterIds.Clear(); // clear poster ids
 
             this.totalCount = 0;
             this.currentOffset = 0;
@@ -711,7 +731,6 @@ namespace VKGroups
                 sb.Append("owner_id=").Append(groupId.ToString()).Append("&");
                 sb.Append("offset=").Append(currentOffset).Append("&");
                 sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
-                sb.Append("extended=").Append(1).Append("&"); // request extended information - wall, profiles, groups
                 context.parameters = sb.ToString();
                 Debug.WriteLine("Download parameters: " + context.parameters);
 
@@ -729,7 +748,6 @@ namespace VKGroups
             }
 
             groupPostsWriter.Close();
-            groupPostersWriter.Close();
 
             if (postsWithComments.Count > 0)
             {
@@ -770,7 +788,7 @@ namespace VKGroups
                         sb.Append("offset=").Append(currentOffset).Append("&");
                         sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
                         context.parameters = sb.ToString();
-                        context.cookie = postsWithComments[i]; // pass post id as a cookie
+                        context.cookie = postsWithComments[i].ToString(); // pass post id as a cookie
                         Debug.WriteLine("Request parameters: " + context.parameters);
 
                         // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
@@ -787,6 +805,105 @@ namespace VKGroups
 
                 groupCommentsWriter.Close();
             }
+
+            // process the likers - they will be added to the posters
+            if (likes.Count > 0)
+            {
+                // request likers ids
+                bw.ReportProgress(-1, "Getting likers");
+                this.step = (int)(10000 / this.likes.Count);
+
+                timeLastCall = 0;
+
+                for (int i = 0; i < this.likes.Count; i++)
+                {
+                    isRunning = true;
+                    //this.totalCount = 0;
+                    //this.currentOffset = 0;
+
+                    bw.ReportProgress(step, "Getting " + (i + 1) + " likes out of " + this.likes.Count);
+
+                    if (bw.CancellationPending)
+                        break;
+
+                    sb.Length = 0;
+                    sb.Append("type=").Append(likes[i].type).Append("&"); // group id
+                    sb.Append("owner_id=").Append(likes[i].owner_id).Append("&"); // group id
+                    sb.Append("item_id=").Append(likes[i].item_id).Append("&"); // post id
+                    sb.Append("count=").Append(LIKES_PER_REQUEST).Append("&");
+                    context.parameters = sb.ToString();
+                    Debug.WriteLine("Request parameters: " + context.parameters);
+
+                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                    timeLastCall = sleepTime(timeLastCall);
+                    // call VK REST API
+                    vkRestApi.CallVKFunction(VKFunction.LikesGetList, context);
+
+                    // wait for the user data
+                    readyEvent.WaitOne();
+                }
+            }
+
+            // now collect visitors posters (not members, who left a post or a comment or a like) 
+
+            // find posters not members
+            List<long> visitors = new List<long>();
+            foreach (long p in posterIds)
+            {
+                if (!memberIds.Contains(p))
+                {
+                    // this is a visitor poster
+                    visitors.Add(p);
+                }
+            }
+
+            // group posters profiles
+            fileName = generateGroupPostersFileName(groupId);
+            groupPostersWriter = File.CreateText(fileName);
+            printGroupPostersHeader(groupPostersWriter);
+
+            // request visitors info
+            bw.ReportProgress(-1, "Getting visitors");
+            this.step = (int)(10000 / visitors.Count);
+
+            timeLastCall = 0;
+
+            for (int i = 0; i < visitors.Count; i+=100)
+            {
+                isRunning = true;
+                //this.totalCount = 0;
+                //this.currentOffset = 0;
+
+                bw.ReportProgress(step, "Getting " + (i + 1) + " visitors out of " + visitors.Count);
+
+                if (bw.CancellationPending)
+                    break;
+
+                sb.Length = 0;
+
+                sb.Append("user_ids=");
+
+                for (int j = i; j < visitors.Count && j < i + 100; ++j)
+                {
+                    sb.Append(visitors[j]).Append(","); // users
+                }
+
+                sb.Append("&").Append("fields=").Append(PROFILE_FIELDS);
+
+                context.parameters = sb.ToString();
+                Debug.WriteLine("Request parameters: " + context.parameters);
+
+                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                timeLastCall = sleepTime(timeLastCall);
+                // call VK REST API
+                vkRestApi.CallVKFunction(VKFunction.UsersGet, context);
+
+                // wait for the user data
+                readyEvent.WaitOne();
+
+            }
+
+            groupPostersWriter.Close();
 
             //args.Result = TimeConsumingOperation(bw, arg);
 
@@ -848,6 +965,8 @@ namespace VKGroups
             VKRestContext context = new VKRestContext(this.userId, this.authToken);
             StringBuilder sb = new StringBuilder();
 
+            this.memberIds.Clear(); // clear member ids
+
             this.totalCount = 0;
             this.currentOffset = 0;
             this.step = 1;
@@ -874,7 +993,7 @@ namespace VKGroups
                 sb.Append("sort=").Append("id_asc").Append("&");
                 sb.Append("offset=").Append(currentOffset).Append("&");
                 sb.Append("count=").Append(MEMBERS_PER_REQUEST).Append("&");
-                sb.Append("fields=").Append(MEMBER_FIELDS).Append("&");
+                sb.Append("fields=").Append(PROFILE_FIELDS).Append("&");
                 context.parameters = sb.ToString();
                 Debug.WriteLine("Request parameters: " + context.parameters);
 
@@ -954,15 +1073,15 @@ namespace VKGroups
             VKRestContext context = new VKRestContext(this.userId, this.authToken);
             StringBuilder sb = new StringBuilder();
 
-            List<string> members;
+            HashSet<long> members;
             
             if(isPostersNetwork) 
             {
-                members = this.groupNetworkAnalyzer.GetPosterIds();
+                members = this.posterIds;
             }
             else 
             {
-                members = this.groupNetworkAnalyzer.GetMemeberIds();
+                members = this.memberIds;
             }
 
             // request group comments
@@ -970,20 +1089,18 @@ namespace VKGroups
             this.step = (int)(10000 / members.Count);
 
             long timeLastCall = 0;
-
-            for (int i = 0; i < members.Count && isNetworkRunning; ++i)
+            long l = 0;
+            foreach (long mId in members)
             {
-                if (bw.CancellationPending)
+                if (bw.CancellationPending || !isNetworkRunning)
                     break;
 
-                bw.ReportProgress(step, "Getting friends: " + (i + 1) + " out of " + members.Count);
-
-                String memberId = members[i];
+                bw.ReportProgress(step, "Getting friends: " + (++l) + " out of " + members.Count);
 
                 sb.Length = 0;
-                sb.Append("user_id=").Append(memberId);
+                sb.Append("user_id=").Append(mId);
                 context.parameters = sb.ToString();
-                context.cookie = memberId; // pass member id as a cookie
+                context.cookie = mId.ToString(); // pass member id as a cookie
                 Debug.WriteLine("Request parameters: " + context.parameters);
 
                 // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
@@ -1097,60 +1214,83 @@ namespace VKGroups
 
             //this.backgroundGroupsWorker.ReportProgress(0, "Processing next " + count + " posts out of " + totalCount);
 
+            long gId = (long)(this.isGroup ? decimal.Negate(this.groupId) : this.groupId);
             List<Post> posts = new List<Post>();
 
-            String t; // temp string
-            long l; // temp number
-            DateTime d; // temp date obj
             // process response body
             for (int i = 0; i < count; ++i)
             {
                 JObject postObj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
 
                 Post post = new Post();
-                post.id = postObj["id"].ToString();
-                post.owner_id = postObj["owner_id"] != null ? postObj["owner_id"].ToString() : "";
-                post.from_id = postObj["from_id"] != null ? postObj["from_id"].ToString() : "";
-                post.signer_id = postObj["signer_id"] != null ? postObj["signer_id"].ToString() : "";
+                post.id = getLongField("id", postObj);
+                post.owner_id = getLongField("owner_id", postObj);
+                post.from_id = getLongField("from_id", postObj);
+                post.signer_id = getLongField("signer_id", postObj);
                 // post date
-                l = postObj["date"] != null ? postObj["date"].ToObject<long>() : 0;
-                d = timeToDateTime(l);
-                post.date = d.ToString("yyyy-MM-dd HH:mm:ss");
+                post.date = getStringDateField("date", postObj);
                 // post_type 
-                post.post_type = postObj["post_type"] != null ? postObj["post_type"].ToString() : ""; 
+                post.post_type = getStringField("post_type", postObj); 
                 // comments
-                if(postObj["comments"] != null)
+                post.comments = getLongField("comments", "count", postObj);
+                if (post.comments > 0)
                 {
-                    post.comments = postObj["comments"]["count"].ToString();
-                    l = postObj["comments"]["count"].ToObject<long>();
-                    if (l > 0)
-                    {
-                        this.postsWithComments.Add(post.id); // add post's id to the ref list for comments processing
-                    }
+                    this.postsWithComments.Add(post.id); // add post's id to the ref list for comments processing
                 }
-                // likes/dislikes
-                if(postObj["likes"] != null)
+
+                // likes
+                post.likes = getLongField("likes", "count", postObj);
+                if (post.likes > 0)
                 {
-                    int likes = postObj["likes"]["count"].ToObject<int>();
-                    post.likes = likes.ToString();
+                    Like like = new Like();
+                    like.type = "post";
+                    like.owner_id = gId;
+                    like.item_id = post.id;
+                    this.likes.Add(like);
                 }
+
                 // reposts
-                if(postObj["reposts"] != null)
-                {
-                    post.reposts = postObj["reposts"]["count"].ToString();
-                }
+                post.reposts = getLongField("reposts", "count", postObj);
+                
                 // attachments count
                 if(postObj["attachments"] != null)
                 {
-                    post.attachments = postObj["attachments"].ToArray().Length.ToString();
+                    post.attachments = postObj["attachments"].ToArray().Length;
                 }
+
                 // post text
-                t = postObj["text"] != null ? postObj["text"].ToString() : "";
-                if(t.Length > 0)
+                post.text = getTextField("text", postObj);
+
+                // update posters if different from the group
+                if (post.from_id != gId)
                 {
-                    post.text = Regex.Replace(t, @"\r\n?|\n", "");
+                    if (!posters.ContainsKey(post.from_id))
+                    {
+                        posters[post.from_id] = new Poster();
+                    }
+
+                    posters[post.from_id].posts += 1; // increment number of posts
+                    posters[post.from_id].likes += post.likes;
+                    
+                    // add to the poster ids
+                    posterIds.Add(post.from_id);
                 }
-            
+
+                // if post has a signer - update posters
+                if (post.signer_id > 0 && post.signer_id != post.from_id)
+                {
+                    if (!posters.ContainsKey(post.signer_id))
+                    {
+                        posters[post.signer_id] = new Poster();
+                    }
+
+                    posters[post.signer_id].posts += 1; // increment number of posts
+                    posters[post.signer_id].likes += post.likes;
+
+                    // add to the poster ids
+                    posterIds.Add(post.signer_id);
+                }
+
                 posts.Add(post);
             }
 
@@ -1158,46 +1298,6 @@ namespace VKGroups
             {
                 // save the posts list
                 updateGroupPostsFile(posts, groupPostsWriter);
-            }
-
-            // process extended information
-            // profiles
-            if(data[VKRestApi.RESPONSE_BODY]["profiles"] != null)
-            {
-                List<Profile> profiles = new List<Profile>();
-
-                JArray profilesObj = (JArray)data[VKRestApi.RESPONSE_BODY]["profiles"];
-                for (int i = 0; i < profilesObj.Count; i++ )
-                {
-                    JObject profileObj = profilesObj[i].ToObject<JObject>();
-
-                    if(profileObj != null)
-                    {
-                        Profile profile = new Profile();
-
-                        profile.id = profileObj["id"].ToString();
-
-                        // ignore requester profile
-                        if (profile.id.Equals(this.userId))
-                            continue;
-
-                        profile.first_name = profileObj["first_name"] != null ? profileObj["first_name"].ToString() : "";
-                        profile.last_name = profileObj["last_name"] != null ? profileObj["last_name"].ToString() : "";
-                        profile.screen_name = profileObj["screen_name"] != null ? profileObj["screen_name"].ToString() : "";
-                        profile.sex = profileObj["sex"] != null ? profileObj["sex"].ToString() : "";
-                        profile.photo = profileObj["photo_50"] != null ? profileObj["photo_50"].ToString() : "";
-
-                        profiles.Add(profile);
-
-                        // add graph poster vertex
-                        this.groupNetworkAnalyzer.addPosterVertex(profileObj);
-                    }
-                }
-
-                if(profiles.Count > 0)
-                {
-                    updateGroupPostersFile(profiles, groupPostersWriter);
-                }
             }
         }
 
@@ -1218,43 +1318,57 @@ namespace VKGroups
             // now calc items in response
             int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
 
+            long gId = (long)(this.isGroup ? decimal.Negate(this.groupId) : this.groupId);
             List<Comment> comments = new List<Comment>();
 
-            String t; // temp string
-            long l; // temp number
-            DateTime d; // temp date obj
             // process response body
             for (int i = 0; i < count; ++i)
             {
                 JObject postObj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
                 
                 Comment comment = new Comment();
-                comment.id = postObj["id"].ToString();
-                comment.post_id = cookie; // passed as a cookie
-                comment.from_id = postObj["from_id"] != null ? postObj["from_id"].ToString() : "";
+                comment.id = getLongField("id", postObj);
+                comment.post_id = Convert.ToInt64(cookie); // passed as a cookie
+                comment.from_id = getLongField("from_id", postObj);
                 // post date
-                l = postObj["date"] != null ? postObj["date"].ToObject<long>() : 0;
-                d = timeToDateTime(l);
-                comment.date = d.ToString("yyyy-MM-dd HH:mm:ss");
-                comment.reply_to_uid = postObj["reply_to_uid"] != null ? postObj["reply_to_uid"].ToString() : "";
-                comment.reply_to_cid = postObj["reply_to_cid"] != null ? postObj["reply_to_cid"].ToString() : "";
+                comment.date = getStringDateField("date", postObj);
+
+                comment.reply_to_uid = getLongField("reply_to_uid", postObj);
+                comment.reply_to_cid = getLongField("reply_to_cid", postObj);
                 
                 // likes/dislikes
-                if (postObj["likes"] != null)
+                comment.likes = getLongField("likes", "count", postObj);
+                if (comment.likes > 0)
                 {
-                    int likes = postObj["likes"]["count"].ToObject<int>();
-                    comment.likes = likes.ToString();
+                    Like like = new Like();
+                    like.type = "comment";
+                    like.owner_id = gId;
+                    like.item_id = comment.id;
+                    this.likes.Add(like);
                 }
+ 
                 // attachments count
                 if (postObj["attachments"] != null)
                 {
-                    comment.attachments = postObj["attachments"].ToArray().Length.ToString();
+                    comment.attachments = postObj["attachments"].ToArray().Length;
                 }
+        
                 // post text
-                t = postObj["text"] != null ? postObj["text"].ToString() : "";
-                if (t.Length > 0)
+                comment.text = getTextField("text", postObj);
+
+                // update posters
+                if (comment.from_id != gId)
                 {
-                    comment.text = Regex.Replace(t, @"\r\n?|\n", "");
+                    if (!posters.ContainsKey(comment.from_id))
+                    {
+                        posters[comment.from_id] = new Poster();
+                    }
+                    
+                    posters[comment.from_id].comments += 1; // increment number of comments
+                    posters[comment.from_id].likes += comment.likes;
+
+                    // add to the poster ids
+                    posterIds.Add(comment.from_id);
                 }
 
                 comments.Add(comment);
@@ -1267,6 +1381,31 @@ namespace VKGroups
             }
         }
 
+        // process likes user list
+        private void OnLikesGetList(JObject data)
+        {
+            if (data[VKRestApi.RESPONSE_BODY] == null)
+            {
+                this.isRunning = false;
+                return;
+            }
+
+            // now calc items in response
+            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+
+            // process response body
+            for (int i = 0; i < count; ++i)
+            {
+                long likerId = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<long>();
+                // this user liked the subject - add him to the posters
+                if (!posters.ContainsKey(likerId))
+                {
+                    posters[likerId] = new Poster();
+                }
+
+                this.posterIds.Add(likerId);
+            }
+        }
 
         // process group member
         private void OnGroupsGetMembers(JObject data, String cookie)
@@ -1286,11 +1425,8 @@ namespace VKGroups
             // now calc items in response
             int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
 
-            List<Member> members = new List<Member>();
+            List<Profile> profiles = new List<Profile>();
 
-            String t; // temp string
-            long l; // temp number
-            DateTime d; // temp date obj
             // process response body
             for (int i = 0; i < count; ++i)
             {
@@ -1298,7 +1434,7 @@ namespace VKGroups
 
                 if (profileObj != null)
                 {
-                    String type = profileObj["type"] != null ? profileObj["type"].ToString() : "";
+                    String type = getStringField("type", profileObj);
 
                     if (!type.Equals("profile")) 
                     {
@@ -1306,63 +1442,47 @@ namespace VKGroups
                         continue; // must be profile
                     }
 
-                    Member member = new Member();
+                    Profile profile = new Profile();
 
-                    member.id = profileObj["id"].ToString();
+                    profile.id = getLongField("id", profileObj);
 
-                    if (member.id.Length == 0)
+                    if (profile.id <= 0)
                     {
                         // probably blocked or deleted account, continue
                         continue;
                     }
 
-                    member.first_name = profileObj["first_name"] != null ? profileObj["first_name"].ToString() : "";
-                    member.last_name = profileObj["last_name"] != null ? profileObj["last_name"].ToString() : "";
-                    member.screen_name = profileObj["screen_name"] != null ? profileObj["screen_name"].ToString() : "";
-                    member.bdate = profileObj["bdate"] != null ? profileObj["bdate"].ToString() : "";
+                    profile.first_name = getTextField("first_name", profileObj);
+                    profile.last_name = getTextField("last_name", profileObj);
+                    profile.screen_name = getTextField("screen_name", profileObj);
+                    profile.bdate = getTextField("bdate", profileObj);
+                    profile.city = getStringField("city", "title", profileObj);
+                    profile.country = getStringField("country", "title", profileObj);
 
-                    if(profileObj["city"] != null)
-                    {
-                        member.city = profileObj["city"]["title"].ToString();
-                    }
-                    
-                    if(profileObj["country"] != null)
-                    {
-                        member.country = profileObj["country"]["title"].ToString();
-                    }
-
-                    member.photo = profileObj["photo_50"] != null ? profileObj["photo_50"].ToString() : "";
-                    member.sex = profileObj["sex"] != null ? profileObj["sex"].ToString() : "";
-                    member.relation = profileObj["relation"] != null ? profileObj["relation"].ToString() : "";
+                    profile.photo = getStringField("photo_50", profileObj);
+                    profile.sex = getStringField("sex", profileObj);
+                    profile.relation = getStringField("relation", profileObj);
           
-                    // university name
-                    t = profileObj["university_name"] != null ? profileObj["university_name"].ToString() : "";
-                    if (t.Length > 0)
-                    {
-                        member.education = Regex.Replace(t, @"\r\n?|\n", "");
-                    }
+                    // university name - text
+                    profile.education = getTextField("university_name", profileObj);
 
                     // status text
-                    t = profileObj["status"] != null ? profileObj["status"].ToString() : "";
-                    if (t.Length > 0)
-                    {
-                        member.status = Regex.Replace(t, @"\r\n?|\n", "");
-                    }
+                    profile.status = getTextField("status", profileObj);
 
-                    members.Add(member);
+                    profiles.Add(profile);
 
                     // add graph member vertex
+                    this.memberIds.Add(profile.id);
                     this.groupNetworkAnalyzer.addMemberVertex(profileObj);
                 }
             }
 
-            if (members.Count > 0)
+            if (profiles.Count > 0)
             {
                 // save the posts list
-                updateGroupMembersFile(members, groupMembersWriter);
+                updateGroupMembersFile(profiles, groupMembersWriter);
             }
         }
-
 
         // process friends list
         private void OnGetFriends(JObject data, String cookie)
@@ -1391,6 +1511,60 @@ namespace VKGroups
                 {
                     this.groupNetworkAnalyzer.AddFriendsEdge(memberId, friendId); // if friendship exists, the new edge will be added
                 }
+            }
+        }
+
+        // process user info
+        private void OnUsersGet(JObject data)
+        {
+            if (data[VKRestApi.RESPONSE_BODY] == null)
+            {
+                this.isRunning = false;
+                return;
+            }
+
+            // now calc items in response
+            int count = data[VKRestApi.RESPONSE_BODY].Count();
+            Debug.WriteLine("Processing " + count + " users");
+
+            List<Profile> profiles = new List<Profile>();
+            
+            // process response body
+            for (int i = 0; i < count; ++i)
+            {
+                JObject userObj = data[VKRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+            
+                Profile profile = new Profile();
+                profile.id = getLongField("id", userObj);
+
+                profile.first_name = getTextField("first_name", userObj);
+                profile.last_name = getTextField("last_name", userObj);
+                profile.screen_name = getTextField("screen_name", userObj);
+                profile.bdate = getTextField("bdate", userObj);
+                profile.city = getStringField("city", "title", userObj);
+                profile.country = getStringField("country", "title", userObj);
+
+                profile.photo = getStringField("photo_50", userObj);
+                profile.sex = getStringField("sex", userObj);
+                profile.relation = getStringField("relation", userObj);
+
+                // university name - text
+                profile.education = getTextField("university_name", userObj);
+
+                // status text
+                profile.status = getTextField("status", userObj);
+
+                profiles.Add(profile);
+
+                // add graph member vertex
+                //this.memberIds.Add(profile.id);
+                //this.groupNetworkAnalyzer.addMemberVertex(userObj);
+            }
+
+            if (profiles.Count > 0)
+            {
+                // update posters
+                updateGroupPostersFile(profiles, groupPostersWriter);
             }
         }
 
@@ -1489,9 +1663,9 @@ namespace VKGroups
                     "id", "first_name", "last_name", "screen_name", "bdate", "city", "country", "photo", "sex", "relation",  "education", "status");
         }
 
-        private void updateGroupMembersFile(List<Member> members, StreamWriter writer)
+        private void updateGroupMembersFile(List<Profile> profiles, StreamWriter writer)
         {
-            foreach (Member m in members)
+            foreach (Profile m in profiles)
             {
                 writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"\t\"{11}\"",
                     m.id, m.first_name, m.last_name, m.screen_name, m.bdate, m.city, m.country, m.photo, m.sex, m.relation, m.education, m.status);
@@ -1577,7 +1751,7 @@ namespace VKGroups
 
         long sleepTime(long timeLastCall)
         {
-            long timeToSleep = 333 - (getTimeNowMillis() - timeLastCall);
+            long timeToSleep = 339 - (getTimeNowMillis() - timeLastCall);
             if (timeToSleep > 0)
                 Thread.Sleep((Int32)timeToSleep);
 
@@ -1590,16 +1764,65 @@ namespace VKGroups
             return o[name] != null ? o[name].ToString() : "";
         }
 
-        private static String getStringTitleField(String name, JObject o)
+        private static long getLongField(String name, JObject o, long def = 0)
         {
-            if (o[name] != null)
+            long result = def;
+
+            if( o[name] != null) 
             {
-                if (o[name]["title"] != null)
+                string value = o[name].ToString();
+
+                try
                 {
-                   return o[name]["title"].ToString();
+                    result = Convert.ToInt64(value);
                 }
+                catch (OverflowException)
+                {
+                    Debug.WriteLine("The value is outside the range of the Int64 type: " + value);
+                }
+                catch (FormatException)
+                {
+                    Debug.WriteLine("The value is not in a recognizable format: " + value);
+                }
+            } 
+
+            return result;
+        }
+
+        private static String getStringField(String category, String name, JObject o)
+        {
+            if (o[category] != null &&
+                o[category][name] != null)
+            {
+                return o[category][name].ToString();
             }
             return "";
+        }
+
+        private static long getLongField(String category, String name, JObject o, long def = 0)
+        {
+            long result = def;
+
+            if (o[category] != null &&
+                o[category][name] != null)
+            {
+                string value = o[category][name].ToString();
+
+                try
+                {
+                    result = Convert.ToInt64(value);
+                }
+                catch (OverflowException)
+                {
+                    Debug.WriteLine("The value is outside the range of the Int64 type: " + value);
+                }
+                catch (FormatException)
+                {
+                    Debug.WriteLine("The value is not in a recognizable format: " + value);
+                }
+            }
+
+            return result;
         }
 
         private static String getTextField(String name, JObject o)
@@ -1620,3 +1843,48 @@ namespace VKGroups
         }
     }
 }
+
+/*
+ * 
+            // process extended information
+            // profiles
+            if(data[VKRestApi.RESPONSE_BODY]["profiles"] != null)
+            {
+                List<Profile> profiles = new List<Profile>();
+
+                JArray profilesObj = (JArray)data[VKRestApi.RESPONSE_BODY]["profiles"];
+                for (int i = 0; i < profilesObj.Count; i++ )
+                {
+                    JObject profileObj = profilesObj[i].ToObject<JObject>();
+
+                    if(profileObj != null)
+                    {
+                        Profile profile = new Profile();
+
+                        profile.id = getLongField("id", profileObj);
+
+                        // ignore requester profile
+                        if (profile.id.Equals(this.userId))
+                            continue;
+
+                        profile.first_name = profileObj["first_name"] != null ? profileObj["first_name"].ToString() : "";
+                        profile.last_name = profileObj["last_name"] != null ? profileObj["last_name"].ToString() : "";
+                        profile.screen_name = profileObj["screen_name"] != null ? profileObj["screen_name"].ToString() : "";
+                        profile.sex = profileObj["sex"] != null ? profileObj["sex"].ToString() : "";
+                        profile.photo = profileObj["photo_50"] != null ? profileObj["photo_50"].ToString() : "";
+
+                        profiles.Add(profile);
+
+                        // add graph poster vertex
+                        this.groupNetworkAnalyzer.addPosterVertex(profileObj);
+                    }
+                }
+
+                if(profiles.Count > 0)
+                {
+                    updateGroupPostersFile(profiles, groupPostersWriter);
+                }
+            }
+ * 
+ * 
+ */
