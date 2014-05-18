@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
+using System.Diagnostics;
 using Smrf.XmlLib;
 using Smrf.AppLib;
 using rcsir.net.common.NetworkAnalyzer;
@@ -17,6 +18,9 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
         // members network
         private VertexCollection vertices = new VertexCollection();
         private EdgeCollection edges = new EdgeCollection();
+
+        // visitor vertices
+        private VertexCollection visitorVertices = new VertexCollection();
 
         // posters network
         private VertexCollection posterVertices = new VertexCollection();
@@ -33,15 +37,12 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             new AttributeUtils.Attribute("Relation","relation", "friends", false),
             new AttributeUtils.Attribute("City","city", "friends", false),
             new AttributeUtils.Attribute("Country","country", "friends", false),
-        };
-
-        private static List<AttributeUtils.Attribute> GroupPosterAttributes = new List<AttributeUtils.Attribute>()
-        {
-            new AttributeUtils.Attribute("Name","name", "friends", false),
-            new AttributeUtils.Attribute("First Name","first_name", "friends", true),
-            new AttributeUtils.Attribute("Last Name","last_name", "friends", true),
-            new AttributeUtils.Attribute("Picture","photo_50", "friends", true),
-            new AttributeUtils.Attribute("Sex","sex", "friends", true),
+            // posts stats
+            new AttributeUtils.Attribute("Posts","posts", "friends", false),
+            new AttributeUtils.Attribute("Comments","comments", "friends", false),
+            new AttributeUtils.Attribute("Receive Likes","rec_likes", "friends", false),
+            new AttributeUtils.Attribute("Likes","likes", "friends", false),
+            new AttributeUtils.Attribute("Friends","friends", "friends", false),
         };
 
         public GroupNetworkAnalyzer()
@@ -94,13 +95,23 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
         public void addMemberVertex(JObject member)
         {
             string id = member["id"].ToString();
-
-            // add friend vertex
+            
             AttributesDictionary<String> attributes = createAttributes(member);
 
             this.vertices.Add(new Vertex(id,
                 member["first_name"].ToString() + " " + member["last_name"].ToString(),
                 "Member", attributes));
+        }
+
+        public void addVisitorVertex(JObject visitor)
+        {
+            string id = visitor["id"].ToString();
+
+            AttributesDictionary<String> attributes = createAttributes(visitor);
+
+            this.visitorVertices.Add(new Vertex(id,
+                visitor["first_name"].ToString() + " " + visitor["last_name"].ToString(),
+                "Visitor", attributes));
         }
 
         public void AddFriendsEdge(String memberId, String friendId)
@@ -119,24 +130,74 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             }
         }
 
-        public void addPosterVertex(JObject poster)
+        public void addPosterVertex(String id)
         {
-            string id = poster["id"].ToString();
-
-            // add friend vertex
-            AttributesDictionary<String> attributes = createAttributes(poster);
-
-            String role = "Poster";
-
-            if (vertices[id] != null)
+            Vertex posterVertex = vertices[id];
+            if (posterVertex == null)
             {
-                // poster is a member
-                role = "Member";
+                // visitor
+                posterVertex = visitorVertices[id];
             }
 
-            this.posterVertices.Add(new Vertex(id,
-                poster["first_name"].ToString() + " " + poster["last_name"].ToString(),
-                role, attributes));
+            if (posterVertex != null)
+            {
+                this.posterVertices.Add(posterVertex);
+            }
+            else
+            {
+                Debug.WriteLine("Poster's Vertex not found with id " + id);
+            }
+        }
+
+        public void updateVertexAttributes(String id, Dictionary<String, String> attributes)
+        {
+            Vertex v = vertices[id];
+            if (v == null)
+            {
+                // visitor
+                v = visitorVertices[id];
+            }
+
+            if (v != null)
+            {
+                AttributesDictionary<String> a = v.Attributes;
+                if (a != null)
+                {
+                    foreach (KeyValuePair<string, string> entry in attributes)
+                    {
+                        // note, that entry key must be present in a!
+                        a[entry.Key] = entry.Value;
+                    }
+                }
+            }
+            else
+            {
+                Debug.WriteLine("Vertex not found with id " + id);
+            }
+        }
+
+        public void updateVertexAttributes(String id, String key, String value)
+        {
+            Vertex v = vertices[id];
+            if (v == null)
+            {
+                // visitor
+                v = visitorVertices[id];
+            }
+
+            if (v != null)
+            {
+                AttributesDictionary<String> a = v.Attributes;
+                // note, that entry key must be present in a!
+                if (a != null)
+                {
+                    a[key] = value;
+                }
+            }
+            else
+            {
+                Debug.WriteLine("Vertex not found with id " + id);
+            }
         }
 
         public void AddPostersEdge(String memberId, String friendId)
@@ -155,16 +216,6 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             }
         }
 
-        public VertexCollection GetVertices()
-        {
-            return this.vertices;
-        }
-
-        public EdgeCollection GetEdges()
-        {
-            return this.edges;
-        }
-
         // Group Network GraphML document
         public XmlDocument GenerateGroupNetwork()
         {
@@ -177,7 +228,7 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
         public XmlDocument GeneratePostersNetwork()
         {
             // create default attributes (values will be empty)
-            AttributesDictionary<String> attributes = new AttributesDictionary<String>(GroupPosterAttributes);
+            AttributesDictionary<String> attributes = new AttributesDictionary<String>(GroupAttributes);
             return GenerateNetworkDocument(posterVertices, posterEdges, attributes);
         }
     }

@@ -212,12 +212,16 @@ namespace VKGroups
             {
                 posts = 0;
                 comments = 0;
+                rec_likes = 0;
                 likes = 0;
+                friends = 0;
             }
 
             public long posts { get; set; }
             public long comments { get; set; }
+            public long rec_likes { get; set; }
             public long likes { get; set; }
+            public long friends { get; set; }
         };
 
         // Constructor
@@ -1078,6 +1082,12 @@ namespace VKGroups
             if(isPostersNetwork) 
             {
                 members = this.posterIds;
+
+                // add all posters vertices first
+                foreach (long mId in members)
+                {
+                    this.groupNetworkAnalyzer.addPosterVertex(mId.ToString()); // could be a member or a visitor
+                }
             }
             else 
             {
@@ -1151,27 +1161,27 @@ namespace VKGroups
             }
             else
             {
-                //MessageBox.Show("Search complete!");
-                updateStatus(10000, "Done");
-            }
-
-            // save network document
-            XmlDocument network = args.Result as XmlDocument;
-            if (network != null)
-            {
-                updateStatus(0, "Generate Network Graph File");
-                if (isPostersNetwork)
+                // save network document
+                XmlDocument network = args.Result as XmlDocument;
+                if (network != null)
                 {
-                    network.Save(generateGroupPostersNetworkFileName(this.groupId));
+                    updateStatus(0, "Generate Network Graph File");
+                    if (isPostersNetwork)
+                    {
+                        network.Save(generateGroupPostersNetworkFileName(this.groupId));
+                    }
+                    else
+                    {
+                        network.Save(generateGroupMembersNetworkFileName(this.groupId));
+                    }
                 }
                 else
                 {
-                    network.Save(generateGroupMembersNetworkFileName(this.groupId));
+                    MessageBox.Show("Network document is empty!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
-            }
-            else
-            {
-                MessageBox.Show("Network document is empty!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                //MessageBox.Show("Search complete!");
+                updateStatus(10000, "Done");
             }
 
             ActivateControls();
@@ -1270,7 +1280,7 @@ namespace VKGroups
                     }
 
                     posters[post.from_id].posts += 1; // increment number of posts
-                    posters[post.from_id].likes += post.likes;
+                    posters[post.from_id].rec_likes += post.likes;
                     
                     // add to the poster ids
                     posterIds.Add(post.from_id);
@@ -1285,7 +1295,7 @@ namespace VKGroups
                     }
 
                     posters[post.signer_id].posts += 1; // increment number of posts
-                    posters[post.signer_id].likes += post.likes;
+                    posters[post.signer_id].rec_likes += post.likes;
 
                     // add to the poster ids
                     posterIds.Add(post.signer_id);
@@ -1365,7 +1375,7 @@ namespace VKGroups
                     }
                     
                     posters[comment.from_id].comments += 1; // increment number of comments
-                    posters[comment.from_id].likes += comment.likes;
+                    posters[comment.from_id].rec_likes += comment.likes;
 
                     // add to the poster ids
                     posterIds.Add(comment.from_id);
@@ -1402,6 +1412,8 @@ namespace VKGroups
                 {
                     posters[likerId] = new Poster();
                 }
+
+                posters[likerId].likes += 1; // increment poster's likes count
 
                 this.posterIds.Add(likerId);
             }
@@ -1473,6 +1485,7 @@ namespace VKGroups
 
                     // add graph member vertex
                     this.memberIds.Add(profile.id);
+
                     this.groupNetworkAnalyzer.addMemberVertex(profileObj);
                 }
             }
@@ -1494,10 +1507,22 @@ namespace VKGroups
             }
 
             String memberId = cookie; // memeber id sent as a cooky
+            long mId = Convert.ToInt64(memberId);
 
             // now calc items in response
             int count = data[VKRestApi.RESPONSE_BODY].Count();
             Debug.WriteLine("Processing " + count + " friends of user id " + memberId);
+
+            // update vertex with poster counts
+            Poster poster = null;
+
+            if (posters.TryGetValue(mId, out poster))
+            {
+                poster.friends = count;
+                Dictionary<String, String> attr = dictionaryFromPoster(poster);
+                // update poster vertex attributes
+                this.groupNetworkAnalyzer.updateVertexAttributes(memberId, attr);
+            }
 
             // process response body
             for (int i = 0; i < count; ++i)
@@ -1556,9 +1581,8 @@ namespace VKGroups
 
                 profiles.Add(profile);
 
-                // add graph member vertex
-                //this.memberIds.Add(profile.id);
-                //this.groupNetworkAnalyzer.addMemberVertex(userObj);
+                // add graph visitor vertex
+                this.groupNetworkAnalyzer.addVisitorVertex(userObj);
             }
 
             if (profiles.Count > 0)
@@ -1841,50 +1865,18 @@ namespace VKGroups
             DateTime d = timeToDateTime(l);
             return d.ToString("yyyy-MM-dd HH:mm:ss");
         }
+
+        private Dictionary<String, String> dictionaryFromPoster(Poster poster) 
+        {
+            Dictionary<String, String> dic = new Dictionary<String, String>();
+
+            dic.Add("posts", poster.posts.ToString());
+            dic.Add("comments", poster.comments.ToString());
+            dic.Add("rec_likes", poster.rec_likes.ToString());
+            dic.Add("likes", poster.likes.ToString());
+            dic.Add("friends", poster.friends.ToString());
+
+            return dic;
+        }
     }
 }
-
-/*
- * 
-            // process extended information
-            // profiles
-            if(data[VKRestApi.RESPONSE_BODY]["profiles"] != null)
-            {
-                List<Profile> profiles = new List<Profile>();
-
-                JArray profilesObj = (JArray)data[VKRestApi.RESPONSE_BODY]["profiles"];
-                for (int i = 0; i < profilesObj.Count; i++ )
-                {
-                    JObject profileObj = profilesObj[i].ToObject<JObject>();
-
-                    if(profileObj != null)
-                    {
-                        Profile profile = new Profile();
-
-                        profile.id = getLongField("id", profileObj);
-
-                        // ignore requester profile
-                        if (profile.id.Equals(this.userId))
-                            continue;
-
-                        profile.first_name = profileObj["first_name"] != null ? profileObj["first_name"].ToString() : "";
-                        profile.last_name = profileObj["last_name"] != null ? profileObj["last_name"].ToString() : "";
-                        profile.screen_name = profileObj["screen_name"] != null ? profileObj["screen_name"].ToString() : "";
-                        profile.sex = profileObj["sex"] != null ? profileObj["sex"].ToString() : "";
-                        profile.photo = profileObj["photo_50"] != null ? profileObj["photo_50"].ToString() : "";
-
-                        profiles.Add(profile);
-
-                        // add graph poster vertex
-                        this.groupNetworkAnalyzer.addPosterVertex(profileObj);
-                    }
-                }
-
-                if(profiles.Count > 0)
-                {
-                    updateGroupPostersFile(profiles, groupPostersWriter);
-                }
-            }
- * 
- * 
- */
