@@ -47,7 +47,7 @@ namespace VKGroups
 
         // document
         StreamWriter groupPostsWriter;
-        StreamWriter groupPostersWriter;
+        StreamWriter groupVisitorsWriter;
         StreamWriter groupCommentsWriter;
         StreamWriter groupMembersWriter;
         // error log
@@ -849,8 +849,6 @@ namespace VKGroups
             }
 
             // now collect visitors posters (not members, who left a post or a comment or a like) 
-
-            // find posters not members
             List<long> visitors = new List<long>();
             foreach (long p in posterIds)
             {
@@ -861,10 +859,10 @@ namespace VKGroups
                 }
             }
 
-            // group posters profiles
-            fileName = generateGroupPostersFileName(groupId);
-            groupPostersWriter = File.CreateText(fileName);
-            printGroupPostersHeader(groupPostersWriter);
+            // group visitors profiles
+            fileName = generateGroupVisitorsFileName(groupId);
+            groupVisitorsWriter = File.CreateText(fileName);
+            printGroupVisitorsHeader(groupVisitorsWriter);
 
             // request visitors info
             bw.ReportProgress(-1, "Getting visitors");
@@ -907,7 +905,7 @@ namespace VKGroups
 
             }
 
-            groupPostersWriter.Close();
+            groupVisitorsWriter.Close();
 
             //args.Result = TimeConsumingOperation(bw, arg);
 
@@ -1513,16 +1511,16 @@ namespace VKGroups
             int count = data[VKRestApi.RESPONSE_BODY].Count();
             Debug.WriteLine("Processing " + count + " friends of user id " + memberId);
 
-            // update vertex with poster counts
-            Poster poster = null;
-
-            if (posters.TryGetValue(mId, out poster))
+            // update vertex with friends count
+            if (!posters.ContainsKey(mId))
             {
-                poster.friends = count;
-                Dictionary<String, String> attr = dictionaryFromPoster(poster);
-                // update poster vertex attributes
-                this.groupNetworkAnalyzer.updateVertexAttributes(memberId, attr);
+                posters[mId] = new Poster();
             }
+
+            posters[mId].friends = count;
+            Dictionary<String, String> attr = dictionaryFromPoster(posters[mId]);
+            // update poster vertex attributes
+            this.groupNetworkAnalyzer.updateVertexAttributes(memberId, attr);
 
             // process response body
             for (int i = 0; i < count; ++i)
@@ -1588,7 +1586,7 @@ namespace VKGroups
             if (profiles.Count > 0)
             {
                 // update posters
-                updateGroupPostersFile(profiles, groupPostersWriter);
+                updateGroupVisitorsFile(profiles, groupVisitorsWriter);
             }
         }
 
@@ -1644,24 +1642,24 @@ namespace VKGroups
             }
         }
 
-        // Group posters profiles file name
-        private string generateGroupPostersFileName(decimal groupId)
+        // Group visitors profiles file
+        private string generateGroupVisitorsFileName(decimal groupId)
         {
             StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
 
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-posters");
+            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-visitors");
             fileName.Append(".txt");
 
             return fileName.ToString();
         }
 
-        private void printGroupPostersHeader(StreamWriter writer)
+        private void printGroupVisitorsHeader(StreamWriter writer)
         {
             writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"",
                     "id", "first_name", "last_name", "screen_name", "sex", "photo");
         }
 
-        private void updateGroupPostersFile(List<Profile> profiles, StreamWriter writer)
+        private void updateGroupVisitorsFile(List<Profile> profiles, StreamWriter writer)
         {
             foreach (Profile p in profiles)
             {
