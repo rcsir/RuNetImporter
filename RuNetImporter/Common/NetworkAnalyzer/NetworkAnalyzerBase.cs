@@ -13,7 +13,7 @@ using rcsir.net.common.Network;
 
 namespace rcsir.net.common.NetworkAnalyzer
 {
-    public class NetworkAnalyzerBase
+    public class NetworkAnalyzerBase<T>
     {
         //*************************************************************************
         //  Protected constants
@@ -46,7 +46,7 @@ namespace rcsir.net.common.NetworkAnalyzer
         protected const String TooltipID = "Tooltip";
 
 
-        public XmlDocument GenerateNetworkDocument(VertexCollection vertices, EdgeCollection edges, AttributesDictionary<String> attributes)
+        public XmlDocument GenerateNetworkDocument(VertexCollection<T> vertices, EdgeCollection<T> edges, AttributesDictionary<String> attributes)
         {
             GraphMLXmlDocument graphMLXmlDocument = new GraphMLXmlDocument(false); // directed = falce
             
@@ -85,21 +85,21 @@ namespace rcsir.net.common.NetworkAnalyzer
 
             // add vertices
             XmlNode oVertexXmlNode;
-            foreach (Vertex oVertex in vertices)
+            foreach (Vertex<T> oVertex in vertices)
             {
-                oVertexXmlNode = graphMLXmlDocument.AppendVertexXmlNode(oVertex.ID);
+                oVertexXmlNode = graphMLXmlDocument.AppendVertexXmlNode(oVertex.ID.ToString());
                 AddVertexAttributes(oVertexXmlNode, oVertex, graphMLXmlDocument);
                 AddVertexImageAttribute(oVertexXmlNode, oVertex, graphMLXmlDocument);
             }
 
             // add edges
             XmlNode oEdgeXmlNode;
-            foreach (Edge oEdge in edges)
+            foreach (Edge<T> oEdge in edges)
             {
                 try
                 {
-                    oEdgeXmlNode =graphMLXmlDocument.AppendEdgeXmlNode(oEdge.Vertex1.ID,
-                            oEdge.Vertex2.ID);
+                    oEdgeXmlNode =graphMLXmlDocument.AppendEdgeXmlNode(oEdge.Vertex1.ID.ToString(),
+                            oEdge.Vertex2.ID.ToString());
                     AddEdgeAttributes(oEdgeXmlNode, oEdge, graphMLXmlDocument);
                 }
                 catch (KeyNotFoundException)
@@ -120,7 +120,7 @@ namespace rcsir.net.common.NetworkAnalyzer
             return AttributeUtils.UserAttributes; // this list is based on Facebook attributes, override as needed
         }
 
-        private void AddVertexAttributes(XmlNode oVertexXmlNode, Vertex oVertex, GraphMLXmlDocument oGraphMLXmlDocument)
+        private void AddVertexAttributes(XmlNode oVertexXmlNode, Vertex<T> oVertex, GraphMLXmlDocument oGraphMLXmlDocument)
         {
             string sAttribtueValue;
             foreach (KeyValuePair<AttributeUtils.Attribute, String> kvp in oVertex.Attributes)
@@ -154,7 +154,7 @@ namespace rcsir.net.common.NetworkAnalyzer
         /// <param name="oVertexXmlNode"></param>
         /// <param name="oVertex"></param>
         /// <param name="oGraphMLXmlDocument"></param>
-        protected virtual void AddVertexImageAttribute(XmlNode oVertexXmlNode, Vertex oVertex, GraphMLXmlDocument oGraphMLXmlDocument)
+        protected virtual void AddVertexImageAttribute(XmlNode oVertexXmlNode, Vertex<T> oVertex, GraphMLXmlDocument oGraphMLXmlDocument)
         {
             // add picture
             if (oVertex.Attributes.ContainsKey("pic_small") &&
@@ -164,7 +164,7 @@ namespace rcsir.net.common.NetworkAnalyzer
             }
         }
 
-        private void AddEdgeAttributes ( XmlNode oEdgeXmlNode, Edge oEdge,GraphMLXmlDocument oGraphMLXmlDocument)
+        private void AddEdgeAttributes ( XmlNode oEdgeXmlNode, Edge<T> oEdge,GraphMLXmlDocument oGraphMLXmlDocument)
         {
             oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, "e_type", oEdge.Type);
             oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, RelationshipID, oEdge.Relationship);

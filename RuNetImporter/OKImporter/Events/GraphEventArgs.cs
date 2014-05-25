@@ -20,8 +20,8 @@ namespace rcsir.net.ok.importer.Events
         public readonly Types Type;
         public readonly JSONObject JData;
 
-        public readonly VertexCollection Vertices;
-        public readonly EdgeCollection Edges;
+        public readonly VertexCollection<String> Vertices;
+        public readonly EdgeCollection<String> Edges;
         public readonly AttributesDictionary<bool> DialogAttributes;
         public readonly AttributesDictionary<string> GraphAttributes;
         public readonly int Count;
@@ -38,7 +38,7 @@ namespace rcsir.net.ok.importer.Events
             Count = cunt;
         }
 
-        public GraphEventArgs(VertexCollection vertices, EdgeCollection edges, AttributesDictionary<bool> dialogAttributes, AttributesDictionary<string> graphAttributes)
+        public GraphEventArgs(VertexCollection<String> vertices, EdgeCollection<String> edges, AttributesDictionary<bool> dialogAttributes, AttributesDictionary<string> graphAttributes)
         {
             Type = Types.GraphGenerated;
             Vertices = vertices;

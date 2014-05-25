@@ -27,7 +27,7 @@ namespace Smrf.NodeXL.GraphDataProviders
 /// </remarks>
 //*****************************************************************************
 
-public abstract class HttpNetworkAnalyzerBase : NetworkAnalyzerBase
+public abstract class HttpNetworkAnalyzerBase : NetworkAnalyzerBase<String>
 {
     //*************************************************************************
     //  Constructor: HttpNetworkAnalyzerBase()

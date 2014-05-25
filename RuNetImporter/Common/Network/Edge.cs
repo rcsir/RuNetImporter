@@ -7,10 +7,10 @@ using Smrf.AppLib;
 
 namespace rcsir.net.common.Network
 {
-    public class Edge
+    public class Edge<T>
     {
-        public Vertex Vertex1 { get; set; }        
-        public Vertex Vertex2 { get; set; }
+        public Vertex<T> Vertex1 { get; set; }        
+        public Vertex<T> Vertex2 { get; set; }
         public string Type { get; set; }
         public string Relationship { get; set; }
         public string Comment { get; set; }        
@@ -20,7 +20,7 @@ namespace rcsir.net.common.Network
         public EdgeDirection Direction { get; set; }        
 
 
-        public Edge(Vertex Vertex1, Vertex Vertex2, string Type,
+        public Edge(Vertex<T> Vertex1, Vertex<T> Vertex2, string Type,
                     string Relationship, string Comment, int Weight)
         {
             this.Vertex1 = Vertex1;
@@ -33,7 +33,7 @@ namespace rcsir.net.common.Network
             this.Direction = EdgeDirection.Undirected;
         }
 
-        public Edge(Vertex Vertex1, Vertex Vertex2, string Type,
+        public Edge(Vertex<T> Vertex1, Vertex<T> Vertex2, string Type,
                     string Relationship, string Comment, int Weight,
                     int Timestamp, EdgeDirection eDirection)
         {
@@ -49,7 +49,7 @@ namespace rcsir.net.common.Network
             this.Direction = eDirection;
         }
 
-        public Edge(Vertex Vertex1, Vertex Vertex2, string Type,
+        public Edge(Vertex<T> Vertex1, Vertex<T> Vertex2, string Type,
                     string Relationship, string Comment, int Weight,
                     int Timestamp, string FeedOfOrigin, EdgeDirection eDirection)
         {
@@ -73,9 +73,9 @@ namespace rcsir.net.common.Network
         }
         public override bool Equals(object obj)
         {
-            return Equals(obj as Edge);
+            return Equals(obj as Edge<T>);
         }
-        private bool Equals(Edge obj)
+        private bool Equals(Edge<T> obj)
         {
             if (Direction == EdgeDirection.Undirected)
             {

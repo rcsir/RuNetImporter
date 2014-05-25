@@ -43,6 +43,7 @@ namespace VKGroups
         private volatile bool isRunning;
         private volatile bool isMembersRunning;
         private volatile bool isNetworkRunning;
+        private volatile bool isEgoNetWorkRunning;
         private volatile bool isPostersNetwork; // todo: do it better
 
         // document
@@ -67,6 +68,10 @@ namespace VKGroups
         Dictionary<long, Poster> posters = new Dictionary<long, Poster>();
         HashSet<long> memberIds = new HashSet<long>();
         HashSet<long> posterIds = new HashSet<long>();
+
+        // network analyzer document
+        EgoNetworkAnalyzer egoNetAnalyzer = new EgoNetworkAnalyzer();
+        HashSet<long> friendIds = new HashSet<long>();
 
         // group's post
         private class Post
@@ -275,6 +280,16 @@ namespace VKGroups
             this.backgroundNetworkWorker.RunWorkerCompleted
                 += new RunWorkerCompletedEventHandler(networkWorkCompleted);
 
+            // setup background Ego net workder handlers
+            this.backgroundEgoNetWorker.DoWork
+                += new DoWorkEventHandler(egoNetWork);
+
+            this.backgroundEgoNetWorker.ProgressChanged
+                += new ProgressChangedEventHandler(egoNetWorkProgressChanged);
+
+            this.backgroundEgoNetWorker.RunWorkerCompleted
+                += new RunWorkerCompletedEventHandler(egoNetWorkCompleted);
+
             // this.folderBrowserDialog1.ShowNewFolderButton = false;
             // Default to the My Documents folder. 
             this.folderBrowserDialog1.RootFolder = Environment.SpecialFolder.Personal;
@@ -462,6 +477,16 @@ namespace VKGroups
             }
         }
 
+        private void DownloadEgoNets_Click(object sender, EventArgs e)
+        {
+            updateStatus(-1, "Start");
+            decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
+
+            isEgoNetWorkRunning = true;
+            this.backgroundEgoNetWorker.RunWorkerAsync(gid);
+            ActivateControls();
+        }
+
         private void CancelJobBurron_Click(object sender, EventArgs e)
         {
             if (isRunning)
@@ -482,7 +507,7 @@ namespace VKGroups
                 if (isWorkingFolderSet)
                 {
                     bool shouldActivate = this.groupId != 0;
-                    bool isBusy = this.isRunning || this.isMembersRunning || this.isNetworkRunning;
+                    bool isBusy = this.isRunning || this.isMembersRunning || this.isNetworkRunning || this.isEgoNetWorkRunning;
 
                     this.FindGroupsButton.Enabled = true && !isBusy;
 
@@ -491,6 +516,7 @@ namespace VKGroups
                     this.DownloadGroupMembers.Enabled = shouldActivate && !isBusy;
                     this.DownloadMembersNetwork.Enabled = shouldActivate && !isBusy;
                     this.DownloadPostersNetwork.Enabled = shouldActivate && !isBusy;
+                    this.DownloadEgoNets.Enabled = shouldActivate && !isBusy;
                     this.CancelJobBurron.Enabled = isBusy; // todo: activate only when running
                 }
             }
@@ -502,6 +528,7 @@ namespace VKGroups
                 this.DownloadGroupMembers.Enabled = false;
                 this.DownloadMembersNetwork.Enabled = false;
                 this.DownloadPostersNetwork.Enabled = false;
+                this.DownloadEgoNets.Enabled = false;
                 this.CancelJobBurron.Enabled = false;
             }
         }
@@ -549,6 +576,12 @@ namespace VKGroups
                     break;
                 case VKFunction.UsersGet:
                     OnUsersGet(onDataArgs.data);
+                    break;
+                case VKFunction.LoadFriends:
+                    OnLoadFriends(onDataArgs.data);
+                    break;
+                case VKFunction.GetMutual:
+                    OnGetMutual(onDataArgs.data, onDataArgs.cookie);
                     break;
                 default:
                     Debug.WriteLine("Error, unknown function.");
@@ -1084,7 +1117,7 @@ namespace VKGroups
                 // add all posters vertices first
                 foreach (long mId in members)
                 {
-                    this.groupNetworkAnalyzer.addPosterVertex(mId.ToString()); // could be a member or a visitor
+                    this.groupNetworkAnalyzer.addPosterVertex(mId); // could be a member or a visitor
                 }
             }
             else 
@@ -1184,7 +1217,117 @@ namespace VKGroups
 
             ActivateControls();
         }
- 
+
+        // Ego Net work async handlers
+        private void egoNetWork(Object sender, DoWorkEventArgs args)
+        {
+            // Do not access the form's BackgroundWorker reference directly. 
+            // Instead, use the reference provided by the sender parameter.
+            BackgroundWorker bw = sender as BackgroundWorker;
+
+            isEgoNetWorkRunning = true;
+
+            // Extract the argument. 
+            decimal groupId = (decimal)args.Argument;
+
+            // gather the list of all users friends to build the group network
+            this.totalCount = 0;
+            this.currentOffset = 0;
+            this.step = 1;
+
+            // request group comments
+            bw.ReportProgress(-1, "Getting members Ego network");
+            this.step = (int)(10000 / memberIds.Count);
+
+            long timeLastCall = 0;
+            long l = 0;
+            foreach (long mId in memberIds)
+            {
+                if (bw.CancellationPending || !isEgoNetWorkRunning)
+                    break;
+
+                bw.ReportProgress(step, "Getting ego nets: " + (++l) + " out of " + memberIds.Count);
+
+                // reset friends
+                this.friendIds.Clear();
+                
+                // reset ego net analyzer
+                this.egoNetAnalyzer.Clear();
+
+                // for each member get his ego net
+                VKRestContext context = new VKRestContext(mId.ToString(), this.authToken);
+                StringBuilder sb = new StringBuilder();
+
+                sb.Length = 0;
+                sb.Append("fields=").Append(PROFILE_FIELDS);
+                context.parameters = sb.ToString();
+                vkRestApi.CallVKFunction(VKFunction.LoadFriends, context);
+
+                // wait for the friends data
+                readyEvent.WaitOne();
+
+                foreach (long targetId in this.friendIds)
+                {
+                    sb.Length = 0;
+                    sb.Append("target_uid=").Append(targetId); // Append target friend ids
+                    context.parameters = sb.ToString();
+                    context.cookie = targetId.ToString(); // pass target id in the cookie context field
+
+                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                    timeLastCall = sleepTime(timeLastCall);
+                    vkRestApi.CallVKFunction(VKFunction.GetMutual, context);
+
+                    // wait for the friends data
+                    readyEvent.WaitOne();
+                }
+
+                // save ego net document
+                XmlDocument egoNet = this.egoNetAnalyzer.GenerateEgoNetwork();
+                egoNet.Save(generateEgoNetworkFileName(groupId, mId));
+
+            }
+
+            // args.Result = this.groupNetworkAnalyzer.GeneratePostersNetwork();
+
+            // If the operation was canceled by the user,  
+            // set the DoWorkEventArgs.Cancel property to true. 
+            if (bw.CancellationPending)
+            {
+                args.Cancel = true;
+            }
+        }
+
+        private void egoNetWorkProgressChanged(Object sender, ProgressChangedEventArgs args)
+        {
+            String status = args.UserState as String;
+            int progress = args.ProgressPercentage;
+            updateStatus(progress, status);
+        }
+
+        private void egoNetWorkCompleted(object sender, RunWorkerCompletedEventArgs args)
+        {
+            isEgoNetWorkRunning = false;
+
+            if (args.Error != null)
+            {
+                MessageBox.Show(args.Error.Message);
+                updateStatus(0, "Error");
+            }
+            else if (args.Cancelled)
+            {
+                MessageBox.Show("Ego Net canceled!");
+                updateStatus(0, "Canceled");
+            }
+            else
+            {
+                //MessageBox.Show("Search complete!");
+                updateStatus(10000, "Done");
+            }
+
+            ActivateControls();
+        }
+
+        // Status report
         private void updateStatus(int progress, String status)
         {
             // if 0 - ignore progress param
@@ -1520,19 +1663,19 @@ namespace VKGroups
             posters[mId].friends = count;
             Dictionary<String, String> attr = dictionaryFromPoster(posters[mId]);
             // update poster vertex attributes
-            this.groupNetworkAnalyzer.updateVertexAttributes(memberId, attr);
+            this.groupNetworkAnalyzer.updateVertexAttributes(mId, attr);
 
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                String friendId = data[VKRestApi.RESPONSE_BODY][i].ToString();
+                long friendId = data[VKRestApi.RESPONSE_BODY][i].ToObject<long>();
                 if (isPostersNetwork)
                 {
-                    this.groupNetworkAnalyzer.AddPostersEdge(memberId, friendId); // if friendship exists, the new edge will be added
+                    this.groupNetworkAnalyzer.AddPostersEdge(mId, friendId); // if friendship exists, the new edge will be added
                 }
                 else
                 {
-                    this.groupNetworkAnalyzer.AddFriendsEdge(memberId, friendId); // if friendship exists, the new edge will be added
+                    this.groupNetworkAnalyzer.AddFriendsEdge(mId, friendId); // if friendship exists, the new edge will be added
                 }
             }
         }
@@ -1589,6 +1732,57 @@ namespace VKGroups
                 updateGroupVisitorsFile(profiles, groupVisitorsWriter);
             }
         }
+
+        // for user's EGO nets
+        // process load user friends response
+        private void OnLoadFriends(JObject data)
+        {
+            if (data[VKRestApi.RESPONSE_BODY] == null)
+            {
+                this.isEgoNetWorkRunning = false;
+                return;
+            }
+            
+            // now calc items in response
+            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+
+            // process response body
+            for (int i = 0; i < count; ++i)
+            {
+                JObject friend = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+
+                long id = friend["id"].ToObject<long>();
+                // add user id to the friends list
+                this.friendIds.Add(id);
+
+                // add friend vertex
+                this.egoNetAnalyzer.AddFriendVertex(friend);
+            }
+        }
+
+        // process get mutual response
+        private void OnGetMutual(JObject data, String cookie)
+        {
+            if (data[VKRestApi.RESPONSE_BODY] == null)
+            {
+                this.isEgoNetWorkRunning = false;
+                return;
+            }
+
+            long mId = Convert.ToInt64(cookie); // members id passed as a cookie
+            if (data[VKRestApi.RESPONSE_BODY].Count() > 0)
+            {
+                List<String> friendFriendsIds = new List<string>();
+
+                for (int i = 0; i < data[VKRestApi.RESPONSE_BODY].Count(); ++i)
+                {
+                    long friendFriendsId = data[VKRestApi.RESPONSE_BODY][i].ToObject<long>();
+                    // add friend vertex
+                    this.egoNetAnalyzer.AddFriendsEdge(mId, friendFriendsId); // member id is in the cookie
+                }
+            }
+        }
+
 
         // Group file name
         private string generateGroupFileName(decimal groupId)
@@ -1738,6 +1932,16 @@ namespace VKGroups
             return fileName.ToString();
         }
 
+        // Ego Network file
+        private string generateEgoNetworkFileName(decimal groupId, long memberId)
+        {
+            StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
+
+            fileName.Append("\\").Append(Math.Abs(groupId)).Append("-").Append(memberId).Append("-ego-networkd.graphml");
+
+            return fileName.ToString();
+        }
+
         // Error log file
         private string generateErrorLogFileName()
         {
@@ -1775,7 +1979,7 @@ namespace VKGroups
         {
             long timeToSleep = 339 - (getTimeNowMillis() - timeLastCall);
             if (timeToSleep > 0)
-                Thread.Sleep((Int32)timeToSleep);
+                Thread.Sleep((int)timeToSleep);
 
             return getTimeNowMillis();
         }

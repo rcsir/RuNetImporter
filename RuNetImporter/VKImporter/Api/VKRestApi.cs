@@ -263,6 +263,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append('?');
             sb.Append("user_id=").Append(userId).Append('&');
             sb.Append(parameters);
+            sb.Append('&').Append("v=5.21");
 
             makeRestCall(function, sb.ToString());
         }

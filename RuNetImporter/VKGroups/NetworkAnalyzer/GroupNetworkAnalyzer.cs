@@ -13,18 +13,18 @@ using Newtonsoft.Json.Linq;
 
 namespace rcsir.net.vk.groups.NetworkAnalyzer
 {
-    class GroupNetworkAnalyzer : NetworkAnalyzerBase
+    class GroupNetworkAnalyzer : NetworkAnalyzerBase<long>
     {
         // members network
-        private VertexCollection vertices = new VertexCollection();
-        private EdgeCollection edges = new EdgeCollection();
+        private VertexCollection<long> vertices = new VertexCollection<long>();
+        private EdgeCollection<long> edges = new EdgeCollection<long>();
 
         // visitor vertices
-        private VertexCollection visitorVertices = new VertexCollection();
+        private VertexCollection<long> visitorVertices = new VertexCollection<long>();
 
         // posters network
-        private VertexCollection posterVertices = new VertexCollection();
-        private EdgeCollection posterEdges = new EdgeCollection();
+        private VertexCollection<long> posterVertices = new VertexCollection<long>();
+        private EdgeCollection<long> posterEdges = new EdgeCollection<long>();
 
         private static List<AttributeUtils.Attribute> GroupAttributes = new List<AttributeUtils.Attribute>()
         {
@@ -82,7 +82,7 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             return attributes;
         }
 
-        protected override void AddVertexImageAttribute(XmlNode node, Vertex vertex, GraphMLXmlDocument xmlDocument)
+        protected override void AddVertexImageAttribute(XmlNode node, Vertex<long> vertex, GraphMLXmlDocument xmlDocument)
         {
             // add picture
             if (vertex.Attributes.ContainsKey("photo_50") &&
@@ -94,45 +94,45 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
 
         public void addMemberVertex(JObject member)
         {
-            string id = member["id"].ToString();
+            long id = member["id"].ToObject<long>();
             
             AttributesDictionary<String> attributes = createAttributes(member);
 
-            this.vertices.Add(new Vertex(id,
+            this.vertices.Add(new Vertex<long>(id,
                 member["first_name"].ToString() + " " + member["last_name"].ToString(),
                 "Member", attributes));
         }
 
         public void addVisitorVertex(JObject visitor)
         {
-            string id = visitor["id"].ToString();
+            long id = visitor["id"].ToObject<long>();
 
             AttributesDictionary<String> attributes = createAttributes(visitor);
 
-            this.visitorVertices.Add(new Vertex(id,
+            this.visitorVertices.Add(new Vertex<long>(id,
                 visitor["first_name"].ToString() + " " + visitor["last_name"].ToString(),
                 "Visitor", attributes));
         }
 
-        public void AddFriendsEdge(String memberId, String friendId)
+        public void AddFriendsEdge(long memberId, long friendId)
         {
-            Vertex friend = vertices.FirstOrDefault(x => x.ID == memberId);
-            Vertex friendsFriend = vertices.FirstOrDefault(x => x.ID == friendId);
+            Vertex<long> friend = vertices.FirstOrDefault(x => x.ID == memberId);
+            Vertex<long> friendsFriend = vertices.FirstOrDefault(x => x.ID == friendId);
 
             if (friend != null && friendsFriend != null)
             {
                 // check for duplicates first
-                Edge e = edges.FirstOrDefault(x => x.Vertex1.ID == friendsFriend.ID && x.Vertex2.ID == friend.ID);
+                Edge<long> e = edges.FirstOrDefault(x => x.Vertex1.ID == friendsFriend.ID && x.Vertex2.ID == friend.ID);
                 if (e == null)
                 {
-                    edges.Add(new Edge(friend, friendsFriend, "", "Friend", "", 1));
+                    edges.Add(new Edge<long>(friend, friendsFriend, "", "Friend", "", 1));
                 }
             }
         }
 
-        public void addPosterVertex(String id)
+        public void addPosterVertex(long id)
         {
-            Vertex posterVertex = vertices[id];
+            Vertex<long> posterVertex = vertices[id];
             if (posterVertex == null)
             {
                 // visitor
@@ -149,9 +149,9 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             }
         }
 
-        public void updateVertexAttributes(String id, Dictionary<String, String> attributes)
+        public void updateVertexAttributes(long id, Dictionary<String, String> attributes)
         {
-            Vertex v = vertices[id];
+            Vertex<long> v = vertices[id];
             if (v == null)
             {
                 // visitor
@@ -176,9 +176,9 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             }
         }
 
-        public void updateVertexAttributes(String id, String key, String value)
+        public void updateVertexAttributes(long id, String key, String value)
         {
-            Vertex v = vertices[id];
+            Vertex<long> v = vertices[id];
             if (v == null)
             {
                 // visitor
@@ -200,18 +200,18 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             }
         }
 
-        public void AddPostersEdge(String memberId, String friendId)
+        public void AddPostersEdge(long memberId, long friendId)
         {
-            Vertex poster = posterVertices.FirstOrDefault(x => x.ID == memberId);
-            Vertex postersFriend = posterVertices.FirstOrDefault(x => x.ID == friendId);
+            Vertex<long> poster = posterVertices.FirstOrDefault(x => x.ID == memberId);
+            Vertex<long> postersFriend = posterVertices.FirstOrDefault(x => x.ID == friendId);
 
             if (poster != null && postersFriend != null)
             {
                 // check for duplicates first
-                Edge e = posterEdges.FirstOrDefault(x => x.Vertex1.ID == postersFriend.ID && x.Vertex2.ID == poster.ID);
+                Edge<long> e = posterEdges.FirstOrDefault(x => x.Vertex1.ID == postersFriend.ID && x.Vertex2.ID == poster.ID);
                 if (e == null)
                 {
-                    posterEdges.Add(new Edge(poster, postersFriend, "", "Friend", "", 1));
+                    posterEdges.Add(new Edge<long>(poster, postersFriend, "", "Friend", "", 1));
                 }
             }
         }

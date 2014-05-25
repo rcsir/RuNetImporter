@@ -3,15 +3,15 @@ using Smrf.AppLib;
 
 namespace rcsir.net.common.Network
 {
-    public class Vertex
+    public class Vertex<T>
     {
-        public string ID { get; set; }
+        public T ID { get; set; }
         public string Name {get; set; }
         public string Type { get; set; }
         public string ToolTip { get; set; }
         public AttributesDictionary<String> Attributes { get; set; }
 
-        public Vertex(string ID, string Name, string Type)
+        public Vertex(T ID, string Name, string Type)
         {
             this.ID = ID;
             this.Name = Name;
@@ -19,7 +19,7 @@ namespace rcsir.net.common.Network
             Attributes = new AttributesDictionary<String>();            
         }
 
-        public Vertex(string ID, string Name, string Type, AttributesDictionary<String> Attributes)
+        public Vertex(T ID, string Name, string Type, AttributesDictionary<String> Attributes)
         {
             this.ID = ID;
             this.Name = Name;            
@@ -33,9 +33,9 @@ namespace rcsir.net.common.Network
         }
         public override bool Equals(object obj)
         {
-            return Equals(obj as Vertex);
+            return Equals(obj as Vertex<T>);
         }
-        private bool Equals(Vertex obj)
+        private bool Equals(Vertex<T> obj)
         {
             return (obj != null &&                    
                     obj.ID.Equals(this.ID));

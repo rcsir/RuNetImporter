@@ -47,6 +47,8 @@
             this.DownloadMembersNetwork = new System.Windows.Forms.Button();
             this.DownloadPostersNetwork = new System.Windows.Forms.Button();
             this.backgroundNetworkWorker = new System.ComponentModel.BackgroundWorker();
+            this.backgroundEgoNetWorker = new System.ComponentModel.BackgroundWorker();
+            this.DownloadEgoNets = new System.Windows.Forms.Button();
             this.groupsStatusStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -77,7 +79,7 @@
             // 
             this.groupsStatusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.groupsStripStatusLabel});
-            this.groupsStatusStrip.Location = new System.Drawing.Point(0, 468);
+            this.groupsStatusStrip.Location = new System.Drawing.Point(0, 504);
             this.groupsStatusStrip.Name = "groupsStatusStrip";
             this.groupsStatusStrip.Size = new System.Drawing.Size(375, 22);
             this.groupsStatusStrip.TabIndex = 4;
@@ -130,7 +132,7 @@
             // CancelJobBurron
             // 
             this.CancelJobBurron.Enabled = false;
-            this.CancelJobBurron.Location = new System.Drawing.Point(12, 397);
+            this.CancelJobBurron.Location = new System.Drawing.Point(12, 435);
             this.CancelJobBurron.Name = "CancelJobBurron";
             this.CancelJobBurron.Size = new System.Drawing.Size(117, 30);
             this.CancelJobBurron.TabIndex = 9;
@@ -140,7 +142,7 @@
             // 
             // GroupsProgressBar
             // 
-            this.GroupsProgressBar.Location = new System.Drawing.Point(12, 433);
+            this.GroupsProgressBar.Location = new System.Drawing.Point(12, 471);
             this.GroupsProgressBar.Name = "GroupsProgressBar";
             this.GroupsProgressBar.Size = new System.Drawing.Size(351, 22);
             this.GroupsProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
@@ -205,11 +207,27 @@
             this.backgroundNetworkWorker.WorkerReportsProgress = true;
             this.backgroundNetworkWorker.WorkerSupportsCancellation = true;
             // 
+            // backgroundEgoNetWorker
+            // 
+            this.backgroundEgoNetWorker.WorkerReportsProgress = true;
+            this.backgroundEgoNetWorker.WorkerSupportsCancellation = true;
+            // 
+            // DownloadEgoNets
+            // 
+            this.DownloadEgoNets.Location = new System.Drawing.Point(12, 395);
+            this.DownloadEgoNets.Name = "DownloadEgoNets";
+            this.DownloadEgoNets.Size = new System.Drawing.Size(348, 30);
+            this.DownloadEgoNets.TabIndex = 16;
+            this.DownloadEgoNets.Text = "Download Members Ego Nets...";
+            this.DownloadEgoNets.UseVisualStyleBackColor = true;
+            this.DownloadEgoNets.Click += new System.EventHandler(this.DownloadEgoNets_Click);
+            // 
             // VKGroupsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(375, 490);
+            this.ClientSize = new System.Drawing.Size(375, 526);
+            this.Controls.Add(this.DownloadEgoNets);
             this.Controls.Add(this.DownloadPostersNetwork);
             this.Controls.Add(this.DownloadMembersNetwork);
             this.Controls.Add(this.groupDescription);
@@ -256,6 +274,8 @@
         private System.Windows.Forms.Button DownloadMembersNetwork;
         private System.Windows.Forms.Button DownloadPostersNetwork;
         private System.ComponentModel.BackgroundWorker backgroundNetworkWorker;
+        private System.ComponentModel.BackgroundWorker backgroundEgoNetWorker;
+        private System.Windows.Forms.Button DownloadEgoNets;
     }
 }
 

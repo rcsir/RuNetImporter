@@ -18,15 +18,15 @@ namespace rcsir.net.ok.importer.NetworkAnalyzer
 
         public OkController Controller { set { controller = value; } }
         
-        private VertexCollection vertices;
-        private EdgeCollection edges;
+        private VertexCollection<String> vertices;
+        private EdgeCollection<String> edges;
         private AttributesDictionary<bool> dialogAttributes;
         private AttributesDictionary<string> graphAttributes;
 
         private string egoId;
         public string EgoId { set { egoId = value; } }
 
-        public void SetGraph(VertexCollection okVertices, EdgeCollection okEdges, AttributesDictionary<bool> okDialogAttributes, AttributesDictionary<string> okDraphAttributes)
+        public void SetGraph(VertexCollection<String> okVertices, EdgeCollection<String> okEdges, AttributesDictionary<bool> okDialogAttributes, AttributesDictionary<string> okDraphAttributes)
         {
             vertices = okVertices;
             edges = okEdges;

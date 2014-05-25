@@ -26,10 +26,10 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         private static AutoResetEvent readyEvent = new AutoResetEvent(false);
 
         private bool includeEgo = false; // include ego vertex and edges, should be controled by UI
-        private Vertex egoVertex;
+        private Vertex<String> egoVertex;
         private List<string> friendIds = new List<string>();
-        private VertexCollection vertices = new VertexCollection();
-        private EdgeCollection edges = new EdgeCollection();
+        private VertexCollection<String> vertices = new VertexCollection<String>();
+        private EdgeCollection<String> edges = new EdgeCollection<String>();
         private RequestStatistics requestStatistics;
 
         private static List<AttributeUtils.Attribute> VKAttributes = new List<AttributeUtils.Attribute>()
@@ -106,7 +106,7 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
                 // ok, create the ego object here
                 AttributesDictionary<String> attributes = createAttributes(ego);
 
-                this.egoVertex = new Vertex(ego["uid"].ToString(),
+                this.egoVertex = new Vertex<String>(ego["uid"].ToString(),
                     ego["first_name"].ToString() + " " + ego["last_name"].ToString(),
                     "Ego", attributes);
 
@@ -137,7 +137,7 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
                     // add friend vertex
                     AttributesDictionary<String> attributes = createAttributes(friend);
 
-                    this.vertices.Add(new Vertex(uid,
+                    this.vertices.Add(new Vertex<String>(uid,
                         friend["first_name"].ToString() + " " + friend["last_name"].ToString(),
                         "Friend", attributes));
                 }
@@ -156,9 +156,7 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
                     String friendFriendsId = data[VKRestApi.RESPONSE_BODY][i].ToString();
 
                     CreateFriendsMutualEdge(cookie, // target id we passed as a param
-                                            friendFriendsId,
-                                            this.edges,
-                                            this.vertices);
+                                            friendFriendsId);
                 }
             }
         }
@@ -198,7 +196,7 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
 
             if (includeEgo)
             {
-                CreateIncludeMeEdges(edges, vertices);
+                CreateIncludeMeEdges();
             }
 
             // create default attributes (values will be empty)
@@ -207,28 +205,28 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
             return GenerateNetworkDocument(vertices, edges, attributes);
         }
 
-        private void CreateIncludeMeEdges(EdgeCollection edges, VertexCollection vertices)
+        private void CreateIncludeMeEdges()
         {
-            List<Vertex> friends = vertices.Where(x => x.Type == "Friend").ToList();
-            Vertex ego = vertices.FirstOrDefault(x => x.Type == "Ego");
+            List<Vertex<String>> friends = vertices.Where(x => x.Type == "Friend").ToList();
+            Vertex<String> ego = vertices.FirstOrDefault(x => x.Type == "Ego");
 
             if (ego != null)
             {
-                foreach (Vertex oFriend in friends)
+                foreach (Vertex<String> oFriend in friends)
                 {
-                    edges.Add(new Edge(ego, oFriend, "", "Friend", "", 1));
+                    edges.Add(new Edge<String>(ego, oFriend, "", "Friend", "", 1));
                 }
             }
         }
 
-        private void CreateFriendsMutualEdge(String friendId, String friendFriendsId, EdgeCollection edges, VertexCollection vertices)
+        private void CreateFriendsMutualEdge(String friendId, String friendFriendsId)
         {
-            Vertex friend = vertices.FirstOrDefault(x => x.ID == friendId);
-            Vertex friendsFriend = vertices.FirstOrDefault(x => x.ID == friendFriendsId);
+            Vertex<String> friend = vertices.FirstOrDefault(x => x.ID == friendId);
+            Vertex<String> friendsFriend = vertices.FirstOrDefault(x => x.ID == friendFriendsId);
 
             if (friend != null && friendsFriend != null)
             {
-                edges.Add(new Edge(friend, friendsFriend, "", "Friend", "", 1));
+                edges.Add(new Edge<String>(friend, friendsFriend, "", "Friend", "", 1));
             }
         }
 
@@ -256,7 +254,7 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
             return attributes;
         }
 
-        protected override void AddVertexImageAttribute(XmlNode oVertexXmlNode, Vertex oVertex, GraphMLXmlDocument oGraphMLXmlDocument)
+        protected override void AddVertexImageAttribute(XmlNode oVertexXmlNode, Vertex<String> oVertex, GraphMLXmlDocument oGraphMLXmlDocument)
         {
             // add picture
             if (oVertex.Attributes.ContainsKey("photo_50") &&
@@ -268,17 +266,17 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
 
 
         // Network details
-        public Vertex GetEgo()
+        public Vertex<String> GetEgo()
         {
             return this.egoVertex;
         }
 
-        public VertexCollection GetVertices()
+        public VertexCollection<String> GetVertices()
         {
             return this.vertices;
         }
 
-        public EdgeCollection GetEdges()
+        public EdgeCollection<String> GetEdges()
         {
             return this.edges;
         }
@@ -371,7 +369,7 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
 
                 if (includeEgo)
                 {
-                    CreateIncludeMeEdges(edges, vertices);
+                    CreateIncludeMeEdges();
                 }
 
                 CheckCancellationPending();
