@@ -105,7 +105,7 @@
             this.Controls.Add(this.CancelSearchButton);
             this.Controls.Add(this.OKButton);
             this.Name = "DownloadGroupMembersDialog";
-            this.Text = "Download Posts";
+            this.Text = "Download Group Members";
             this.Load += new System.EventHandler(this.DownloadGroupMembersDialog_Load);
             ((System.ComponentModel.ISupportInitialize)(this.groupIdNumeric)).EndInit();
             this.ResumeLayout(false);

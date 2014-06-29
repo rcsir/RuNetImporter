@@ -210,7 +210,7 @@ namespace rcsir.net.vk.importer.api
                     LoadUserInfo(function, context.userId, context.authToken);
                     break;
                 case VKFunction.LoadFriends:
-                    LoadFriends(function, context.userId, context.parameters);
+                    LoadFriends(function, context.userId, context.parameters, context.cookie);
                     break;
                 case VKFunction.GetFriends:
                     GetFriends(function, context.parameters, context.cookie);
@@ -256,7 +256,7 @@ namespace rcsir.net.vk.importer.api
             makeRestCall(function, sb.ToString());
         }
 
-        private void LoadFriends(VKFunction function, String userId, String parameters)
+        private void LoadFriends(VKFunction function, String userId, String parameters, String cookie)
         {
             StringBuilder sb = new StringBuilder(api_url);
             sb.Append("/method/friends.get");
@@ -265,7 +265,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append(parameters);
             sb.Append('&').Append("v=5.21");
 
-            makeRestCall(function, sb.ToString());
+            makeRestCall(function, sb.ToString(), cookie);
         }
 
         // just like LoadFriends, but for any user, provided via parameters's [user_id] field
