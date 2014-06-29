@@ -472,8 +472,6 @@ namespace VKCommunityAnalyzer
 
             context = null;
 
-            isEgoNetWorkRunning = true;
-
             // gather the list of all users friends to build the group network
             this.totalCount = 0;
             this.currentOffset = 0;
@@ -487,7 +485,7 @@ namespace VKCommunityAnalyzer
             long l = 0;
             foreach (long mId in memberIds)
             {
-                if (bw.CancellationPending || !isEgoNetWorkRunning)
+                if (bw.CancellationPending)
                     break;
 
                 bw.ReportProgress(step, "Getting friends: " + (++l) + " out of " + memberIds.Count);
