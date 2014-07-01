@@ -39,6 +39,7 @@
             this.backgroundFinderWorker = new System.ComponentModel.BackgroundWorker();
             this.CancelFindButton = new System.Windows.Forms.Button();
             this.FindProgressBar = new System.Windows.Forms.ProgressBar();
+            this.backgroundLoaderWorker = new System.ComponentModel.BackgroundWorker();
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -59,7 +60,6 @@
             this.userIdTextBox.ReadOnly = true;
             this.userIdTextBox.Size = new System.Drawing.Size(348, 20);
             this.userIdTextBox.TabIndex = 1;
-            this.userIdTextBox.TextChanged += new System.EventHandler(this.userIdTextBox_TextChanged);
             // 
             // FindUsersButton
             // 
@@ -166,6 +166,7 @@
         private System.ComponentModel.BackgroundWorker backgroundFinderWorker;
         private System.Windows.Forms.Button CancelFindButton;
         private System.Windows.Forms.ProgressBar FindProgressBar;
+        private System.ComponentModel.BackgroundWorker backgroundLoaderWorker;
     }
 }
 

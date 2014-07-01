@@ -34,7 +34,8 @@ namespace VKFinder
         private String authToken;
         private long expiresAt;
         private static AutoResetEvent readyEvent = new AutoResetEvent(false);
-        private volatile bool run;
+        private volatile bool run; // finder worker flag
+        private volatile bool load; // loader worker flag
         private bool withPhone = false;
 
         // document
@@ -101,7 +102,7 @@ namespace VKFinder
             // this.folderBrowserDialog1.RootFolder = Environment.SpecialFolder.MyComputer;
             this.WorkingFolderTextBox.Text = this.folderBrowserDialog1.SelectedPath;
 
-            // set up background worker handlers
+            // set up background find worker handlers
             this.backgroundFinderWorker.DoWork 
                 += new DoWorkEventHandler(findWork);
 
@@ -110,7 +111,77 @@ namespace VKFinder
 
             this.backgroundFinderWorker.RunWorkerCompleted 
                 += new RunWorkerCompletedEventHandler(findWorkCompleted);
+
+            // set up background load worker handlers
+            this.backgroundLoaderWorker.DoWork
+                += new DoWorkEventHandler(loadWork);        
         }
+
+        private void VKFinderForm_Load(object sender, EventArgs e)
+        {
+            this.ActivateControls();
+        }
+
+        private void AuthorizeButton_Click(object sender, EventArgs e)
+        {
+            bool reLogin = false; // if true - will delete cookies and relogin, use false for dev.
+            vkLoginDialog.Login("friends", reLogin); // default permission - friends
+        }
+
+        private void CancelButton_Click(object sender, EventArgs e)
+        {
+            this.backgroundFinderWorker.CancelAsync();
+        }
+        
+        private void button1_Click(object sender, EventArgs e)
+        {
+            // Show the FolderBrowserDialog.
+            DialogResult result = folderBrowserDialog1.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                this.WorkingFolderTextBox.Text = folderBrowserDialog1.SelectedPath;
+                this.backgroundLoaderWorker.RunWorkerAsync(1); // param is not important
+            }
+        }
+
+        private void FindUsersButton_Click(object sender, EventArgs e)
+        {
+            UserSearchDialog searchDialog = new UserSearchDialog();
+
+            if (searchDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                SearchParameters searchParameters = searchDialog.searchParameters;
+                this.withPhone = searchParameters.withPhone;
+
+                updateStatus(-1, "Start");
+                this.backgroundFinderWorker.RunWorkerAsync(searchParameters);
+            }
+            else
+            {
+                Debug.WriteLine("Search canceled");
+            }
+        }
+
+        private void ActivateControls()
+        {
+            //            bool isAuthorized = (this.userId != null && this.userId.Length > 0);
+            bool isAuthorized = true; //TODO temp
+
+            if (isAuthorized)
+            {
+                // enable user controls
+                this.FindUsersButton.Enabled = true;
+                this.CancelFindButton.Enabled = true;
+            }
+            else
+            {
+                // disable user controls
+                this.FindUsersButton.Enabled = false;
+                this.CancelFindButton.Enabled = false;
+            }
+        }
+
+        // Async Workers
 
         private void findWork(Object sender, DoWorkEventArgs args)
         {
@@ -185,6 +256,8 @@ namespace VKFinder
 
             VKRestContext context = new VKRestContext(this.userId, this.authToken);
 
+            long timeLastCall = 0;
+
             // loop by birth year and month to maximize number of matches (1000 at a time)
             StringBuilder sb = new StringBuilder();
             while(startDate <= stopDate)
@@ -225,14 +298,14 @@ namespace VKFinder
                     Debug.WriteLine("Search parameters: " + context.parameters);
 
                     context.cookie = this.currentOffset.ToString();
+
+                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                    timeLastCall = sleepTime(timeLastCall);
                     vkRestApi.CallVKFunction(VKFunction.UsersSearch, context);
 
                     // wait for the user data
                     readyEvent.WaitOne();
 
-                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                    // TODO: account for time spent in processing
-                    Thread.Sleep(333);
                     this.currentOffset += ITEMS_PER_REQUEST;
                 }
 
@@ -250,6 +323,74 @@ namespace VKFinder
             {
                 args.Cancel = true;
             }
+
+        }
+
+        private void loadWork(Object sender, DoWorkEventArgs args)
+        {
+            // Do not access the form's BackgroundWorker reference directly. 
+            // Instead, use the reference provided by the sender parameter.
+            BackgroundWorker bw = sender as BackgroundWorker;
+
+            // Extract the argument. 
+            // SearchParameters searchParameters = args.Argument as SearchParameters;
+            VKRestContext context = new VKRestContext(this.userId, this.authToken);
+
+
+            // loop by birth year and month to maximize number of matches (1000 at a time)
+            StringBuilder sb = new StringBuilder();
+            this.run = true;
+            this.totalCount = 0;
+            this.currentOffset = 0;
+            long timeLastCall = 0;
+
+            // process regions
+            while (this.run &&
+                this.currentOffset <= this.totalCount)
+            {
+                sb.Length = 0;
+                sb.Append("country_id=").Append(1).Append("&"); // Russia
+                sb.Append("offset=").Append(currentOffset).Append("&");
+                sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
+                context.parameters = sb.ToString();
+                Debug.WriteLine("request params: " + context.parameters);
+
+                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                timeLastCall = sleepTime(timeLastCall);
+                vkRestApi.CallVKFunction(VKFunction.DatabaseGetRegions, context);
+
+                // wait for the user data
+                readyEvent.WaitOne();
+                this.currentOffset += ITEMS_PER_REQUEST;
+            }
+
+            this.run = true;
+            this.totalCount = 0;
+            this.currentOffset = 0;
+            timeLastCall = 0;
+            // process cities
+            while (this.run &&
+                this.currentOffset <= this.totalCount)
+            {
+                sb.Length = 0;
+                sb.Append("country_id=").Append(1).Append("&"); // Russia
+                sb.Append("region_id=").Append(1045244).Append("&"); // Leningradskaya obl.
+                sb.Append("need_all=").Append(1).Append("&"); // all
+                sb.Append("offset=").Append(currentOffset).Append("&");
+                sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
+                context.parameters = sb.ToString();
+                Debug.WriteLine("request params: " + context.parameters);
+
+                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                timeLastCall = sleepTime(timeLastCall);
+                vkRestApi.CallVKFunction(VKFunction.DatabaseGetCities, context);
+
+                // wait for the user data
+                readyEvent.WaitOne();
+                this.currentOffset += ITEMS_PER_REQUEST;
+            }
+
+            //args.Result = TimeConsumingOperation(bw, arg);
 
         }
 
@@ -279,12 +420,6 @@ namespace VKFinder
             }
         }
 
-        private void AuthorizeButton_Click(object sender, EventArgs e)
-        {
-            bool reLogin = true; // if true - will delete cookies and relogin, use false for dev.
-            vkLoginDialog.Login("friends", reLogin); // default permission - friends
-        }
-
         private void UserLogin(object loginDialog, UserLoginEventArgs loginArgs)
         {
             Debug.WriteLine("User Logged In: " + loginArgs.ToString());
@@ -305,6 +440,15 @@ namespace VKFinder
                 case VKFunction.UsersSearch:
                     OnUsersSearch(onDataArgs.data);
                     break;
+                case VKFunction.DatabaseGetCountries:
+                    OnGetCountries(onDataArgs.data);
+                    break;
+                case VKFunction.DatabaseGetRegions:
+                    OnGetRegions(onDataArgs.data);
+                    break;
+                case VKFunction.DatabaseGetCities:
+                    OnGetCities(onDataArgs.data);
+                    break;
                 default:
                     Debug.WriteLine("Error, unknown function.");
                     break;
@@ -322,42 +466,6 @@ namespace VKFinder
             this.backgroundFinderWorker.CancelAsync();
             // indicate that we can continue
             readyEvent.Set();
-        }
-
-        private void ActivateControls()
-        {
-            bool isAuthorized = (this.userId != null && this.userId.Length > 0);
-
-            if (isAuthorized)
-            {
-                // enable user controls
-                this.FindUsersButton.Enabled = true;
-                this.CancelFindButton.Enabled = true;
-            }
-            else
-            {
-                // disable user controls
-                this.FindUsersButton.Enabled = false;
-                this.CancelFindButton.Enabled = false;
-            }
-        }
-
-        private void FindUsersButton_Click(object sender, EventArgs e)
-        {
-            UserSearchDialog searchDialog = new UserSearchDialog();
-
-            if (searchDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                SearchParameters searchParameters = searchDialog.searchParameters;
-                this.withPhone = searchParameters.withPhone;
-
-                updateStatus(-1, "Start");
-                this.backgroundFinderWorker.RunWorkerAsync(searchParameters);
-            }
-            else
-            {
-                Debug.WriteLine("Search canceled");
-            }
         }
 
         //================================
@@ -433,6 +541,132 @@ namespace VKFinder
             }
         }
 
+        // process countries response
+        private void OnGetCountries(JObject data)
+        {
+            if (data[VKRestApi.RESPONSE_BODY] == null)
+            {
+                this.run = false;
+                return;
+            }
+
+            if (totalCount <= 0)
+            {
+                totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
+            }
+
+            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+
+            if (count <= 0)
+            {
+                this.run = false;
+                return;
+            }
+
+            List<VKCountry> countries = new List<VKCountry>();
+            // process response body
+            for (int i = 0; i < count; ++i)
+            {
+                JObject obj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                int id = getIntField("id", obj);
+                string title = getStringField("title", obj);
+                if(id > 0)
+                {
+                    countries.Add(new VKCountry(id, title));
+                }
+            }
+
+            if (countries.Count > 0)
+            {
+                //UpdateFile(countries);
+            }
+        }
+
+        // process regions response
+        private void OnGetRegions(JObject data)
+        {
+            if (data[VKRestApi.RESPONSE_BODY] == null)
+            {
+                this.run = false;
+                return;
+            }
+
+            if (totalCount <= 0)
+            {
+                totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
+            }
+
+            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+
+            if (count <= 0)
+            {
+                this.run = false;
+                return;
+            }
+
+            List<VKRegion> regions = new List<VKRegion>();
+            // process response body
+            for (int i = 0; i < count; ++i)
+            {
+                JObject obj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                int id = getIntField("id", obj);
+                string title = getStringField("title", obj);
+                if (id > 0)
+                {
+                    regions.Add(new VKRegion(id, title));
+                }
+            }
+
+            if (regions.Count > 0)
+            {
+                //UpdateFile(regions);
+            }
+        }
+
+        // process cities response
+        private void OnGetCities(JObject data)
+        {
+            if (data[VKRestApi.RESPONSE_BODY] == null)
+            {
+                this.run = false;
+                return;
+            }
+
+            if (totalCount <= 0)
+            {
+                totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
+            }
+
+            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+
+            if (count <= 0)
+            {
+                this.run = false;
+                return;
+            }
+
+            var cities = new List<VKCity>();
+            // process response body
+            for (int i = 0; i < count; ++i)
+            {
+                JObject obj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                int id = getIntField("id", obj);
+                string title = getStringField("title", obj);
+                int important = getIntField("important", obj, 0);
+                string region = getStringField("region", obj);
+                string area = getStringField("area", obj);
+                if (id > 0)
+                {
+                    cities.Add(new VKCity(id, title, important > 0, region, area));
+                }
+            }
+
+            if (cities.Count > 0)
+            {
+                //UpdateFile(cities);
+            }
+        }
+
         private string parseSearchParameters(SearchParameters parameters)
         {
             StringBuilder builder = new StringBuilder();
@@ -444,9 +678,9 @@ namespace VKFinder
 
             if (parameters.city != null)
             {
-                if (parameters.city.Value > 0)
+                if (parameters.city.id > 0)
                 {
-                    builder.Append("city=").Append(parameters.city.Value).Append("&");
+                    builder.Append("city=").Append(parameters.city.id).Append("&");
                 }
             }
 
@@ -471,7 +705,7 @@ namespace VKFinder
                 fileName.Append(parameters.query);
 
             if (parameters.city != null)
-                fileName.Append(parameters.city.Name);
+                fileName.Append(parameters.city.title);
             else
                 fileName.Append("anyCity");
 
@@ -524,16 +758,6 @@ namespace VKFinder
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            // Show the FolderBrowserDialog.
-            DialogResult result = folderBrowserDialog1.ShowDialog();
-            if (result == DialogResult.OK)
-            {
-                this.WorkingFolderTextBox.Text = folderBrowserDialog1.SelectedPath;
-            }
-        }
-
         private void updateStatus(int progress, String status)
         {
             if (progress > 0)
@@ -550,19 +774,136 @@ namespace VKFinder
             this.toolStripStatusLabel1.Text = status;
         }
 
-        private void CancelButton_Click(object sender, EventArgs e)
+        // Utiliti
+        private static DateTime timeToDateTime(long unixTimeStamp)
         {
-            this.backgroundFinderWorker.CancelAsync();
+            // Unix timestamp is seconds past epoch
+            System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+            dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
+            return dtDateTime;
         }
 
-        private void VKFinderForm_Load(object sender, EventArgs e)
+        long getTimeNowMillis()
         {
-
+            return DateTime.Now.Ticks / 10000;
         }
 
-        private void userIdTextBox_TextChanged(object sender, EventArgs e)
+        long sleepTime(long timeLastCall)
         {
+            long timeToSleep = 339 - (getTimeNowMillis() - timeLastCall);
+            if (timeToSleep > 0)
+                Thread.Sleep((int)timeToSleep);
 
+            return getTimeNowMillis();
+        }
+
+        // JObject utils
+        private static String getStringField(String name, JObject o)
+        {
+            return o[name] != null ? o[name].ToString() : "";
+        }
+
+        private static long getLongField(String name, JObject o, long def = 0)
+        {
+            long result = def;
+
+            if (o[name] != null)
+            {
+                string value = o[name].ToString();
+
+                try
+                {
+                    result = Convert.ToInt64(value);
+                }
+                catch (OverflowException)
+                {
+                    Debug.WriteLine("The value is outside the range of the Int64 type: " + value);
+                }
+                catch (FormatException)
+                {
+                    Debug.WriteLine("The value is not in a recognizable format: " + value);
+                }
+            }
+
+            return result;
+        }
+
+        private static int getIntField(String name, JObject o, int def = 0)
+        {
+            int result = def;
+
+            if (o[name] != null)
+            {
+                string value = o[name].ToString();
+
+                try
+                {
+                    result = Convert.ToInt32(value);
+                }
+                catch (OverflowException)
+                {
+                    Debug.WriteLine("The value is outside the range of the Int32 type: " + value);
+                }
+                catch (FormatException)
+                {
+                    Debug.WriteLine("The value is not in a recognizable format: " + value);
+                }
+            }
+
+            return result;
+        }
+
+        private static String getStringField(String category, String name, JObject o)
+        {
+            if (o[category] != null &&
+                o[category][name] != null)
+            {
+                return o[category][name].ToString();
+            }
+            return "";
+        }
+
+        private static long getLongField(String category, String name, JObject o, long def = 0)
+        {
+            long result = def;
+
+            if (o[category] != null &&
+                o[category][name] != null)
+            {
+                string value = o[category][name].ToString();
+
+                try
+                {
+                    result = Convert.ToInt64(value);
+                }
+                catch (OverflowException)
+                {
+                    Debug.WriteLine("The value is outside the range of the Int64 type: " + value);
+                }
+                catch (FormatException)
+                {
+                    Debug.WriteLine("The value is not in a recognizable format: " + value);
+                }
+            }
+
+            return result;
+        }
+
+        private static String getTextField(String name, JObject o)
+        {
+            String t = o[name] != null ? o[name].ToString() : "";
+            if (t.Length > 0)
+            {
+                return Regex.Replace(t, @"\r\n?|\n", "");
+            }
+            return "";
+        }
+
+        private static String getStringDateField(String name, JObject o)
+        {
+            long l = o[name] != null ? o[name].ToObject<long>() : 0;
+            DateTime d = timeToDateTime(l);
+            return d.ToString("yyyy-MM-dd HH:mm:ss");
         }
     }
 }

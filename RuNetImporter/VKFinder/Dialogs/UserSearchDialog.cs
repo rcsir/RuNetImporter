@@ -17,11 +17,14 @@ namespace rcsir.net.vk.finder.Dialogs
         public UserSearchDialog()
         {
             InitializeComponent();
-            
+        }
+
+        private void UserSearchDialog_Load(object sender, EventArgs e)
+        {
             // city combo
-            this.CityComboBox.Items.Add(new VKCity("any", 0));
-            this.CityComboBox.Items.Add(new VKCity("Санкт-Петербург", 2));
-            this.CityComboBox.Items.Add(new VKCity("Москва", 1));
+            this.CityComboBox.Items.Add(new VKCity(0, "any"));
+            this.CityComboBox.Items.Add(new VKCity(2, "Санкт-Петербург"));
+            this.CityComboBox.Items.Add(new VKCity(1, "Москва"));
             this.CityComboBox.SelectedIndex = 1; // spb
 
             // sex combo
@@ -29,8 +32,6 @@ namespace rcsir.net.vk.finder.Dialogs
             this.SexComboBox.Items.Add(new VKSex("female", 1));
             this.SexComboBox.Items.Add(new VKSex("male", 2));
             this.SexComboBox.SelectedIndex = 2; // male
-
-            
         }
 
         private void UserSearchDialog_Validated(object sender, EventArgs e)
@@ -98,6 +99,7 @@ namespace rcsir.net.vk.finder.Dialogs
         {
 
         }
+
     }
 
     public class SearchParameters

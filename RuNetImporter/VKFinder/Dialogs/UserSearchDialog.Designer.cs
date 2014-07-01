@@ -61,7 +61,7 @@
             // OKButton
             // 
             this.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.OKButton.Location = new System.Drawing.Point(292, 269);
+            this.OKButton.Location = new System.Drawing.Point(286, 408);
             this.OKButton.Name = "OKButton";
             this.OKButton.Size = new System.Drawing.Size(75, 23);
             this.OKButton.TabIndex = 0;
@@ -72,7 +72,7 @@
             // CancelSearchButton
             // 
             this.CancelSearchButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelSearchButton.Location = new System.Drawing.Point(211, 269);
+            this.CancelSearchButton.Location = new System.Drawing.Point(205, 408);
             this.CancelSearchButton.Name = "CancelSearchButton";
             this.CancelSearchButton.Size = new System.Drawing.Size(75, 23);
             this.CancelSearchButton.TabIndex = 1;
@@ -100,7 +100,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(38, 89);
+            this.label2.Location = new System.Drawing.Point(32, 235);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(42, 13);
             this.label2.TabIndex = 4;
@@ -109,7 +109,7 @@
             // SexComboBox
             // 
             this.SexComboBox.FormattingEnabled = true;
-            this.SexComboBox.Location = new System.Drawing.Point(126, 89);
+            this.SexComboBox.Location = new System.Drawing.Point(120, 235);
             this.SexComboBox.Name = "SexComboBox";
             this.SexComboBox.Size = new System.Drawing.Size(241, 21);
             this.SexComboBox.TabIndex = 5;
@@ -117,7 +117,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(38, 200);
+            this.label3.Location = new System.Drawing.Point(32, 339);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(52, 13);
             this.label3.TabIndex = 6;
@@ -127,7 +127,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(225, 205);
+            this.label4.Location = new System.Drawing.Point(219, 344);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(42, 13);
             this.label4.TabIndex = 7;
@@ -136,7 +136,7 @@
             // 
             // AgeFrom
             // 
-            this.AgeFrom.Location = new System.Drawing.Point(126, 198);
+            this.AgeFrom.Location = new System.Drawing.Point(120, 337);
             this.AgeFrom.Name = "AgeFrom";
             this.AgeFrom.Size = new System.Drawing.Size(79, 20);
             this.AgeFrom.TabIndex = 8;
@@ -144,7 +144,7 @@
             // 
             // AgeTo
             // 
-            this.AgeTo.Location = new System.Drawing.Point(292, 198);
+            this.AgeTo.Location = new System.Drawing.Point(286, 337);
             this.AgeTo.Name = "AgeTo";
             this.AgeTo.Size = new System.Drawing.Size(75, 20);
             this.AgeTo.TabIndex = 9;
@@ -153,7 +153,7 @@
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(38, 19);
+            this.label5.Location = new System.Drawing.Point(32, 203);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(35, 13);
             this.label5.TabIndex = 10;
@@ -161,14 +161,14 @@
             // 
             // QueryTextBox
             // 
-            this.QueryTextBox.Location = new System.Drawing.Point(126, 16);
+            this.QueryTextBox.Location = new System.Drawing.Point(120, 200);
             this.QueryTextBox.Name = "QueryTextBox";
             this.QueryTextBox.Size = new System.Drawing.Size(241, 20);
             this.QueryTextBox.TabIndex = 11;
             // 
             // YearFrom
             // 
-            this.YearFrom.Location = new System.Drawing.Point(126, 135);
+            this.YearFrom.Location = new System.Drawing.Point(120, 274);
             this.YearFrom.Maximum = new decimal(new int[] {
             3000,
             0,
@@ -181,7 +181,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(38, 137);
+            this.label6.Location = new System.Drawing.Point(32, 276);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(55, 13);
             this.label6.TabIndex = 12;
@@ -190,7 +190,7 @@
             // 
             // YearTo
             // 
-            this.YearTo.Location = new System.Drawing.Point(292, 135);
+            this.YearTo.Location = new System.Drawing.Point(286, 274);
             this.YearTo.Maximum = new decimal(new int[] {
             3000,
             0,
@@ -203,7 +203,7 @@
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(225, 137);
+            this.label7.Location = new System.Drawing.Point(219, 276);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(45, 13);
             this.label7.TabIndex = 15;
@@ -212,7 +212,7 @@
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(225, 168);
+            this.label8.Location = new System.Drawing.Point(219, 307);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(53, 13);
             this.label8.TabIndex = 19;
@@ -220,7 +220,7 @@
             // 
             // MonthTo
             // 
-            this.MonthTo.Location = new System.Drawing.Point(292, 166);
+            this.MonthTo.Location = new System.Drawing.Point(286, 305);
             this.MonthTo.Maximum = new decimal(new int[] {
             12,
             0,
@@ -232,7 +232,7 @@
             // 
             // MonthFrom
             // 
-            this.MonthFrom.Location = new System.Drawing.Point(126, 166);
+            this.MonthFrom.Location = new System.Drawing.Point(120, 305);
             this.MonthFrom.Maximum = new decimal(new int[] {
             12,
             0,
@@ -245,7 +245,7 @@
             // label9
             // 
             this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(38, 168);
+            this.label9.Location = new System.Drawing.Point(32, 307);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(63, 13);
             this.label9.TabIndex = 16;
@@ -256,7 +256,7 @@
             this.withPhone.AutoSize = true;
             this.withPhone.Checked = true;
             this.withPhone.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.withPhone.Location = new System.Drawing.Point(285, 235);
+            this.withPhone.Location = new System.Drawing.Point(279, 374);
             this.withPhone.Name = "withPhone";
             this.withPhone.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.withPhone.Size = new System.Drawing.Size(82, 17);
@@ -267,7 +267,7 @@
             // useSlowSearch
             // 
             this.useSlowSearch.AutoSize = true;
-            this.useSlowSearch.Location = new System.Drawing.Point(97, 235);
+            this.useSlowSearch.Location = new System.Drawing.Point(91, 374);
             this.useSlowSearch.Name = "useSlowSearch";
             this.useSlowSearch.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.useSlowSearch.Size = new System.Drawing.Size(108, 17);
@@ -280,7 +280,7 @@
             this.AcceptButton = this.OKButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(379, 306);
+            this.ClientSize = new System.Drawing.Size(466, 443);
             this.Controls.Add(this.useSlowSearch);
             this.Controls.Add(this.withPhone);
             this.Controls.Add(this.label8);
@@ -309,6 +309,7 @@
             this.MinimizeBox = false;
             this.Name = "UserSearchDialog";
             this.Text = "UserSearchDialog";
+            this.Load += new System.EventHandler(this.UserSearchDialog_Load);
             this.Validated += new System.EventHandler(this.UserSearchDialog_Validated);
             ((System.ComponentModel.ISupportInitialize)(this.AgeFrom)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.AgeTo)).EndInit();

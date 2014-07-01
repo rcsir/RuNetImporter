@@ -26,7 +26,10 @@ namespace rcsir.net.vk.importer.api
         GroupsGetMembers,
         GroupsGetById,
         LikesGetList,
-        UsersGet
+        UsersGet,
+        DatabaseGetCountries,
+        DatabaseGetRegions,
+        DatabaseGetCities
     };
 
     // VK enum for sex field
@@ -49,21 +52,72 @@ namespace rcsir.net.vk.importer.api
         InLove = 7 
     };
 
+    // VK Country
+    public class VKCountry
+    {
+        public int id { get; private set; }
+        public string title { get; private set; }
+
+        public VKCountry(int id, string title)
+        {
+            this.id = id;
+            this.title = title;
+        }
+    };
+
+    // VK Region
+    public class VKRegion
+    {
+        public int id { get; private set; }
+        public string title { get; private set; }
+
+        public VKRegion(int id, string title)
+        {
+            this.id = id;
+            this.title = title;
+        }
+    };
+
     // VK city
     public class VKCity
     {
-        public string Name { get; set; }
-        public int Value { get; set; }
+        public int id { get; private set; }
+        public string title { get; private set; }
+        public bool important { get; private set; }
+        public string regionTitle { get; private set; }
+        public string areaTitle { get; private set; }
 
-        public VKCity(String name, int value)
+        public VKCity(int id, String title)
         {
-            this.Name = name;
-            this.Value = value;
+            this.title = title;
+            this.id = id;
+            this.important = false;
+            this.regionTitle = "";
+            this.areaTitle = "";
         }
-        
+
+        public VKCity(int id, String title, bool important)
+            : this(id, title)
+        {
+            this.important = important;
+        }
+
+        public VKCity(int id, String title, bool important, string region)
+            : this(id, title, important)
+        {
+            this.regionTitle = region;
+        }
+
+        public VKCity(int id, String title, bool important, string region, string area)
+            : this(id, title, important, region)
+        {
+            this.areaTitle = area;
+        }
+
         public override string ToString()
         {
-            return Name;
+            // String.Format("id: {} title: {} important: {} region: {} area: {}", id, title, important, regionTitle, areaTitle)
+            return title;
         }
     };
 
@@ -239,6 +293,15 @@ namespace rcsir.net.vk.importer.api
                 case VKFunction.UsersGet:
                     UsersGet(function, context.authToken, context.parameters);
                     break;
+                case VKFunction.DatabaseGetCountries:
+                    GetCountries(function, context.authToken, context.parameters);
+                    break;
+                case VKFunction.DatabaseGetRegions:
+                    GetRegions(function, context.authToken, context.parameters);
+                    break;
+                case VKFunction.DatabaseGetCities:
+                    GetCities(function, context.authToken, context.parameters);
+                    break;
                 default:
                     break;
             }
@@ -374,6 +437,45 @@ namespace rcsir.net.vk.importer.api
         {
             StringBuilder sb = new StringBuilder(api_url);
             sb.Append("/method/users.get");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+            sb.Append('&').Append("v=5.21");
+
+            makeRestCall(function, sb.ToString());
+        }
+
+        // GET Countries v 5.21
+        private void GetCountries(VKFunction function, String authToken, String parameters)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/database.getCountries");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+            sb.Append('&').Append("v=5.21");
+
+            makeRestCall(function, sb.ToString());
+        }
+
+        // GET Regions v 5.21
+        private void GetRegions(VKFunction function, String authToken, String parameters)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/database.getRegions");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+            sb.Append('&').Append("v=5.21");
+
+            makeRestCall(function, sb.ToString());
+        }
+
+        // GET Cities v 5.21
+        private void GetCities(VKFunction function, String authToken, String parameters)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/database.getCities");
             sb.Append('?');
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
