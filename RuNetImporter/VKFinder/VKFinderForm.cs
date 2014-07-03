@@ -35,8 +35,12 @@ namespace VKFinder
         private long expiresAt;
         private static AutoResetEvent readyEvent = new AutoResetEvent(false);
         private volatile bool run; // finder worker flag
-        private volatile bool load; // loader worker flag
+        //private volatile bool load; // loader worker flag
         private bool withPhone = false;
+
+        // places
+        private List<VKRegion> regions = new List<VKRegion>();
+        private List<VKCity> cities = new List<VKCity>();
 
         // document
         StreamWriter writer;
@@ -146,7 +150,7 @@ namespace VKFinder
 
         private void FindUsersButton_Click(object sender, EventArgs e)
         {
-            UserSearchDialog searchDialog = new UserSearchDialog();
+            UserSearchDialog searchDialog = new UserSearchDialog(this.regions, this.cities);
 
             if (searchDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
@@ -604,7 +608,6 @@ namespace VKFinder
                 return;
             }
 
-            List<VKRegion> regions = new List<VKRegion>();
             // process response body
             for (int i = 0; i < count; ++i)
             {
@@ -617,10 +620,10 @@ namespace VKFinder
                 }
             }
 
-            if (regions.Count > 0)
-            {
+            //if (regions.Count > 0)
+            //{
                 //UpdateFile(regions);
-            }
+            //}
         }
 
         // process cities response
@@ -645,7 +648,6 @@ namespace VKFinder
                 return;
             }
 
-            var cities = new List<VKCity>();
             // process response body
             for (int i = 0; i < count; ++i)
             {
@@ -661,10 +663,10 @@ namespace VKFinder
                 }
             }
 
-            if (cities.Count > 0)
-            {
+            //if (cities.Count > 0)
+            //{
                 //UpdateFile(cities);
-            }
+            //}
         }
 
         private string parseSearchParameters(SearchParameters parameters)

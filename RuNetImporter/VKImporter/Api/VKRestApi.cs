@@ -63,6 +63,11 @@ namespace rcsir.net.vk.importer.api
             this.id = id;
             this.title = title;
         }
+
+        public override string ToString()
+        {
+            return title;
+        }
     };
 
     // VK Region
@@ -75,6 +80,11 @@ namespace rcsir.net.vk.importer.api
         {
             this.id = id;
             this.title = title;
+        }
+
+        public override string ToString()
+        {
+            return title;
         }
     };
 
@@ -116,8 +126,7 @@ namespace rcsir.net.vk.importer.api
 
         public override string ToString()
         {
-            // String.Format("id: {} title: {} important: {} region: {} area: {}", id, title, important, regionTitle, areaTitle)
-            return title;
+            return String.Format("{0}, {1}, {2}",title, areaTitle, regionTitle);
         }
     };
 

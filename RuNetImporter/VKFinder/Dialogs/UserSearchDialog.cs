@@ -14,8 +14,13 @@ namespace rcsir.net.vk.finder.Dialogs
     {
         public SearchParameters searchParameters { get; set; }
 
-        public UserSearchDialog()
+        private List<VKRegion> regions;
+        private List<VKCity> cities;
+
+        public UserSearchDialog(List<VKRegion> regions, List<VKCity> cities)
         {
+            this.regions = regions;
+            this.cities = cities;
             InitializeComponent();
         }
 
@@ -26,6 +31,18 @@ namespace rcsir.net.vk.finder.Dialogs
             this.CityComboBox.Items.Add(new VKCity(2, "Санкт-Петербург"));
             this.CityComboBox.Items.Add(new VKCity(1, "Москва"));
             this.CityComboBox.SelectedIndex = 1; // spb
+
+            // regions combo box
+            foreach (var region in this.regions)
+            {
+                this.regionsComboBox.Items.Add(region);
+            }
+
+            // townd checked combo box
+            foreach (var town in this.cities)
+            {
+                this.townsCheckedListBox.Items.Add(town);
+            }
 
             // sex combo
             this.SexComboBox.Items.Add(new VKSex("any", 0));
@@ -96,6 +113,11 @@ namespace rcsir.net.vk.finder.Dialogs
         }
 
         private void CancelSearchButton_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void checkedListBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
 
         }
