@@ -22,7 +22,7 @@ namespace VKFinder
 {
     public partial class VKFinderForm : Form
     {
-        private static readonly string REQUIRED_FIELDS = "fields=photo,screen_name,sex,bdate,contacts,relation,status";
+        private static readonly string REQUIRED_FIELDS = "fields=photo,screen_name,sex,bdate,contacts,relation,status,city,country";
 
         private static readonly int ITEMS_PER_REQUEST = 1000;
         private long currentOffset;
@@ -40,7 +40,8 @@ namespace VKFinder
 
         // places
         private List<VKRegion> regions = new List<VKRegion>();
-        private List<VKCity> cities = new List<VKCity>();
+        private VKCity SaintPetersburg = new VKCity(2, "Санкт-Петербург", true, "Санкт-Петербург");
+        private Dictionary<string, List<VKCity>> citiesByDistrict = new Dictionary<string, List<VKCity>>();
 
         // document
         StreamWriter writer;
@@ -58,6 +59,8 @@ namespace VKFinder
                 photo = "";
                 mobilePhone = "";
                 homePhone = "";
+                city = "";
+                country = "";
                 relation = "";
                 status = "";
 
@@ -71,6 +74,8 @@ namespace VKFinder
             public String photo { get; set; }
             public String mobilePhone { get; set; }
             public String homePhone { get; set; }
+            public String city { get; set; }
+            public String country { get; set; }
             public String relation { get; set; }
             public String status { get; set; }
 
@@ -128,7 +133,7 @@ namespace VKFinder
 
         private void AuthorizeButton_Click(object sender, EventArgs e)
         {
-            bool reLogin = false; // if true - will delete cookies and relogin, use false for dev.
+            bool reLogin = true; // if true - will delete cookies and relogin, use false for dev.
             vkLoginDialog.Login("friends", reLogin); // default permission - friends
         }
 
@@ -144,13 +149,22 @@ namespace VKFinder
             if (result == DialogResult.OK)
             {
                 this.WorkingFolderTextBox.Text = folderBrowserDialog1.SelectedPath;
-                this.backgroundLoaderWorker.RunWorkerAsync(1); // param is not important
+                if (this.citiesByDistrict.Count() == 0)
+                {
+                    // add spb
+                    var spb = new List<VKCity>();
+                    spb.Add(SaintPetersburg);
+                    this.citiesByDistrict.Add("Санкт-Петербург город", spb);
+                    this.backgroundLoaderWorker.RunWorkerAsync(1); // param is not important
+                }
             }
+
+            this.ActivateControls();
         }
 
         private void FindUsersButton_Click(object sender, EventArgs e)
         {
-            UserSearchDialog searchDialog = new UserSearchDialog(this.regions, this.cities);
+            UserSearchDialog searchDialog = new UserSearchDialog(this.citiesByDistrict);
 
             if (searchDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
@@ -168,8 +182,9 @@ namespace VKFinder
 
         private void ActivateControls()
         {
-            //            bool isAuthorized = (this.userId != null && this.userId.Length > 0);
-            bool isAuthorized = true; //TODO temp
+            bool isAuthorized = (this.userId != null && 
+                                this.userId.Length > 0 &&
+                                this.WorkingFolderTextBox.Text.Count() > 0);
 
             if (isAuthorized)
             {
@@ -227,13 +242,13 @@ namespace VKFinder
                 searchParameters.useSlowSearch = false;
             }
 
-            DateTime startDate = new DateTime(startYear, startMonth, 1);
-            DateTime stopDate = new DateTime(stopYear, stopMonth, 1);
+            DateTime saveStartDate = new DateTime(startYear, startMonth, 1);
+            DateTime saveStopDate = new DateTime(stopYear, stopMonth, 1);
 
             if(searchParameters.useSlowSearch)
             {
                 // set stop date to the last day of the stop month
-                stopDate = stopDate.AddMonths(1).AddDays(-1); 
+                saveStopDate = saveStopDate.AddMonths(1).AddDays(-1); 
             }
 
             // figure out step
@@ -244,14 +259,16 @@ namespace VKFinder
                 if(searchParameters.useSlowSearch)
                 {
                     // calculate number of days
-                    step = (int)(10000 / ((stopDate - startDate).TotalDays) + 0.5);
+                    step = (int)(10000 / ((saveStopDate - saveStartDate).TotalDays) + 0.5);
                 }
                 else
                 {
                     // calculate number of months 
-                    step = (int)(10000 / ((stopDate.Year - startDate.Year) * 12  + stopDate.Month - startDate.Month + 1));
+                    step = (int)(10000 / ((saveStopDate.Year - saveStartDate.Year) * 12  + saveStopDate.Month - saveStartDate.Month + 1));
                 }
             }
+
+            step /= searchParameters.cities.Count();
 
             // create stream writer
             String fileName = generateFileName(searchParameters);
@@ -260,62 +277,73 @@ namespace VKFinder
 
             VKRestContext context = new VKRestContext(this.userId, this.authToken);
 
-            long timeLastCall = 0;
-
             // loop by birth year and month to maximize number of matches (1000 at a time)
             StringBuilder sb = new StringBuilder();
-            while(startDate <= stopDate)
+            foreach (var city in searchParameters.cities)
             {
-                if (bw.CancellationPending)
-                    break;
+                long timeLastCall = 0;
+                DateTime startDate = saveStartDate;
+                DateTime stopDate = saveStopDate;
 
-                bw.ReportProgress(step, "Searching"); 
-
-                this.run = true;
-                this.totalCount = 0;
-                this.currentOffset = 0;
-
-                while (this.run &&
-                    this.currentOffset <= this.totalCount)
+                while (startDate <= stopDate)
                 {
                     if (bw.CancellationPending)
                         break;
 
-                    sb.Length = 0;
-                    sb.Append("offset=").Append(currentOffset).Append("&");
-                    sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
-                    sb.Append(parameters);
-                    // append bdate 
-                    if (startYear > 1900)
+                    bw.ReportProgress(step, "Searching in " + city.title);
+
+                    this.run = true;
+                    this.totalCount = 0;
+                    this.currentOffset = 0;
+
+                    while (this.run &&
+                        this.currentOffset <= this.totalCount)
                     {
-                        sb.Append("birth_year=").Append(startDate.Year).Append("&");
-                        sb.Append("birth_month=").Append(startDate.Month).Append("&");
-                        if(searchParameters.useSlowSearch)
+                        if (bw.CancellationPending)
+                            break;
+
+                        sb.Length = 0;
+                        sb.Append("offset=").Append(currentOffset).Append("&");
+                        sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
+                        sb.Append(parameters);
+                        if (city.id > 0)
                         {
-                            sb.Append("birth_day=").Append(startDate.Day).Append("&");
+                            sb.Append("city=").Append(city.id).Append("&");
                         }
+
+                        // append bdate 
+                        if (startYear > 1900)
+                        {
+                            sb.Append("birth_year=").Append(startDate.Year).Append("&");
+                            sb.Append("birth_month=").Append(startDate.Month).Append("&");
+                            if (searchParameters.useSlowSearch)
+                            {
+                                sb.Append("birth_day=").Append(startDate.Day).Append("&");
+                            }
+                        }
+                        // append required fields
+                        sb.Append(REQUIRED_FIELDS);
+
+                        context.parameters = sb.ToString();
+                        Debug.WriteLine("Search parameters: " + context.parameters);
+
+                        context.cookie = this.currentOffset.ToString();
+
+                        // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                        timeLastCall = sleepTime(timeLastCall);
+                        vkRestApi.CallVKFunction(VKFunction.UsersSearch, context);
+
+                        // wait for the user data
+                        readyEvent.WaitOne();
+
+                        this.currentOffset += ITEMS_PER_REQUEST;
                     }
-                    // append required fields
-                    sb.Append(REQUIRED_FIELDS);
 
-                    context.parameters = sb.ToString();
-                    Debug.WriteLine("Search parameters: " + context.parameters);
-
-                    context.cookie = this.currentOffset.ToString();
-
-                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                    timeLastCall = sleepTime(timeLastCall);
-                    vkRestApi.CallVKFunction(VKFunction.UsersSearch, context);
-
-                    // wait for the user data
-                    readyEvent.WaitOne();
-
-                    this.currentOffset += ITEMS_PER_REQUEST;
+                    // increment date
+                    startDate = searchParameters.useSlowSearch ? startDate.AddDays(1) : startDate.AddMonths(1);
                 }
-
-                // increment date
-                startDate = searchParameters.useSlowSearch ? startDate.AddDays(1) : startDate.AddMonths(1);
             }
+
 
             writer.Close();
 
@@ -465,9 +493,11 @@ namespace VKFinder
         // main error handler
         private void OnError(object vkRestApi, OnErrorEventArgs onErrorArgs)
         {
-            // TODO: notify user about the error
+            // notify user about the error
             Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
-            this.backgroundFinderWorker.CancelAsync();
+            
+            // keep on going ... this.backgroundFinderWorker.CancelAsync();
+            
             // indicate that we can continue
             readyEvent.Set();
         }
@@ -527,6 +557,8 @@ namespace VKFinder
                 person.screenName = personObj["screen_name"] != null ? personObj["screen_name"].ToString() : "";
                 person.sex = personObj["sex"] != null ? personObj["sex"].ToString() : "";
                 person.bdate = personObj["bdate"] != null ? personObj["bdate"].ToString() : "";
+                person.city = getStringField("city", "title", personObj);
+                person.country = getStringField("country", "title", personObj);
                 person.photo = personObj["photo"] != null ? personObj["photo"].ToString() : "";
                 person.relation = personObj["relation"] != null ? personObj["relation"].ToString() : "";
                 string t = personObj["status"] != null ? personObj["status"].ToString() : "";
@@ -659,7 +691,25 @@ namespace VKFinder
                 string area = getStringField("area", obj);
                 if (id > 0)
                 {
-                    cities.Add(new VKCity(id, title, important > 0, region, area));
+                    String location = "";
+
+                    if (area.Count() > 0)
+                    {
+                        location = area;
+                    }
+                    else if (region.Count() > 0)
+                    {
+                        location = region;
+                    }
+
+                    List<VKCity> cs;
+                    if (!citiesByDistrict.TryGetValue(location, out cs))
+                    {
+                        cs = new List<VKCity>();
+                        citiesByDistrict.Add(location, cs);
+                    }
+
+                    cs.Add(new VKCity(id, title, important > 0, region, area));
                 }
             }
 
@@ -676,14 +726,6 @@ namespace VKFinder
             if (parameters.query.Length > 0)
             {
                 builder.Append("q=").Append(parameters.query).Append("&");
-            }
-
-            if (parameters.city != null)
-            {
-                if (parameters.city.id > 0)
-                {
-                    builder.Append("city=").Append(parameters.city.id).Append("&");
-                }
             }
 
             if (parameters.sex != null)
@@ -706,10 +748,10 @@ namespace VKFinder
             if (parameters.query.Length > 0)
                 fileName.Append(parameters.query);
 
-            if (parameters.city != null)
-                fileName.Append(parameters.city.title);
+            if (parameters.cities.Count() == 1)
+                fileName.Append(parameters.cities[0].title);
             else
-                fileName.Append("anyCity");
+                fileName.Append(parameters.cities[0].title + "-and-more");
 
             fileName.Append('-');
 
@@ -747,16 +789,16 @@ namespace VKFinder
 
         private void printHeader(StreamWriter writer)
         {
-            writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"",
-                    "id", "Имя", "Фамилия", "Псевдоним", "пол", "д.рождения", "мобильный", "домашний", "фото", "отношения", "статус");
+            writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"\t\"{11}\"\t\"{12}\"",
+                    "id", "Имя", "Фамилия", "Псевдоним", "пол", "д.рождения", "мобильный", "домашний", "город", "страна", "фото", "отношения", "статус");
         }
 
         private void UpdateFile(List<Person> persons)
         {
             foreach (Person p in persons)
             {
-                writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"",
-                    p.id, p.firstName, p.lastName, p.screenName, p.sex, p.bdate, p.mobilePhone, p.homePhone, p.photo, p.relation, p.status);
+                writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"\t\"{11}\"\t\"{12}\"",
+                    p.id, p.firstName, p.lastName, p.screenName, p.sex, p.bdate, p.mobilePhone, p.homePhone, p.city, p.country, p.photo, p.relation, p.status);
             }
         }
 
@@ -792,7 +834,7 @@ namespace VKFinder
 
         long sleepTime(long timeLastCall)
         {
-            long timeToSleep = 339 - (getTimeNowMillis() - timeLastCall);
+            long timeToSleep = 400 - (getTimeNowMillis() - timeLastCall);
             if (timeToSleep > 0)
                 Thread.Sleep((int)timeToSleep);
 

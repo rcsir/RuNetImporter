@@ -14,35 +14,33 @@ namespace rcsir.net.vk.finder.Dialogs
     {
         public SearchParameters searchParameters { get; set; }
 
-        private List<VKRegion> regions;
-        private List<VKCity> cities;
+        private Dictionary<string, List<VKCity>> citiesByDistrict;
 
-        public UserSearchDialog(List<VKRegion> regions, List<VKCity> cities)
+
+        public UserSearchDialog(Dictionary<string, List<VKCity>> citiesByDistrict)
         {
-            this.regions = regions;
-            this.cities = cities;
+            this.citiesByDistrict = citiesByDistrict;
             InitializeComponent();
+
+            // one click selection
+            this.townsCheckedListBox.CheckOnClick = true;
         }
 
         private void UserSearchDialog_Load(object sender, EventArgs e)
         {
-            // city combo
-            this.CityComboBox.Items.Add(new VKCity(0, "any"));
-            this.CityComboBox.Items.Add(new VKCity(2, "Санкт-Петербург"));
-            this.CityComboBox.Items.Add(new VKCity(1, "Москва"));
-            this.CityComboBox.SelectedIndex = 1; // spb
-
-            // regions combo box
-            foreach (var region in this.regions)
+            // districs combo box
+            this.districtsComboBox.Items.Add("All"); // all districts item 
+            var districts = new List<string>(citiesByDistrict.Keys);
+            foreach (var d in districts)
             {
-                this.regionsComboBox.Items.Add(region);
+                this.districtsComboBox.Items.Add(d);
+
+                // townd checked combo box
+                var cities = citiesByDistrict[d];
+                this.townsCheckedListBox.Items.AddRange(cities.ToArray());
             }
 
-            // townd checked combo box
-            foreach (var town in this.cities)
-            {
-                this.townsCheckedListBox.Items.Add(town);
-            }
+            this.districtsComboBox.SelectedIndex = 0; // all is selected
 
             // sex combo
             this.SexComboBox.Items.Add(new VKSex("any", 0));
@@ -64,13 +62,17 @@ namespace rcsir.net.vk.finder.Dialogs
 
             this.searchParameters.query = this.QueryTextBox.Text.Trim();
 
-            if (this.CityComboBox.SelectedItem != null)
+            this.searchParameters.cities = new List<VKCity>();
+            if (this.townsCheckedListBox.CheckedItems.Count > 0)
             {
-                this.searchParameters.city = (VKCity)this.CityComboBox.SelectedItem;
+                foreach (var itemChecked in this.townsCheckedListBox.CheckedItems)
+                {
+                    this.searchParameters.cities.Add((VKCity)itemChecked);
+                }
             }
             else
             {
-                this.searchParameters.city = null;
+                this.searchParameters.cities.Add( new VKCity(0,"Any")); // add any city item
             }
 
             if (this.SexComboBox.SelectedItem != null)
@@ -107,19 +109,42 @@ namespace rcsir.net.vk.finder.Dialogs
             */
         }
 
-        private void label6_Click(object sender, EventArgs e)
+        private void districtsComboBox_SelectionChangeCommitted(object sender, EventArgs e)
         {
+            ComboBox senderComboBox = (ComboBox)sender;
 
-        }
+            // Change the length of the text box depending on what the user has  
+            // selected and committed using the SelectionLength property. 
+            if (senderComboBox.SelectionLength > 0)
+            {
+                string selection =
+                    senderComboBox.SelectedItem.ToString();
 
-        private void CancelSearchButton_Click(object sender, EventArgs e)
-        {
+                this.townsCheckedListBox.BeginUpdate();
+                this.townsCheckedListBox.Items.Clear();
 
-        }
+                if (String.Compare(selection, "all", true) == 0)
+                {
+                    // show all items
+                    var districts = new List<string>(citiesByDistrict.Keys);
+                    foreach (var d in districts)
+                    {
+                        var cities = citiesByDistrict[d];
+                        this.townsCheckedListBox.Items.AddRange(cities.ToArray());
+                    }
+                }
+                else
+                {
+                    // add cities for a district
+                    if(citiesByDistrict.ContainsKey(selection))
+                    {
+                        var cities = citiesByDistrict[selection];
+                        this.townsCheckedListBox.Items.AddRange(cities.ToArray());
+                    }
+                }
 
-        private void checkedListBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
+                this.townsCheckedListBox.EndUpdate();
+            }
         }
 
     }
@@ -127,7 +152,7 @@ namespace rcsir.net.vk.finder.Dialogs
     public class SearchParameters
     {
         public String query;
-        public VKCity city;
+        public List<VKCity> cities;
         public VKSex sex;
         public decimal yearStart;
         public decimal yearEnd;
