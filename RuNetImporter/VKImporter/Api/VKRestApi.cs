@@ -371,7 +371,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append('?');
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
-            sb.Append('&').Append("v=5.14");
+            sb.Append('&').Append("v=5.21");
 
             makeRestCall(function, sb.ToString());
         }
