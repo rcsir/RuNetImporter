@@ -13,6 +13,8 @@ namespace rcsir.net.vk.groups.Dialogs
     {
         public decimal groupId { get; set; }
         public bool isGroup { get; set; }
+        public DateTime fromDate { get; set; }
+        public DateTime toDate { get; set; }
 
         public DownloadGroupPostsDialog()
         {
@@ -20,13 +22,19 @@ namespace rcsir.net.vk.groups.Dialogs
         }
 
         private void OKButton_Click(object sender, EventArgs e)
-        {   
+        {
+            this.fromDate = this.dateTimeFromPicker.Value;
+            this.toDate = this.dateTimeToPicker.Value;
         }
 
         private void DownloadGroupPostsDialog_Load(object sender, EventArgs e)
         {
             this.groupIdNumeric.Value = groupId;
             this.isGroupcheckBox.Checked = isGroup;
+
+            this.dateTimeFromPicker.Value = DateTime.Today.AddYears(-1);
+            this.dateTimeToPicker.Value = DateTime.Today;
         }
+
     }
 }

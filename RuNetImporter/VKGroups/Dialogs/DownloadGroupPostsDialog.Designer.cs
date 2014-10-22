@@ -33,6 +33,10 @@
             this.groupIdNumeric = new System.Windows.Forms.NumericUpDown();
             this.label1 = new System.Windows.Forms.Label();
             this.isGroupcheckBox = new System.Windows.Forms.CheckBox();
+            this.dateTimeFromPicker = new System.Windows.Forms.DateTimePicker();
+            this.dateTimeToPicker = new System.Windows.Forms.DateTimePicker();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.groupIdNumeric)).BeginInit();
             this.SuspendLayout();
             // 
@@ -92,6 +96,39 @@
             this.isGroupcheckBox.Text = "is Group";
             this.isGroupcheckBox.UseVisualStyleBackColor = true;
             // 
+            // dateTimeFromPicker
+            // 
+            this.dateTimeFromPicker.Location = new System.Drawing.Point(98, 106);
+            this.dateTimeFromPicker.Name = "dateTimeFromPicker";
+            this.dateTimeFromPicker.Size = new System.Drawing.Size(219, 20);
+            this.dateTimeFromPicker.TabIndex = 7;
+            this.dateTimeFromPicker.Value = new System.DateTime(2014, 10, 22, 0, 15, 25, 0);
+            // 
+            // dateTimeToPicker
+            // 
+            this.dateTimeToPicker.Location = new System.Drawing.Point(98, 141);
+            this.dateTimeToPicker.Name = "dateTimeToPicker";
+            this.dateTimeToPicker.Size = new System.Drawing.Size(219, 20);
+            this.dateTimeToPicker.TabIndex = 8;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(12, 112);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(33, 13);
+            this.label2.TabIndex = 9;
+            this.label2.Text = "From:";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(12, 147);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(23, 13);
+            this.label3.TabIndex = 10;
+            this.label3.Text = "To:";
+            // 
             // DownloadGroupPostsDialog
             // 
             this.AcceptButton = this.OKButton;
@@ -99,6 +136,10 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelSearchButton;
             this.ClientSize = new System.Drawing.Size(329, 270);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.dateTimeToPicker);
+            this.Controls.Add(this.dateTimeFromPicker);
             this.Controls.Add(this.isGroupcheckBox);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.groupIdNumeric);
@@ -120,5 +161,9 @@
         private System.Windows.Forms.NumericUpDown groupIdNumeric;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox isGroupcheckBox;
+        private System.Windows.Forms.DateTimePicker dateTimeFromPicker;
+        private System.Windows.Forms.DateTimePicker dateTimeToPicker;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label label3;
     }
 }

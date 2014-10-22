@@ -69,6 +69,10 @@ namespace VKGroups
         HashSet<long> memberIds = new HashSet<long>();
         HashSet<long> posterIds = new HashSet<long>();
 
+        // group posts date range
+        DateTime postsFromDate;
+        DateTime postsToDate;
+
         // network analyzer document
         EgoNetworkAnalyzer egoNetAnalyzer = new EgoNetworkAnalyzer();
         HashSet<long> friendIds = new HashSet<long>();
@@ -227,6 +231,20 @@ namespace VKGroups
             public long rec_likes { get; set; }
             public long likes { get; set; }
             public long friends { get; set; }
+        };
+
+        private class GroupPostsParam
+        {
+            public GroupPostsParam(decimal gid, DateTime from, DateTime to)
+            {
+                this.gid = gid;
+                this.from = from;
+                this.to = to;
+            }
+
+            public decimal gid { get; set;  }
+            public DateTime from { get; set;  }
+            public DateTime to { get; set; }
         };
 
         // Constructor
@@ -402,8 +420,10 @@ namespace VKGroups
                 updateStatus(-1, "Start");
                 decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
 
+                GroupPostsParam param = new GroupPostsParam(gid, postsDialog.fromDate, postsDialog.toDate);
+
                 isRunning = true;
-                this.backgroundGroupsWorker.RunWorkerAsync(gid);
+                this.backgroundGroupsWorker.RunWorkerAsync(param);
                 ActivateControls();
             }
             else
@@ -723,8 +743,19 @@ namespace VKGroups
             // Instead, use the reference provided by the sender parameter.
             BackgroundWorker bw = sender as BackgroundWorker;
 
-            // Extract the argument. 
-            decimal groupId = (decimal)args.Argument;
+            // Extract the argument.
+            GroupPostsParam param = args.Argument as GroupPostsParam;
+            decimal groupId = param.gid;
+            if (param.from <= param.to)
+            {
+                this.postsFromDate = param.from;
+                this.postsToDate = param.to;
+            }
+            else
+            {
+                this.postsFromDate = param.to;
+                this.postsToDate = param.from;
+            }
 
             isRunning = true;
 
@@ -1372,6 +1403,15 @@ namespace VKGroups
             for (int i = 0; i < count; ++i)
             {
                 JObject postObj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+
+                // see if post is in the range
+                DateTime dt = getDateField("date", postObj);
+
+                if(dt < this.postsFromDate ||
+                    dt > this.postsToDate)
+                {
+                    continue;
+                }
 
                 Post post = new Post();
                 post.id = getLongField("id", postObj);
@@ -2066,6 +2106,12 @@ namespace VKGroups
             long l = o[name] != null ? o[name].ToObject<long>() : 0;
             DateTime d = timeToDateTime(l);
             return d.ToString("yyyy-MM-dd HH:mm:ss");
+        }
+
+        private static DateTime getDateField(String name, JObject o)
+        {
+            long l = o[name] != null ? o[name].ToObject<long>() : 0;
+            return timeToDateTime(l);
         }
 
         private Dictionary<String, String> dictionaryFromPoster(Poster poster) 
