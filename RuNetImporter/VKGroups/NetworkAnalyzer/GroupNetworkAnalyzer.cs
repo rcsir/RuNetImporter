@@ -19,13 +19,6 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
         private VertexCollection<long> vertices = new VertexCollection<long>();
         private EdgeCollection<long> edges = new EdgeCollection<long>();
 
-        // visitor vertices
-        private VertexCollection<long> visitorVertices = new VertexCollection<long>();
-
-        // posters network
-        private VertexCollection<long> posterVertices = new VertexCollection<long>();
-        private EdgeCollection<long> posterEdges = new EdgeCollection<long>();
-
         private static List<AttributeUtils.Attribute> GroupAttributes = new List<AttributeUtils.Attribute>()
         {
             new AttributeUtils.Attribute("Name","name", "friends", false),
@@ -92,26 +85,10 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             }
         }
 
-        public void addMemberVertex(JObject member)
+        public void addVertex(long id, string name, string type, JObject member)
         {
-            long id = member["id"].ToObject<long>();
-            
             AttributesDictionary<String> attributes = createAttributes(member);
-
-            this.vertices.Add(new Vertex<long>(id,
-                member["first_name"].ToString() + " " + member["last_name"].ToString(),
-                "Member", attributes));
-        }
-
-        public void addVisitorVertex(JObject visitor)
-        {
-            long id = visitor["id"].ToObject<long>();
-
-            AttributesDictionary<String> attributes = createAttributes(visitor);
-
-            this.visitorVertices.Add(new Vertex<long>(id,
-                visitor["first_name"].ToString() + " " + visitor["last_name"].ToString(),
-                "Visitor", attributes));
+            this.vertices.Add(new Vertex<long>(id, name, type, attributes));
         }
 
         public void AddFriendsEdge(long memberId, long friendId)
@@ -130,33 +107,9 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             }
         }
 
-        public void addPosterVertex(long id)
-        {
-            Vertex<long> posterVertex = vertices[id];
-            if (posterVertex == null)
-            {
-                // visitor
-                posterVertex = visitorVertices[id];
-            }
-
-            if (posterVertex != null)
-            {
-                this.posterVertices.Add(posterVertex);
-            }
-            else
-            {
-                Debug.WriteLine("Poster's Vertex not found with id " + id);
-            }
-        }
-
         public void updateVertexAttributes(long id, Dictionary<String, String> attributes)
         {
             Vertex<long> v = vertices[id];
-            if (v == null)
-            {
-                // visitor
-                v = visitorVertices[id];
-            }
 
             if (v != null)
             {
@@ -179,11 +132,6 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
         public void updateVertexAttributes(long id, String key, String value)
         {
             Vertex<long> v = vertices[id];
-            if (v == null)
-            {
-                // visitor
-                v = visitorVertices[id];
-            }
 
             if (v != null)
             {
@@ -200,36 +148,12 @@ namespace rcsir.net.vk.groups.NetworkAnalyzer
             }
         }
 
-        public void AddPostersEdge(long memberId, long friendId)
-        {
-            Vertex<long> poster = posterVertices.FirstOrDefault(x => x.ID == memberId);
-            Vertex<long> postersFriend = posterVertices.FirstOrDefault(x => x.ID == friendId);
-
-            if (poster != null && postersFriend != null)
-            {
-                // check for duplicates first
-                Edge<long> e = posterEdges.FirstOrDefault(x => x.Vertex1.ID == postersFriend.ID && x.Vertex2.ID == poster.ID);
-                if (e == null)
-                {
-                    posterEdges.Add(new Edge<long>(poster, postersFriend, "", "Friend", "", 1));
-                }
-            }
-        }
-
         // Group Network GraphML document
         public XmlDocument GenerateGroupNetwork()
         {
             // create default attributes (values will be empty)
             AttributesDictionary<String> attributes = new AttributesDictionary<String>(GroupAttributes);
             return GenerateNetworkDocument(vertices, edges, attributes);
-        }
-
-        // Group Posters Network GraphML document
-        public XmlDocument GeneratePostersNetwork()
-        {
-            // create default attributes (values will be empty)
-            AttributesDictionary<String> attributes = new AttributesDictionary<String>(GroupAttributes);
-            return GenerateNetworkDocument(posterVertices, posterEdges, attributes);
         }
     }
 }

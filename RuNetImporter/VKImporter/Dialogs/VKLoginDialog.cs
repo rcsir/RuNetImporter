@@ -11,21 +11,6 @@ using System.IO;
 
 namespace rcsir.net.vk.importer.Dialogs
 {
-    // Login event arguments
-    public class UserLoginEventArgs : EventArgs
-    {
-        public UserLoginEventArgs(String authToken, String userId, long expiersIn)
-        {
-            this.authToken = authToken;
-            this.userId = userId;
-            this.expiersIn = expiersIn;
-        }
-
-        public readonly String authToken;
-        public readonly String userId;
-        public readonly long expiersIn;
-    }
-
     public partial class VKLoginDialog : Form
     {
         private String _authToken;
@@ -79,7 +64,7 @@ namespace rcsir.net.vk.importer.Dialogs
         public void Logout()
         {
             // TODO: enable when not testing
-            // deleteCookies();
+            deleteCookies();
             
             webBrowserLogin.Navigate("http://vk.com/");
             this.ShowDialog();
@@ -168,4 +153,20 @@ namespace rcsir.net.vk.importer.Dialogs
         {
         }
     }
+
+    // Login event arguments
+    public class UserLoginEventArgs : EventArgs
+    {
+        public UserLoginEventArgs(String authToken, String userId, long expiersIn)
+        {
+            this.authToken = authToken;
+            this.userId = userId;
+            this.expiersIn = expiersIn;
+        }
+
+        public readonly String authToken;
+        public readonly String userId;
+        public readonly long expiersIn;
+    }
+
 }

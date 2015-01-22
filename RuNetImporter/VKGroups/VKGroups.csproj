@@ -23,7 +23,7 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>7</ApplicationRevision>
+    <ApplicationRevision>8</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -75,12 +75,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Dialogs\DownloadPostersNetworkDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Dialogs\DownloadPostersNetworkDialog.Designer.cs">
-      <DependentUpon>DownloadPostersNetworkDialog.cs</DependentUpon>
-    </Compile>
     <Compile Include="Dialogs\DownloadMembersNetworkDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -115,9 +109,6 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="Dialogs\DownloadPostersNetworkDialog.resx">
-      <DependentUpon>DownloadPostersNetworkDialog.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\DownloadMembersNetworkDialog.resx">
       <DependentUpon>DownloadMembersNetworkDialog.cs</DependentUpon>
     </EmbeddedResource>

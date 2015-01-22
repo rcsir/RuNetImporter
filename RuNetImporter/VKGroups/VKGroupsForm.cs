@@ -44,7 +44,6 @@ namespace VKGroups
         private volatile bool isMembersRunning;
         private volatile bool isNetworkRunning;
         private volatile bool isEgoNetWorkRunning;
-        private volatile bool isPostersNetwork; // todo: do it better
 
         // document
         StreamWriter groupPostsWriter;
@@ -68,6 +67,7 @@ namespace VKGroups
         Dictionary<long, Poster> posters = new Dictionary<long, Poster>();
         HashSet<long> memberIds = new HashSet<long>();
         HashSet<long> posterIds = new HashSet<long>();
+        List<long> visitorIds = new List<long>();
 
         // group posts date range
         DateTime postsFromDate;
@@ -199,6 +199,30 @@ namespace VKGroups
             public string status { get; set; }
         };
 
+        // group stats 
+        private class GroupStats
+        {
+            public GroupStats()
+            {
+                day = DateTime.Today;
+                views = 0;
+                visitors = 0;
+                reach = 0;
+                reach_subscribers = 0;
+                subscribed = 0;
+                unsubscribed = 0;
+            }
+
+            public DateTime day { get; set; }
+            public uint views { get; set; }
+            public uint visitors { get; set; }
+            public uint reach { get; set; }
+            public uint reach_subscribers { get; set; }
+            public uint subscribed { get; set; }
+            public uint unsubscribed { get; set; }
+
+        };
+
         // post's or comment's like info 
         private class Like
         {
@@ -235,16 +259,19 @@ namespace VKGroups
 
         private class GroupPostsParam
         {
-            public GroupPostsParam(decimal gid, DateTime from, DateTime to)
+            public GroupPostsParam(decimal gid, 
+                DateTime from, DateTime to, Boolean justStats)
             {
                 this.gid = gid;
                 this.from = from;
                 this.to = to;
+                this.justStats = justStats;
             }
 
             public decimal gid { get; set;  }
             public DateTime from { get; set;  }
             public DateTime to { get; set; }
+            public Boolean justStats { get; set; }
         };
 
         // Constructor
@@ -339,11 +366,12 @@ namespace VKGroups
 
         private void AuthorizeButton_Click(object sender, EventArgs e)
         {
+            //bool reLogin = true; // TODO: if true - will delete cookies and relogin, use false for dev.
             bool reLogin = false; // TODO: if true - will delete cookies and relogin, use false for dev.
             vkLoginDialog.Login("friends", reLogin); // default permission - friends
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void WorkingFolderButton_Click(object sender, EventArgs e)
         {
             // Show the FolderBrowserDialog.
             DialogResult result = folderBrowserDialog1.ShowDialog();
@@ -420,7 +448,8 @@ namespace VKGroups
                 updateStatus(-1, "Start");
                 decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
 
-                GroupPostsParam param = new GroupPostsParam(gid, postsDialog.fromDate, postsDialog.toDate);
+                GroupPostsParam param = new GroupPostsParam(gid, 
+                    postsDialog.fromDate, postsDialog.toDate, postsDialog.justGroupStats);
 
                 isRunning = true;
                 this.backgroundGroupsWorker.RunWorkerAsync(param);
@@ -465,29 +494,6 @@ namespace VKGroups
                 decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
 
                 isNetworkRunning = true;
-                isPostersNetwork = false; // note this flag is FALSE!
-                this.backgroundNetworkWorker.RunWorkerAsync(gid);
-                ActivateControls();
-            }
-            else
-            {
-                Debug.WriteLine("Download members network canceled");
-            }
-        }
-
-        private void DownloadPostersNetwork_Click(object sender, EventArgs e)
-        {
-            DownloadPostersNetworkDialog postersDialog = new DownloadPostersNetworkDialog();
-            postersDialog.groupId = this.groupId; // pass saved groupId
-            postersDialog.isGroup = this.isGroup;
-
-            if (postersDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                updateStatus(-1, "Start");
-                decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
-                
-                isNetworkRunning = true;
-                isPostersNetwork = true; // note this flag is TRUE!
                 this.backgroundNetworkWorker.RunWorkerAsync(gid);
                 ActivateControls();
             }
@@ -507,7 +513,7 @@ namespace VKGroups
             ActivateControls();
         }
 
-        private void CancelJobBurron_Click(object sender, EventArgs e)
+        private void CancelJobButton_Click(object sender, EventArgs e)
         {
             if (isRunning)
                 this.backgroundGroupsWorker.CancelAsync();
@@ -535,7 +541,6 @@ namespace VKGroups
                     this.DownloadGroupPosts.Enabled = shouldActivate && !isBusy;
                     this.DownloadGroupMembers.Enabled = shouldActivate && !isBusy;
                     this.DownloadMembersNetwork.Enabled = shouldActivate && !isBusy;
-                    this.DownloadPostersNetwork.Enabled = shouldActivate && !isBusy;
                     this.DownloadEgoNets.Enabled = shouldActivate && !isBusy;
                     this.CancelJobBurron.Enabled = isBusy; // todo: activate only when running
                 }
@@ -547,7 +552,6 @@ namespace VKGroups
                 this.DownloadGroupPosts.Enabled = false;
                 this.DownloadGroupMembers.Enabled = false;
                 this.DownloadMembersNetwork.Enabled = false;
-                this.DownloadPostersNetwork.Enabled = false;
                 this.DownloadEgoNets.Enabled = false;
                 this.CancelJobBurron.Enabled = false;
             }
@@ -602,6 +606,9 @@ namespace VKGroups
                     break;
                 case VKFunction.GetMutual:
                     OnGetMutual(onDataArgs.data, onDataArgs.cookie);
+                    break;
+                case VKFunction.StatsGet:
+                    OnStatsGet(onDataArgs.data);
                     break;
                 default:
                     Debug.WriteLine("Error, unknown function.");
@@ -757,7 +764,28 @@ namespace VKGroups
                 this.postsToDate = param.from;
             }
 
+            VKRestContext context = new VKRestContext(this.userId, this.authToken);
+            StringBuilder sb = new StringBuilder();
             isRunning = true;
+
+            // gather group statistics
+            if (param.justStats)
+            {
+
+                bw.ReportProgress(1, "Getting group stats");
+
+                sb.Length = 0;
+                sb.Append("group_id=").Append(Math.Abs(groupId).ToString()).Append("&");
+                sb.Append("date_from=").Append(this.postsFromDate.ToString("yyyy-MM-dd")).Append("&");
+                sb.Append("date_to=").Append(this.postsToDate.ToString("yyyy-MM-dd"));
+                context.parameters = sb.ToString();
+                Debug.WriteLine("Download parameters: " + context.parameters);
+
+                // call VK REST API
+                vkRestApi.CallVKFunction(VKFunction.StatsGet, context);
+
+                return;
+            }
 
             // create stream writers
             // 1) group posts
@@ -765,15 +793,11 @@ namespace VKGroups
             groupPostsWriter = File.CreateText(fileName);
             printGroupPostsHeader(groupPostsWriter);
 
-            VKRestContext context = new VKRestContext(this.userId, this.authToken);
-
-            // get group posts 100 at a time and store them in the file
-            StringBuilder sb = new StringBuilder();
-
             this.postsWithComments.Clear(); // reset comments reference list
             this.likes.Clear(); // reset likes
             this.posters.Clear(); // reset posters
             this.posterIds.Clear(); // clear poster ids
+            this.visitorIds.Clear(); // clear visitor ids
 
             this.totalCount = 0;
             this.currentOffset = 0;
@@ -781,6 +805,7 @@ namespace VKGroups
 
             long timeLastCall = 0;
 
+            // get group posts 100 at a time and store them in the file
             // request group posts
             while (this.isRunning)
             {
@@ -912,64 +937,66 @@ namespace VKGroups
                 }
             }
 
-            // now collect visitors posters (not members, who left a post or a comment or a like) 
-            List<long> visitors = new List<long>();
+            // now collect visitors (not members, who left a post or a comment or a like) 
             foreach (long p in posterIds)
             {
                 if (!memberIds.Contains(p))
                 {
                     // this is a visitor poster
-                    visitors.Add(p);
+                    visitorIds.Add(p);
                 }
             }
 
-            // group visitors profiles
-            fileName = generateGroupVisitorsFileName(groupId);
-            groupVisitorsWriter = File.CreateText(fileName);
-            printGroupVisitorsHeader(groupVisitorsWriter);
-
-            // request visitors info
-            bw.ReportProgress(-1, "Getting visitors");
-            this.step = (int)(10000 / visitors.Count);
-
-            timeLastCall = 0;
-
-            for (int i = 0; i < visitors.Count; i+=100)
+            if (visitorIds.Count > 0)
             {
-                isRunning = true;
-                //this.totalCount = 0;
-                //this.currentOffset = 0;
+                // group visitors profiles
+                fileName = generateGroupVisitorsFileName(groupId);
+                groupVisitorsWriter = File.CreateText(fileName);
+                printGroupVisitorsHeader(groupVisitorsWriter);
 
-                bw.ReportProgress(step, "Getting " + (i + 1) + " visitors out of " + visitors.Count);
+                // request visitors info
+                bw.ReportProgress(-1, "Getting visitors");
+                this.step = (int)(10000 / visitorIds.Count);
 
-                if (bw.CancellationPending)
-                    break;
+                timeLastCall = 0;
 
-                sb.Length = 0;
-
-                sb.Append("user_ids=");
-
-                for (int j = i; j < visitors.Count && j < i + 100; ++j)
+                for (int i = 0; i < visitorIds.Count; i += 100)
                 {
-                    sb.Append(visitors[j]).Append(","); // users
+                    isRunning = true;
+                    //this.totalCount = 0;
+                    //this.currentOffset = 0;
+
+                    bw.ReportProgress(step, "Getting " + (i + 1) + " visitors out of " + visitorIds.Count);
+
+                    if (bw.CancellationPending)
+                        break;
+
+                    sb.Length = 0;
+
+                    sb.Append("user_ids=");
+
+                    for (int j = i; j < visitorIds.Count && j < i + 100; ++j)
+                    {
+                        sb.Append(visitorIds[j]).Append(","); // users
+                    }
+
+                    sb.Append("&").Append("fields=").Append(PROFILE_FIELDS);
+
+                    context.parameters = sb.ToString();
+                    Debug.WriteLine("Request parameters: " + context.parameters);
+
+                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                    timeLastCall = sleepTime(timeLastCall);
+                    // call VK REST API
+                    vkRestApi.CallVKFunction(VKFunction.UsersGet, context);
+
+                    // wait for the user data
+                    readyEvent.WaitOne();
+
                 }
 
-                sb.Append("&").Append("fields=").Append(PROFILE_FIELDS);
-
-                context.parameters = sb.ToString();
-                Debug.WriteLine("Request parameters: " + context.parameters);
-
-                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                timeLastCall = sleepTime(timeLastCall);
-                // call VK REST API
-                vkRestApi.CallVKFunction(VKFunction.UsersGet, context);
-
-                // wait for the user data
-                readyEvent.WaitOne();
-
+                groupVisitorsWriter.Close();
             }
-
-            groupVisitorsWriter.Close();
 
             //args.Result = TimeConsumingOperation(bw, arg);
 
@@ -1139,24 +1166,15 @@ namespace VKGroups
             VKRestContext context = new VKRestContext(this.userId, this.authToken);
             StringBuilder sb = new StringBuilder();
 
-            HashSet<long> members;
-            
-            if(isPostersNetwork) 
+            // consolidate all group ids
+            HashSet<long> members = this.memberIds;
+            // add all posters visitors ids
+            foreach (long mId in visitorIds)
             {
-                members = this.posterIds;
-
-                // add all posters vertices first
-                foreach (long mId in members)
-                {
-                    this.groupNetworkAnalyzer.addPosterVertex(mId); // could be a member or a visitor
-                }
-            }
-            else 
-            {
-                members = this.memberIds;
+                members.Add(mId); // could be a member or a visitor
             }
 
-            // request group comments
+            // request members friends
             bw.ReportProgress(-1, "Getting friends network");
             this.step = (int)(10000 / members.Count);
 
@@ -1183,14 +1201,7 @@ namespace VKGroups
                 readyEvent.WaitOne();
             }
 
-            if (isPostersNetwork)
-            {
-                args.Result = this.groupNetworkAnalyzer.GeneratePostersNetwork();
-            }
-            else
-            {
-                args.Result = this.groupNetworkAnalyzer.GenerateGroupNetwork();
-            }
+            args.Result = this.groupNetworkAnalyzer.GenerateGroupNetwork();
 
             // If the operation was canceled by the user,  
             // set the DoWorkEventArgs.Cancel property to true. 
@@ -1228,14 +1239,7 @@ namespace VKGroups
                 if (network != null)
                 {
                     updateStatus(0, "Generate Network Graph File");
-                    if (isPostersNetwork)
-                    {
-                        network.Save(generateGroupPostersNetworkFileName(this.groupId));
-                    }
-                    else
-                    {
-                        network.Save(generateGroupMembersNetworkFileName(this.groupId));
-                    }
+                    network.Save(generateGroupMembersNetworkFileName(this.groupId));
                 }
                 else
                 {
@@ -1388,6 +1392,11 @@ namespace VKGroups
             if(this.totalCount == 0)
             {
                 this.totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>();
+                if (this.totalCount == 0)
+                {
+                    this.isRunning = false;
+                    return;
+                }
                 this.step = (int)(10000 * POSTS_PER_REQUEST / this.totalCount);
             }
 
@@ -1629,7 +1638,7 @@ namespace VKGroups
                 {
                     String type = getStringField("type", profileObj);
 
-                    if (!type.Equals("profile")) 
+                    if (type != null && type != "" && !type.Equals("profile")) 
                     {
                         Debug.WriteLine("Ignoring member with type " + type);
                         continue; // must be profile
@@ -1642,6 +1651,7 @@ namespace VKGroups
                     if (profile.id <= 0)
                     {
                         // probably blocked or deleted account, continue
+                        Debug.WriteLine("Ignoring member with bad profile id " + profile.id);
                         continue;
                     }
 
@@ -1667,7 +1677,7 @@ namespace VKGroups
                     // add graph member vertex
                     this.memberIds.Add(profile.id);
 
-                    this.groupNetworkAnalyzer.addMemberVertex(profileObj);
+                    this.groupNetworkAnalyzer.addVertex(profile.id, profile.first_name + " " + profile.last_name, "Member", profileObj);
                 }
             }
 
@@ -1709,14 +1719,7 @@ namespace VKGroups
             for (int i = 0; i < count; ++i)
             {
                 long friendId = data[VKRestApi.RESPONSE_BODY][i].ToObject<long>();
-                if (isPostersNetwork)
-                {
-                    this.groupNetworkAnalyzer.AddPostersEdge(mId, friendId); // if friendship exists, the new edge will be added
-                }
-                else
-                {
-                    this.groupNetworkAnalyzer.AddFriendsEdge(mId, friendId); // if friendship exists, the new edge will be added
-                }
+                this.groupNetworkAnalyzer.AddFriendsEdge(mId, friendId); // if friendship exists, the new edge will be added
             }
         }
 
@@ -1763,7 +1766,7 @@ namespace VKGroups
                 profiles.Add(profile);
 
                 // add graph visitor vertex
-                this.groupNetworkAnalyzer.addVisitorVertex(userObj);
+                this.groupNetworkAnalyzer.addVertex(profile.id, profile.first_name + " " + profile.last_name, "Visitor", userObj);
             }
 
             if (profiles.Count > 0)
@@ -1823,6 +1826,28 @@ namespace VKGroups
             }
         }
 
+        // process stats
+        private void OnStatsGet(JObject data)
+        {
+            if (data[VKRestApi.RESPONSE_BODY] == null)
+            {
+                this.isRunning = false;
+                return;
+            }
+
+            // now calc items in response
+            int count = data[VKRestApi.RESPONSE_BODY].Count();
+            Debug.WriteLine("Processing " + count + " stats days");
+
+            //List<DayStats> profiles = new List<DayStats>();
+
+            // process response body
+            for (int i = 0; i < count; ++i)
+            {
+                JObject statsObj = data[VKRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+                String date = getStringField("day", statsObj);
+            }
+        }
 
         // Group file name
         private string generateGroupFileName(decimal groupId)
@@ -2008,6 +2033,11 @@ namespace VKGroups
             System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
             dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
             return dtDateTime;
+        }
+
+        private static long DateTimeToUnixTimestamp(DateTime dateTime)
+        {
+            return (long)(dateTime - new DateTime(1970, 1, 1).ToLocalTime()).TotalSeconds;
         }
 
         long getTimeNowMillis()

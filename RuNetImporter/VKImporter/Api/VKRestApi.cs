@@ -29,7 +29,8 @@ namespace rcsir.net.vk.importer.api
         UsersGet,
         DatabaseGetCountries,
         DatabaseGetRegions,
-        DatabaseGetCities
+        DatabaseGetCities,
+        StatsGet
     };
 
     // VK enum for sex field
@@ -287,6 +288,9 @@ namespace rcsir.net.vk.importer.api
                 case VKFunction.WallGet:
                     WallGet(function, context.authToken, context.parameters);
                     break;
+                case VKFunction.StatsGet:
+                    StatsGet(function, context.authToken, context.parameters);
+                    break;
                 case VKFunction.WallGetComments:
                     WallGetComments(function, context.authToken, context.parameters, context.cookie);
                     break;
@@ -324,6 +328,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append('?');
             sb.Append("uid=").Append(userId).Append('&');
             sb.Append("access_token=").Append(authToken);
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString());
         }
@@ -336,6 +341,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append("user_id=").Append(userId).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.21");
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString(), cookie);
         }
@@ -347,6 +353,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append("/method/friends.get");
             sb.Append('?');
             sb.Append(parameters);
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString(), cookie);
         }
@@ -360,6 +367,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.21");
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString(), cookie);
         }
@@ -372,6 +380,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.21");
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString());
         }
@@ -385,6 +394,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.14");
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString());
         }
@@ -398,8 +408,23 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.14");
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString(), cookie);
+        }
+
+        // Stats GET v 5.25
+        private void StatsGet(VKFunction function, String authToken, String parameters)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/stats.get");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+            sb.Append('&').Append("v=5.25");
+            sb.Append('&').Append("lang=en");
+
+            makeRestCall(function, sb.ToString());
         }
 
         // Groups GET Members v 5.21
@@ -411,6 +436,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.21");
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString(), cookie);
         }
@@ -424,6 +450,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.21");
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString(), cookie);
         }
@@ -437,6 +464,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.21");
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString());
         }
@@ -450,6 +478,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.21");
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString());
         }
@@ -463,6 +492,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.21");
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString());
         }
@@ -476,6 +506,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.21");
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString());
         }
@@ -489,6 +520,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append("access_token=").Append(authToken).Append('&');
             sb.Append(parameters);
             sb.Append('&').Append("v=5.21");
+            sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString());
         }

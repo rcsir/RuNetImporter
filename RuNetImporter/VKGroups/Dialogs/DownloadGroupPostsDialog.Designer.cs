@@ -37,6 +37,7 @@
             this.dateTimeToPicker = new System.Windows.Forms.DateTimePicker();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
+            this.groupStatCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.groupIdNumeric)).BeginInit();
             this.SuspendLayout();
             // 
@@ -102,7 +103,7 @@
             this.dateTimeFromPicker.Name = "dateTimeFromPicker";
             this.dateTimeFromPicker.Size = new System.Drawing.Size(219, 20);
             this.dateTimeFromPicker.TabIndex = 7;
-            this.dateTimeFromPicker.Value = new System.DateTime(2014, 10, 22, 0, 15, 25, 0);
+            this.dateTimeFromPicker.Value = new System.DateTime(2014, 11, 11, 0, 0, 0, 0);
             // 
             // dateTimeToPicker
             // 
@@ -110,6 +111,8 @@
             this.dateTimeToPicker.Name = "dateTimeToPicker";
             this.dateTimeToPicker.Size = new System.Drawing.Size(219, 20);
             this.dateTimeToPicker.TabIndex = 8;
+            this.dateTimeToPicker.Value = new System.DateTime(2014, 11, 11, 18, 28, 14, 0);
+            this.dateTimeToPicker.ValueChanged += new System.EventHandler(this.dateTimeToPicker_ValueChanged);
             // 
             // label2
             // 
@@ -129,6 +132,16 @@
             this.label3.TabIndex = 10;
             this.label3.Text = "To:";
             // 
+            // groupStatCheckBox
+            // 
+            this.groupStatCheckBox.AutoSize = true;
+            this.groupStatCheckBox.Location = new System.Drawing.Point(98, 181);
+            this.groupStatCheckBox.Name = "groupStatCheckBox";
+            this.groupStatCheckBox.Size = new System.Drawing.Size(104, 17);
+            this.groupStatCheckBox.TabIndex = 11;
+            this.groupStatCheckBox.Text = "Just Group Stats";
+            this.groupStatCheckBox.UseVisualStyleBackColor = true;
+            // 
             // DownloadGroupPostsDialog
             // 
             this.AcceptButton = this.OKButton;
@@ -136,6 +149,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelSearchButton;
             this.ClientSize = new System.Drawing.Size(329, 270);
+            this.Controls.Add(this.groupStatCheckBox);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.dateTimeToPicker);
@@ -165,5 +179,6 @@
         private System.Windows.Forms.DateTimePicker dateTimeToPicker;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.CheckBox groupStatCheckBox;
     }
 }

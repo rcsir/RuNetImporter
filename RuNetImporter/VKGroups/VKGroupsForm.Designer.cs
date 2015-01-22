@@ -33,7 +33,7 @@
             this.backgroundGroupsWorker = new System.ComponentModel.BackgroundWorker();
             this.groupsStatusStrip = new System.Windows.Forms.StatusStrip();
             this.groupsStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.button1 = new System.Windows.Forms.Button();
+            this.WorkingFolderButton = new System.Windows.Forms.Button();
             this.WorkingFolderTextBox = new System.Windows.Forms.TextBox();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             this.FindGroupsButton = new System.Windows.Forms.Button();
@@ -45,7 +45,6 @@
             this.groupId2 = new System.Windows.Forms.TextBox();
             this.groupDescription = new System.Windows.Forms.TextBox();
             this.DownloadMembersNetwork = new System.Windows.Forms.Button();
-            this.DownloadPostersNetwork = new System.Windows.Forms.Button();
             this.backgroundNetworkWorker = new System.ComponentModel.BackgroundWorker();
             this.backgroundEgoNetWorker = new System.ComponentModel.BackgroundWorker();
             this.DownloadEgoNets = new System.Windows.Forms.Button();
@@ -91,15 +90,15 @@
             this.groupsStripStatusLabel.Size = new System.Drawing.Size(39, 17);
             this.groupsStripStatusLabel.Text = "Status";
             // 
-            // button1
+            // WorkingFolderButton
             // 
-            this.button1.Location = new System.Drawing.Point(12, 74);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(348, 30);
-            this.button1.TabIndex = 5;
-            this.button1.Text = "Working Folder...";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.WorkingFolderButton.Location = new System.Drawing.Point(12, 74);
+            this.WorkingFolderButton.Name = "WorkingFolderButton";
+            this.WorkingFolderButton.Size = new System.Drawing.Size(348, 30);
+            this.WorkingFolderButton.TabIndex = 5;
+            this.WorkingFolderButton.Text = "Working Folder...";
+            this.WorkingFolderButton.UseVisualStyleBackColor = true;
+            this.WorkingFolderButton.Click += new System.EventHandler(this.WorkingFolderButton_Click);
             // 
             // WorkingFolderTextBox
             // 
@@ -138,7 +137,7 @@
             this.CancelJobBurron.TabIndex = 9;
             this.CancelJobBurron.Text = "Cancel Operation";
             this.CancelJobBurron.UseVisualStyleBackColor = true;
-            this.CancelJobBurron.Click += new System.EventHandler(this.CancelJobBurron_Click);
+            this.CancelJobBurron.Click += new System.EventHandler(this.CancelJobButton_Click);
             // 
             // GroupsProgressBar
             // 
@@ -188,19 +187,9 @@
             this.DownloadMembersNetwork.Name = "DownloadMembersNetwork";
             this.DownloadMembersNetwork.Size = new System.Drawing.Size(348, 30);
             this.DownloadMembersNetwork.TabIndex = 14;
-            this.DownloadMembersNetwork.Text = "Download Members Network...";
+            this.DownloadMembersNetwork.Text = "Download Groups Network...";
             this.DownloadMembersNetwork.UseVisualStyleBackColor = true;
             this.DownloadMembersNetwork.Click += new System.EventHandler(this.DownloadMembersNetwork_Click);
-            // 
-            // DownloadPostersNetwork
-            // 
-            this.DownloadPostersNetwork.Location = new System.Drawing.Point(12, 359);
-            this.DownloadPostersNetwork.Name = "DownloadPostersNetwork";
-            this.DownloadPostersNetwork.Size = new System.Drawing.Size(348, 30);
-            this.DownloadPostersNetwork.TabIndex = 15;
-            this.DownloadPostersNetwork.Text = "Download Posters Network...";
-            this.DownloadPostersNetwork.UseVisualStyleBackColor = true;
-            this.DownloadPostersNetwork.Click += new System.EventHandler(this.DownloadPostersNetwork_Click);
             // 
             // backgroundNetworkWorker
             // 
@@ -228,7 +217,6 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(375, 526);
             this.Controls.Add(this.DownloadEgoNets);
-            this.Controls.Add(this.DownloadPostersNetwork);
             this.Controls.Add(this.DownloadMembersNetwork);
             this.Controls.Add(this.groupDescription);
             this.Controls.Add(this.groupId2);
@@ -238,7 +226,7 @@
             this.Controls.Add(this.DownloadGroupPosts);
             this.Controls.Add(this.FindGroupsButton);
             this.Controls.Add(this.WorkingFolderTextBox);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.WorkingFolderButton);
             this.Controls.Add(this.groupsStatusStrip);
             this.Controls.Add(this.userIdTextBox);
             this.Controls.Add(this.AuthorizeButton);
@@ -260,7 +248,7 @@
         private System.ComponentModel.BackgroundWorker backgroundGroupsWorker;
         private System.Windows.Forms.StatusStrip groupsStatusStrip;
         private System.Windows.Forms.ToolStripStatusLabel groupsStripStatusLabel;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button WorkingFolderButton;
         private System.Windows.Forms.TextBox WorkingFolderTextBox;
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
         private System.Windows.Forms.Button FindGroupsButton;
@@ -272,7 +260,6 @@
         private System.Windows.Forms.TextBox groupId2;
         private System.Windows.Forms.TextBox groupDescription;
         private System.Windows.Forms.Button DownloadMembersNetwork;
-        private System.Windows.Forms.Button DownloadPostersNetwork;
         private System.ComponentModel.BackgroundWorker backgroundNetworkWorker;
         private System.ComponentModel.BackgroundWorker backgroundEgoNetWorker;
         private System.Windows.Forms.Button DownloadEgoNets;
