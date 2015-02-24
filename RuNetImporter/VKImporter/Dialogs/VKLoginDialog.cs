@@ -46,9 +46,31 @@ namespace rcsir.net.vk.importer.Dialogs
 
             Debug.WriteLine("Navigate");
 
-            StringBuilder sb = new StringBuilder(Secret.auth_url);
+            // sudo randomly select an application
+            var random = new Random();
+            var app  = random.Next(1, 5); // from 1 to 4
+            var app_id = "";
+            switch (app)
+            {
+                case 1:
+                    app_id = Secret.client_id_1;
+                    break;
+                case 2:
+                    app_id = Secret.client_id_2;
+                    break;
+                case 3:
+                    app_id = Secret.client_id_3;
+                    break;
+                default:
+                    app_id = Secret.client_id;
+                    break;
+            }
+
+            Debug.WriteLine("Using APP ID: " + app_id);
+
+            var sb = new StringBuilder(Secret.auth_url);
             sb.Append('?');
-            sb.Append("client_id=").Append(Secret.client_id).Append('&');
+            sb.Append("client_id=").Append(app_id).Append('&');
             sb.Append("scope=").Append(permissions).Append('&');
             sb.Append("redirect_uri=").Append(Secret.redirect_url).Append('&');
             sb.Append("display=").Append(Secret.display).Append('&');

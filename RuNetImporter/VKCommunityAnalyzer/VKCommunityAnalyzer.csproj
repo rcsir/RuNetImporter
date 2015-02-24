@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>rcsir.net.vk.community</RootNamespace>
     <AssemblyName>VKCommunityAnalyzer</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
@@ -39,6 +39,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -48,6 +49,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>82E8EB8AFB90F39A443FB412A0094279CA310C6D</ManifestCertificateThumbprint>
@@ -63,7 +65,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.NodeXL.ExcelTemplatePlugIns">
-      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Social Media Research Foundation\NodeXL Excel Template\Microsoft.NodeXL.ExcelTemplatePlugIns.dll</HintPath>
+      <HintPath>..\..\..\..\NodeXLClassLibraries_1.0.1.332\Microsoft.NodeXL.ExcelTemplatePlugIns.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\Json.NET\Bin\Net35\Newtonsoft.Json.dll</HintPath>

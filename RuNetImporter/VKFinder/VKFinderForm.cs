@@ -28,12 +28,12 @@ namespace VKFinder
         private long currentOffset;
         private long totalCount;
 
-        private VKLoginDialog vkLoginDialog;
-        private VKRestApi vkRestApi;
+        private readonly VKLoginDialog vkLoginDialog;
+        private readonly VKRestApi vkRestApi;
         private String userId;
         private String authToken;
         private long expiresAt;
-        private static AutoResetEvent readyEvent = new AutoResetEvent(false);
+        private static readonly AutoResetEvent readyEvent = new AutoResetEvent(false);
         private volatile bool run; // finder worker flag
         //private volatile bool load; // loader worker flag
         private bool withPhone = false;
@@ -41,7 +41,9 @@ namespace VKFinder
         // places
         private List<VKRegion> regions = new List<VKRegion>();
         private VKCity SaintPetersburg = new VKCity(2, "Санкт-Петербург", true, "Санкт-Петербург");
-        private Dictionary<string, List<VKCity>> citiesByDistrict = new Dictionary<string, List<VKCity>>();
+        private VKCity Moscow = new VKCity(1, "Москва", true, "Москва");
+        private VKCity Ekaterinburg = new VKCity(49, "Екатеринбург", true, "Екатеринбург");
+        private readonly Dictionary<string, List<VKCity>> citiesByDistrict = new Dictionary<string, List<VKCity>>();
 
         // document
         StreamWriter writer;
@@ -152,9 +154,17 @@ namespace VKFinder
                 if (this.citiesByDistrict.Count() == 0)
                 {
                     // add spb
-                    var spb = new List<VKCity>();
-                    spb.Add(SaintPetersburg);
+                    var spb = new List<VKCity> {SaintPetersburg};
                     this.citiesByDistrict.Add("Санкт-Петербург город", spb);
+
+                    // add moscow
+                    var moscow = new List<VKCity> {Moscow};
+                    this.citiesByDistrict.Add("Москва город", moscow);
+
+                    // add eburg
+                    var eburg = new List<VKCity> {Ekaterinburg};
+                    this.citiesByDistrict.Add("Екатеринбург город", eburg);
+
                     this.backgroundLoaderWorker.RunWorkerAsync(1); // param is not important
                 }
             }
