@@ -37,11 +37,13 @@
             this.AuthorizeButton = new System.Windows.Forms.Button();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             this.GroupsProgressBar = new System.Windows.Forms.ProgressBar();
-            this.Authorize = new System.Windows.Forms.Button();
+            this.CancelOperation = new System.Windows.Forms.Button();
             this.groupsStatusStrip = new System.Windows.Forms.StatusStrip();
             this.groupsStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.DownloadGroupPosts = new System.Windows.Forms.Button();
             this.backgroundGroupsWorker = new System.ComponentModel.BackgroundWorker();
+            this.GenerateCommunicatinoNetwork = new System.Windows.Forms.Button();
+            this.backgroundNetWorker = new System.ComponentModel.BackgroundWorker();
             this.groupsStatusStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -126,17 +128,17 @@
             this.GroupsProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.GroupsProgressBar.TabIndex = 23;
             // 
-            // Authorize
+            // CancelOperation
             // 
-            this.Authorize.Enabled = false;
-            this.Authorize.Location = new System.Drawing.Point(15, 638);
-            this.Authorize.Margin = new System.Windows.Forms.Padding(6);
-            this.Authorize.Name = "Authorize";
-            this.Authorize.Size = new System.Drawing.Size(234, 58);
-            this.Authorize.TabIndex = 22;
-            this.Authorize.Text = "Cancel Operation";
-            this.Authorize.UseVisualStyleBackColor = true;
-            this.Authorize.Click += new System.EventHandler(this.CancelJobButton_Click);
+            this.CancelOperation.Enabled = false;
+            this.CancelOperation.Location = new System.Drawing.Point(15, 638);
+            this.CancelOperation.Margin = new System.Windows.Forms.Padding(6);
+            this.CancelOperation.Name = "CancelOperation";
+            this.CancelOperation.Size = new System.Drawing.Size(234, 58);
+            this.CancelOperation.TabIndex = 22;
+            this.CancelOperation.Text = "Cancel Operation";
+            this.CancelOperation.UseVisualStyleBackColor = true;
+            this.CancelOperation.Click += new System.EventHandler(this.CancelJobButton_Click);
             // 
             // groupsStatusStrip
             // 
@@ -171,14 +173,31 @@
             this.backgroundGroupsWorker.WorkerReportsProgress = true;
             this.backgroundGroupsWorker.WorkerSupportsCancellation = true;
             // 
+            // GenerateCommunicatinoNetwork
+            // 
+            this.GenerateCommunicatinoNetwork.Location = new System.Drawing.Point(15, 554);
+            this.GenerateCommunicatinoNetwork.Margin = new System.Windows.Forms.Padding(6);
+            this.GenerateCommunicatinoNetwork.Name = "GenerateCommunicatinoNetwork";
+            this.GenerateCommunicatinoNetwork.Size = new System.Drawing.Size(696, 58);
+            this.GenerateCommunicatinoNetwork.TabIndex = 25;
+            this.GenerateCommunicatinoNetwork.Text = "Generate Communication Network...";
+            this.GenerateCommunicatinoNetwork.UseVisualStyleBackColor = true;
+            this.GenerateCommunicatinoNetwork.Click += new System.EventHandler(this.GenerateCommunicatinoNetwork_Click);
+            // 
+            // backgroundNetWorker
+            // 
+            this.backgroundNetWorker.WorkerReportsProgress = true;
+            this.backgroundNetWorker.WorkerSupportsCancellation = true;
+            // 
             // VKContentForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(730, 824);
+            this.Controls.Add(this.GenerateCommunicatinoNetwork);
             this.Controls.Add(this.DownloadGroupPosts);
             this.Controls.Add(this.GroupsProgressBar);
-            this.Controls.Add(this.Authorize);
+            this.Controls.Add(this.CancelOperation);
             this.Controls.Add(this.groupsStatusStrip);
             this.Controls.Add(this.groupDescription);
             this.Controls.Add(this.groupId2);
@@ -210,11 +229,13 @@
         private System.Windows.Forms.Button AuthorizeButton;
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
         private System.Windows.Forms.ProgressBar GroupsProgressBar;
-        private System.Windows.Forms.Button Authorize;
+        private System.Windows.Forms.Button CancelOperation;
         private System.Windows.Forms.StatusStrip groupsStatusStrip;
         private System.Windows.Forms.ToolStripStatusLabel groupsStripStatusLabel;
         private System.Windows.Forms.Button DownloadGroupPosts;
         private System.ComponentModel.BackgroundWorker backgroundGroupsWorker;
+        private System.Windows.Forms.Button GenerateCommunicatinoNetwork;
+        private System.ComponentModel.BackgroundWorker backgroundNetWorker;
     }
 }
 

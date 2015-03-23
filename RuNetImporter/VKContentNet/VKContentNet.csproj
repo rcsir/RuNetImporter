@@ -82,6 +82,12 @@
     <Compile Include="Dialogs\DownloadGroupPostsDialog.Designer.cs">
       <DependentUpon>DownloadGroupPostsDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Dialogs\GenerateCommunicationNetworkDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\GenerateCommunicationNetworkDialog.Designer.cs">
+      <DependentUpon>GenerateCommunicationNetworkDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\FindGroupsDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -99,6 +105,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Dialogs\DownloadGroupPostsDialog.resx">
       <DependentUpon>DownloadGroupPostsDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\GenerateCommunicationNetworkDialog.resx">
+      <DependentUpon>GenerateCommunicationNetworkDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\FindGroupsDialog.resx">
       <DependentUpon>FindGroupsDialog.cs</DependentUpon>

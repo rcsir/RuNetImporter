@@ -284,6 +284,15 @@ namespace VKContentNet
             this.backgroundGroupsWorker.RunWorkerCompleted
                 += new RunWorkerCompletedEventHandler(groupsWorkCompleted);
 
+            // setup background communication network worker handlers
+            this.backgroundNetWorker.DoWork
+                += new DoWorkEventHandler(netWork);
+
+            this.backgroundNetWorker.ProgressChanged
+                += new ProgressChangedEventHandler(netWorkProgressChanged);
+
+            this.backgroundNetWorker.RunWorkerCompleted
+                += new RunWorkerCompletedEventHandler(netWorkCompleted);
 
             ActivateControls();
         }
@@ -374,7 +383,8 @@ namespace VKContentNet
 
                     // activate group buttons
                     this.DownloadGroupPosts.Enabled = shouldActivate && !isBusy;
-                    this.Authorize.Enabled = isBusy; // todo: activate only when running
+                    this.GenerateCommunicatinoNetwork.Enabled = shouldActivate && !isBusy && this.u2uMatrix.Count > 0;
+                    this.CancelOperation.Enabled = isBusy; // todo: activate only when running
                 }
             }
             else
@@ -382,7 +392,8 @@ namespace VKContentNet
                 // disable user controls
                 this.FindGroupsButton.Enabled = false;
                 this.DownloadGroupPosts.Enabled = false;
-                this.Authorize.Enabled = false;
+                this.GenerateCommunicatinoNetwork.Enabled = false;
+                this.CancelOperation.Enabled = false;
             }
         }
 
@@ -551,7 +562,28 @@ namespace VKContentNet
             {
                 Debug.WriteLine("Download posts canceled");
             }
+        }
 
+        private void GenerateCommunicatinoNetwork_Click(object sender, EventArgs e)
+        {
+            var communicationDialog = new GenerateCommunicationNetworkDialog();
+            communicationDialog.groupId = Math.Abs(this.groupId); // pass saved groupId
+            communicationDialog.isGroup = this.isGroup;
+
+            if (communicationDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                updateStatus(-1, "Start");
+                var param = 1; //GroupPostsParam(this.groupId,
+                //    communicationDialog.fromDate, communicationDialog.toDate, communicationDialog.justGroupStats);
+
+                isRunning = true;
+                this.backgroundNetWorker.RunWorkerAsync(param);
+                ActivateControls();
+            }
+            else
+            {
+                Debug.WriteLine("Download posts canceled");
+            }
         }
 
         private void CancelJobButton_Click(object sender, EventArgs e)
@@ -826,24 +858,8 @@ namespace VKContentNet
                 this.contentNetworkAnalyzer.updateVertexAttributes((long)this.groupId, attr);
             }
 
-            // generate U2U edges
-            generateU2UEdges();
-            // generate U2U network
-            args.Result = this.contentNetworkAnalyzer.GenerateU2UNetwork();
-        }
-
-        private void generateU2UEdges()
-        {
-            foreach (var entry in u2uMatrix)
-            {
-                var from = entry.Key;
-                foreach (var entry2 in entry.Value)
-                {
-                    var to = entry2.Key;
-                    var weight = entry2.Value;
-                    this.contentNetworkAnalyzer.AddEdge(from,to,"Link", "Post", "", weight, 0);
-                }
-            }            
+            // complete the job
+            //args.Result = 
         }
 
         private void groupsWorkProgressChanged(Object sender, ProgressChangedEventArgs args)
@@ -864,7 +880,76 @@ namespace VKContentNet
             }
             else if (args.Cancelled)
             {
-                MessageBox.Show("Search canceled!");
+                MessageBox.Show("Group posts download canceled!");
+                updateStatus(0, "Canceled");
+            }
+            else
+            {
+                //var network = args.Result as XmlDocument;
+                //MessageBox.Show("Group posts downloadcomplete!");
+                updateStatus(10000, "Done");
+            }
+
+            ActivateControls();
+        }
+
+        // Async Communication Network Worker
+        private void netWork(Object sender, DoWorkEventArgs args)
+        {
+            // Do not access the form's BackgroundWorker reference directly. 
+            // Instead, use the reference provided by the sender parameter.
+            var bw = sender as BackgroundWorker;
+
+            // Extract the argument.
+            //var param = args.Argument as GroupPostsParam;
+            //if (param.from <= param.to)
+            //{
+            //    this.postsFromDate = param.from;
+            //    this.postsToDate = param.to;
+            //}
+            //else
+            //{
+            //    this.postsFromDate = param.to;
+            //    this.postsToDate = param.from;
+            //}
+
+            isRunning = true;
+
+            // generate U2U edges
+            foreach (var entry in u2uMatrix)
+            {
+                var from = entry.Key;
+                foreach (var entry2 in entry.Value)
+                {
+                    var to = entry2.Key;
+                    var weight = entry2.Value;
+                    this.contentNetworkAnalyzer.AddEdge(from, to, "Link", "Communication", "", weight, 0);
+                }
+            }
+
+            // generate U2U network
+            args.Result = this.contentNetworkAnalyzer.GenerateU2UNetwork();
+        }
+
+        private void netWorkProgressChanged(Object sender, ProgressChangedEventArgs args)
+        {
+            var status = args.UserState as String;
+            var progress = args.ProgressPercentage;
+            updateStatus(progress, status);
+        }
+
+        private void netWorkCompleted(object sender, RunWorkerCompletedEventArgs args)
+        {
+            isRunning = false;
+
+            if (args.Error != null)
+            {
+                MessageBox.Show(args.Error.Message);
+                updateStatus(0, "Error");
+            }
+            else if (args.Cancelled)
+            {
+                MessageBox.Show("Communication Network Generation canceled!");
                 updateStatus(0, "Canceled");
             }
             else
@@ -873,7 +958,7 @@ namespace VKContentNet
                 var network = args.Result as XmlDocument;
                 if (network != null)
                 {
-                    updateStatus(0, "Generate Network Graph File");
+                    updateStatus(0, "Save Network Graph File");
                     network.Save(generateU2UNetworkFileName(this.groupId));
                 }
                 else
