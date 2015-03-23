@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2013 for Windows Desktop
-VisualStudioVersion = 12.0.30110.0
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VKImporter", "VKImporter\VKImporter.csproj", "{B8C66AD6-57EA-4C74-B47E-DCF4682B7F18}"
 EndProject
@@ -18,6 +18,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VKGroups", "VKGroups\VKGroups.csproj", "{C08E2BE8-DE11-4D89-A104-440A78EB4E9B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VKCommunityAnalyzer", "VKCommunityAnalyzer\VKCommunityAnalyzer.csproj", "{EFE10A12-5C12-44D5-A4FA-F1584ECD74E2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VKContentNet", "VKContentNet\VKContentNet.csproj", "{C7593C96-E6FA-4E77-A19B-D5199B4DE845}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -110,6 +112,16 @@ Global
 		{EFE10A12-5C12-44D5-A4FA-F1584ECD74E2}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{EFE10A12-5C12-44D5-A4FA-F1584ECD74E2}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{EFE10A12-5C12-44D5-A4FA-F1584ECD74E2}.Release|x86.ActiveCfg = Release|Any CPU
+		{C7593C96-E6FA-4E77-A19B-D5199B4DE845}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7593C96-E6FA-4E77-A19B-D5199B4DE845}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7593C96-E6FA-4E77-A19B-D5199B4DE845}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{C7593C96-E6FA-4E77-A19B-D5199B4DE845}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{C7593C96-E6FA-4E77-A19B-D5199B4DE845}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C7593C96-E6FA-4E77-A19B-D5199B4DE845}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7593C96-E6FA-4E77-A19B-D5199B4DE845}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7593C96-E6FA-4E77-A19B-D5199B4DE845}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{C7593C96-E6FA-4E77-A19B-D5199B4DE845}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{C7593C96-E6FA-4E77-A19B-D5199B4DE845}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

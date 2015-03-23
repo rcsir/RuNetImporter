@@ -46,9 +46,12 @@ namespace rcsir.net.common.NetworkAnalyzer
         protected const String TooltipID = "Tooltip";
 
 
-        public XmlDocument GenerateNetworkDocument(VertexCollection<T> vertices, EdgeCollection<T> edges, AttributesDictionary<String> attributes)
+        public XmlDocument GenerateNetworkDocument(VertexCollection<T> vertices, 
+            EdgeCollection<T> edges, 
+            AttributesDictionary<String> attributes,
+            bool directed = false)
         {
-            GraphMLXmlDocument graphMLXmlDocument = new GraphMLXmlDocument(false); // directed = falce
+            GraphMLXmlDocument graphMLXmlDocument = new GraphMLXmlDocument(directed); // directed = falce
             
             // Image file attribute
             graphMLXmlDocument.DefineGraphMLAttribute(false, 
@@ -70,6 +73,7 @@ namespace rcsir.net.common.NetworkAnalyzer
 
             graphMLXmlDocument.DefineGraphMLAttribute(false, "type", "Type", "string", null);
             graphMLXmlDocument.DefineGraphMLAttribute(true, "e_type", "Edge Type", "string", null);
+            graphMLXmlDocument.DefineGraphMLAttribute(true, "weight", "Weight", "string", null);
 
             // Relationship attribute
             graphMLXmlDocument.DefineGraphMLAttribute(true, 
@@ -168,6 +172,8 @@ namespace rcsir.net.common.NetworkAnalyzer
         {
             oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, "e_type", oEdge.Type);
             oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, RelationshipID, oEdge.Relationship);
+            oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, "weight", oEdge.Weight);
+            //oGraphMLXmlDocument.AppendGraphMLAttributeValue(oEdgeXmlNode, "timestamp", oEdge.Timestamp);
         }
 
         //*************************************************************************

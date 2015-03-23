@@ -301,7 +301,7 @@ namespace rcsir.net.vk.importer.api
                     GroupsGetById(function, context.authToken, context.parameters, context.cookie);
                     break;
                 case VKFunction.LikesGetList:
-                    LikesGetList(function, context.authToken, context.parameters);
+                    LikesGetList(function, context.authToken, context.parameters, context.cookie);
                     break;
                 case VKFunction.UsersGet:
                     UsersGet(function, context.authToken, context.parameters);
@@ -456,7 +456,7 @@ namespace rcsir.net.vk.importer.api
         }
 
         // Likes GET List v 5.21 (get list of ids who has liked the item)
-        private void LikesGetList(VKFunction function, String authToken, String parameters)
+        private void LikesGetList(VKFunction function, String authToken, String parameters, String cookie)
         {
             StringBuilder sb = new StringBuilder(api_url);
             sb.Append("/method/likes.getList");
@@ -466,7 +466,7 @@ namespace rcsir.net.vk.importer.api
             sb.Append('&').Append("v=5.21");
             sb.Append('&').Append("lang=en");
 
-            makeRestCall(function, sb.ToString());
+            makeRestCall(function, sb.ToString(), cookie);
         }
 
         // Users GET v 5.21 (get users info)

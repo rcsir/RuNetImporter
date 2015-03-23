@@ -367,7 +367,7 @@ namespace VKGroups
         private void AuthorizeButton_Click(object sender, EventArgs e)
         {
             //bool reLogin = true; // TODO: if true - will delete cookies and relogin, use false for dev.
-            bool reLogin = false; // TODO: if true - will delete cookies and relogin, use false for dev.
+            bool reLogin = false; 
             vkLoginDialog.Login("friends", reLogin); // default permission - friends
         }
 
@@ -2155,6 +2155,26 @@ namespace VKGroups
             dic.Add("friends", poster.friends.ToString());
 
             return dic;
+        }
+
+        private void userIdTextBox_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void groupId2_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void WorkingFolderTextBox_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void groupDescription_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
