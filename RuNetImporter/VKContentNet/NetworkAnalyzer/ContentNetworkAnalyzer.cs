@@ -16,6 +16,7 @@ namespace rcsir.net.vk.content.NetworkAnalyzer
     class ContentNetworkAnalyzer : NetworkAnalyzerBase<long>
     {
         // content network
+        public string graphName { get; set; }
         private VertexCollection<long> vertices = new VertexCollection<long>();
         private EdgeCollection<long> edges = new EdgeCollection<long>();
 
@@ -89,6 +90,12 @@ namespace rcsir.net.vk.content.NetworkAnalyzer
         {
             AttributesDictionary<String> attributes = createAttributes(member);
             this.vertices.Add(new Vertex<long>(id, name, type, attributes));
+        }
+
+        // remove all edges
+        public void ResetEdges()
+        {
+            edges.Clear();
         }
 
         public void AddEdge(long user1, long user2, string type, string relationship,

@@ -6,13 +6,13 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using VKContentNet;
 
 namespace rcsir.net.vk.content.Dialogs
 {
     public partial class GenerateCommunicationNetworkDialog : Form
     {
-        public decimal groupId { get; set; }
-        public bool isGroup { get; set; }
+        public int type { get; set; }
 
         public GenerateCommunicationNetworkDialog()
         {
@@ -20,13 +20,32 @@ namespace rcsir.net.vk.content.Dialogs
         }
 
         private void OKButton_Click(object sender, EventArgs e)
-        {   
+        {
+            var checkedButton = GraphTypeGroupBox.Controls.OfType<RadioButton>()
+                                      .FirstOrDefault(r => r.Checked);
+            if (checkedButton != null)
+            {
+                switch (checkedButton.Text)
+                {
+                    case "Comments":
+                        type = 1;
+                        break;
+                    case "Likes":
+                        type = 2;
+                        break;
+                    case "Combined":
+                        type = 3;
+                        break;
+                    default:
+                        type = 3;
+                        break;
+                }
+            }
         }
 
-        private void DownloadMembersNetworkDialog_Load(object sender, EventArgs e)
+        private void Dialog_Load(object sender, EventArgs e)
         {
-            this.groupIdNumeric.Value = groupId;
-            this.isGroupcheckBox.Checked = isGroup;
+
         }
     }
 }

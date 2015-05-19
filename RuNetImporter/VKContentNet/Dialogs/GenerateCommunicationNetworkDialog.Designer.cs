@@ -30,17 +30,18 @@
         {
             this.CancelSearchButton = new System.Windows.Forms.Button();
             this.OKButton = new System.Windows.Forms.Button();
-            this.groupIdNumeric = new System.Windows.Forms.NumericUpDown();
-            this.label1 = new System.Windows.Forms.Label();
-            this.isGroupcheckBox = new System.Windows.Forms.CheckBox();
-            ((System.ComponentModel.ISupportInitialize)(this.groupIdNumeric)).BeginInit();
+            this.Comments = new System.Windows.Forms.RadioButton();
+            this.Likes = new System.Windows.Forms.RadioButton();
+            this.Combined = new System.Windows.Forms.RadioButton();
+            this.GraphTypeGroupBox = new System.Windows.Forms.GroupBox();
+            this.GraphTypeGroupBox.SuspendLayout();
             this.SuspendLayout();
             // 
             // CancelSearchButton
             // 
             this.CancelSearchButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.CancelSearchButton.Location = new System.Drawing.Point(326, 452);
-            this.CancelSearchButton.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.CancelSearchButton.Margin = new System.Windows.Forms.Padding(6);
             this.CancelSearchButton.Name = "CancelSearchButton";
             this.CancelSearchButton.Size = new System.Drawing.Size(150, 44);
             this.CancelSearchButton.TabIndex = 3;
@@ -51,7 +52,7 @@
             // 
             this.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.OKButton.Location = new System.Drawing.Point(488, 452);
-            this.OKButton.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.OKButton.Margin = new System.Windows.Forms.Padding(6);
             this.OKButton.Name = "OKButton";
             this.OKButton.Size = new System.Drawing.Size(150, 44);
             this.OKButton.TabIndex = 2;
@@ -59,43 +60,49 @@
             this.OKButton.UseVisualStyleBackColor = true;
             this.OKButton.Click += new System.EventHandler(this.OKButton_Click);
             // 
-            // groupIdNumeric
+            // Comments
             // 
-            this.groupIdNumeric.Location = new System.Drawing.Point(196, 100);
-            this.groupIdNumeric.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
-            this.groupIdNumeric.Maximum = new decimal(new int[] {
-            1000000000,
-            0,
-            0,
-            0});
-            this.groupIdNumeric.Name = "groupIdNumeric";
-            this.groupIdNumeric.ReadOnly = true;
-            this.groupIdNumeric.Size = new System.Drawing.Size(438, 31);
-            this.groupIdNumeric.TabIndex = 4;
+            this.Comments.AutoSize = true;
+            this.Comments.Location = new System.Drawing.Point(44, 44);
+            this.Comments.Name = "Comments";
+            this.Comments.Size = new System.Drawing.Size(145, 29);
+            this.Comments.TabIndex = 4;
+            this.Comments.Text = "Comments";
+            this.Comments.UseVisualStyleBackColor = true;
             // 
-            // label1
+            // Likes
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(24, 104);
-            this.label1.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(154, 25);
-            this.label1.TabIndex = 5;
-            this.label1.Text = "Group/User ID:";
+            this.Likes.AutoSize = true;
+            this.Likes.Location = new System.Drawing.Point(44, 94);
+            this.Likes.Name = "Likes";
+            this.Likes.Size = new System.Drawing.Size(94, 29);
+            this.Likes.TabIndex = 5;
+            this.Likes.Text = "Likes";
+            this.Likes.UseVisualStyleBackColor = true;
             // 
-            // isGroupcheckBox
+            // Combined
             // 
-            this.isGroupcheckBox.AutoCheck = false;
-            this.isGroupcheckBox.AutoSize = true;
-            this.isGroupcheckBox.Checked = true;
-            this.isGroupcheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.isGroupcheckBox.Location = new System.Drawing.Point(196, 150);
-            this.isGroupcheckBox.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
-            this.isGroupcheckBox.Name = "isGroupcheckBox";
-            this.isGroupcheckBox.Size = new System.Drawing.Size(125, 29);
-            this.isGroupcheckBox.TabIndex = 6;
-            this.isGroupcheckBox.Text = "is Group";
-            this.isGroupcheckBox.UseVisualStyleBackColor = true;
+            this.Combined.AutoSize = true;
+            this.Combined.Checked = true;
+            this.Combined.Location = new System.Drawing.Point(44, 137);
+            this.Combined.Name = "Combined";
+            this.Combined.Size = new System.Drawing.Size(140, 29);
+            this.Combined.TabIndex = 6;
+            this.Combined.TabStop = true;
+            this.Combined.Text = "Combined";
+            this.Combined.UseVisualStyleBackColor = true;
+            // 
+            // GraphTypeGroupBox
+            // 
+            this.GraphTypeGroupBox.Controls.Add(this.Likes);
+            this.GraphTypeGroupBox.Controls.Add(this.Combined);
+            this.GraphTypeGroupBox.Controls.Add(this.Comments);
+            this.GraphTypeGroupBox.Location = new System.Drawing.Point(12, 12);
+            this.GraphTypeGroupBox.Name = "GraphTypeGroupBox";
+            this.GraphTypeGroupBox.Size = new System.Drawing.Size(626, 202);
+            this.GraphTypeGroupBox.TabIndex = 7;
+            this.GraphTypeGroupBox.TabStop = false;
+            this.GraphTypeGroupBox.Text = "Communication Graph Type";
             // 
             // GenerateCommunicationNetworkDialog
             // 
@@ -103,19 +110,17 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelSearchButton;
-            this.ClientSize = new System.Drawing.Size(658, 519);
-            this.Controls.Add(this.isGroupcheckBox);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.groupIdNumeric);
+            this.ClientSize = new System.Drawing.Size(648, 519);
+            this.Controls.Add(this.GraphTypeGroupBox);
             this.Controls.Add(this.CancelSearchButton);
             this.Controls.Add(this.OKButton);
-            this.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.Margin = new System.Windows.Forms.Padding(6);
             this.Name = "GenerateCommunicationNetworkDialog";
             this.Text = "Generate Communication Network";
-            this.Load += new System.EventHandler(this.DownloadMembersNetworkDialog_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.groupIdNumeric)).EndInit();
+            this.Load += new System.EventHandler(this.Dialog_Load);
+            this.GraphTypeGroupBox.ResumeLayout(false);
+            this.GraphTypeGroupBox.PerformLayout();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -123,8 +128,9 @@
 
         private System.Windows.Forms.Button CancelSearchButton;
         private System.Windows.Forms.Button OKButton;
-        private System.Windows.Forms.NumericUpDown groupIdNumeric;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.CheckBox isGroupcheckBox;
+        private System.Windows.Forms.RadioButton Comments;
+        private System.Windows.Forms.RadioButton Likes;
+        private System.Windows.Forms.RadioButton Combined;
+        private System.Windows.Forms.GroupBox GraphTypeGroupBox;
     }
 }

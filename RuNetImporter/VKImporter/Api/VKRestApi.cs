@@ -30,7 +30,9 @@ namespace rcsir.net.vk.importer.api
         DatabaseGetCountries,
         DatabaseGetRegions,
         DatabaseGetCities,
-        StatsGet
+        StatsGet,
+        BoardGetTopics,
+        BoardGetComments
     };
 
     // VK enum for sex field
@@ -315,6 +317,12 @@ namespace rcsir.net.vk.importer.api
                 case VKFunction.DatabaseGetCities:
                     GetCities(function, context.authToken, context.parameters);
                     break;
+                case VKFunction.BoardGetTopics:
+                    BoardGetTopics(function, context.authToken, context.parameters, context.cookie);
+                    break;
+                case VKFunction.BoardGetComments:
+                    BoardGetComments(function, context.authToken, context.parameters, context.cookie);
+                    break;
                 default:
                     break;
             }
@@ -523,6 +531,33 @@ namespace rcsir.net.vk.importer.api
             sb.Append('&').Append("lang=en");
 
             makeRestCall(function, sb.ToString());
+        }
+        // Board Get Topics
+        private void BoardGetTopics(VKFunction function, String authToken, String parameters, String cookie)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/board.getTopics");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+            sb.Append('&').Append("v=5.32");
+            sb.Append('&').Append("lang=en");
+
+            makeRestCall(function, sb.ToString(), cookie);
+        }
+
+        // Board Get Comments
+        private void BoardGetComments(VKFunction function, String authToken, String parameters, String cookie)
+        {
+            StringBuilder sb = new StringBuilder(api_url);
+            sb.Append("/method/board.getComments");
+            sb.Append('?');
+            sb.Append("access_token=").Append(authToken).Append('&');
+            sb.Append(parameters);
+            sb.Append('&').Append("v=5.32");
+            sb.Append('&').Append("lang=en");
+
+            makeRestCall(function, sb.ToString(), cookie);
         }
 
         private void makeRestCall(VKFunction function, String uri, String cookie = null)
