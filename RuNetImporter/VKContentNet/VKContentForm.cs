@@ -12,21 +12,24 @@ using Newtonsoft.Json.Linq;
 using rcsir.net.vk.content.NetworkAnalyzer;
 using rcsir.net.vk.importer.Dialogs;
 using rcsir.net.vk.importer.api;
+using rcsir.net.vk.importer.api.entity;
 using rcsir.net.vk.content.Dialogs;
+using Smrf.XmlLib;
 
 namespace VKContentNet
 {
+// ReSharper disable once InconsistentNaming
     public partial class VKContentForm : Form
     {
-        private static readonly int POSTS_PER_REQUEST = 100;
-        private static readonly int MEMBERS_PER_REQUEST = 1000;
-        private static readonly int LIKES_PER_REQUEST = 1000;
-        private static readonly string PROFILE_FIELDS = "first_name,last_name,screen_name,bdate,city,country,photo_50,sex,relation,status,education";
-        private static readonly string GROUP_FIELDS = "members_count,city,country,description,status";
+        private const int POSTS_PER_REQUEST = 100;
+        private const int MEMBERS_PER_REQUEST = 1000;
+        private const int LIKES_PER_REQUEST = 1000;
+        private const string PROFILE_FIELDS = "first_name,last_name,screen_name,bdate,city,country,photo_50,sex,relation,status,education";
+        private const string GROUP_FIELDS = "members_count,city,country,description,status";
+        private const int MAX_EMPTY_RETRY = 10;
 
-        readonly private VKLoginDialog vkLoginDialog;
-        readonly private VKRestApi vkRestApi;
-
+        private readonly VKLoginDialog vkLoginDialog;
+        private readonly VkRestApi vkRestApi;
         private String userId;
         private String authToken;
 
@@ -42,9 +45,10 @@ namespace VKContentNet
         DateTime postsToDate;
 
         // progress
-        long totalCount;
-        long currentOffset;
-        int step;
+        private long totalCount;
+        private long currentOffset;
+        private int step;
+        private int totalEmptyRetry;
 
         // group's temp collections
         private readonly List<long> postsWithComments = new List<long>();
@@ -83,76 +87,12 @@ namespace VKContentNet
         private StreamWriter groupPostsWriter;
         private StreamWriter groupVisitorsWriter;
         private StreamWriter groupCommentsWriter;
-        private StreamWriter groupBoardTopisWriter;
+        private StreamWriter groupBoardTopicsWriter;
         private StreamWriter groupBoardCommentsWriter;
+        private StreamWriter errorLogWriter;
 
         // Network Analyzer documetn
         private ContentNetworkAnalyzer contentNetworkAnalyzer;
-        
-        // error log
-        StreamWriter errorLogWriter;
-
-        // group's info
-        private class Group
-        {
-            public Group()
-            {
-                id = 0;
-                name = "";
-                screen_name = "";
-                is_closed = "";
-                type = "";
-                members_count = "";
-                city = "";
-                country = "";
-                photo = "";
-                description = "";
-                status = "";
-            }
-
-            public long id { get; set; }
-            public string name { get; set; }
-            public string screen_name { get; set; }
-            public string is_closed { get; set; }
-            public string type { get; set; }
-            public string members_count { get; set; }
-            public string city { get; set; }
-            public string country { get; set; }
-            public string photo { get; set; }
-            public string description { get; set; }
-            public string status { get; set; }
-        };
-
-        // group's post
-        private class Post
-        {
-            public Post()
-            {
-                id = 0;
-                owner_id = 0;
-                from_id = 0;
-                signer_id = 0;
-                date = "";
-                post_type = "";
-                comments = 0;
-                likes = 0;
-                reposts = 0;
-                attachments = 0;
-                text = "";
-            }
-
-            public long id { get; set; }
-            public long owner_id { get; set; }
-            public long from_id { get; set; }
-            public long signer_id { get; set; }
-            public string date { get; set; }
-            public string post_type { get; set; }
-            public long comments { get; set; }
-            public long likes { get; set; }
-            public long reposts { get; set; }
-            public long attachments { get; set; }
-            public string text { get; set; }
-        };
 
         private class PostInfo
         {
@@ -166,81 +106,6 @@ namespace VKContentNet
             public long id { get; set; }
             public long timestamp { get; set; }
             public long user_id { get; set; }
-        };
-
-        // group's member profile
-        private class Profile
-        {
-            public Profile()
-            {
-                id = 0;
-                first_name = "";
-                last_name = "";
-                screen_name = "";
-                bdate = "";
-                city = "";
-                country = "";
-                photo = "";
-                sex = "";
-                relation = "";
-                education = "";
-                status = "";
-            }
-
-            public long id { get; set; }
-            public string first_name { get; set; }
-            public string last_name { get; set; }
-            public string screen_name { get; set; }
-            public string bdate { get; set; }
-            public string city { get; set; }
-            public string country { get; set; }
-            public string photo { get; set; }
-            public string sex { get; set; }
-            public string relation { get; set; }
-            public string education { get; set; }
-            public string status { get; set; }
-        };
-
-        // group's comment 
-        private class Comment
-        {
-            public Comment()
-            {
-                id = 0;
-                post_id = 0;
-                from_id = 0;
-                date = "";
-                reply_to_uid = 0;
-                reply_to_cid = 0;
-                likes = 0;
-                attachments = 0;
-                text = "";
-            }
-
-            public long id { get; set; }
-            public long post_id { get; set; }
-            public long from_id { get; set; }
-            public string date { get; set; }
-            public long reply_to_uid { get; set; } // user id
-            public long reply_to_cid { get; set; } // comment id 
-            public long likes { get; set; }
-            public long attachments { get; set; }
-            public string text { get; set; }
-        };
-
-        // post's or comment's like info 
-        private class Like
-        {
-            public Like()
-            {
-                type = "";
-                owner_id = 0;
-                item_id = 0;
-            }
-
-            public string type { get; set; } // post, comment etc.
-            public long owner_id { get; set; }
-            public long item_id { get; set; }
         };
 
         // poster info 
@@ -260,32 +125,6 @@ namespace VKContentNet
             public long rec_likes { get; set; }
             public long likes { get; set; }
             public long friends { get; set; }
-        };
-
-        private class BoardTopic
-        {
-            public BoardTopic()
-            {
-                id = 0;
-                title = "";
-                created = "";
-                created_by = 0;
-                updated = "";
-                updated_by = 0;
-                is_closed = false;
-                is_fixed = false;
-                comments = 0;
-            }
-
-            public long id { get; set; }
-            public string title { get; set; }
-            public string created { get; set; }
-            public long created_by { get; set; }
-            public string updated { get; set; }
-            public long updated_by { get; set; }
-            public bool is_closed { get; set; }
-            public bool is_fixed { get; set; }
-            public long comments { get; set; }
         };
 
         private class GroupPostsParam
@@ -308,7 +147,7 @@ namespace VKContentNet
 
         private class GraphParam
         {
-            public enum Type
+            public enum GraphType
             {
                 Comments = 1,
                 Likes = 2,
@@ -317,15 +156,15 @@ namespace VKContentNet
 
             public GraphParam()
             {
-                this.type = Type.Combined;
+                this.Type = GraphType.Combined;
             }
 
-            public GraphParam(Type t)
+            public GraphParam(GraphType t)
             {
-                this.type = t;
+                this.Type = t;
             }
 
-            public Type type { get; set; }
+            public GraphType Type { get; private set; }
 
         };
 
@@ -341,15 +180,15 @@ namespace VKContentNet
             // subscribe for login events
             vkLoginDialog.OnUserLogin += new VKLoginDialog.UserLoginHandler(OnUserLogin);
 
-            vkRestApi = new VKRestApi();
+            vkRestApi = new VkRestApi();
             // set up data handler
-            vkRestApi.OnData += new VKRestApi.DataHandler(OnData);
+            vkRestApi.OnData += new VkRestApi.DataHandler(OnData);
             // set up error handler
-            vkRestApi.OnError += new VKRestApi.ErrorHandler(OnError);
+            vkRestApi.OnError += new VkRestApi.ErrorHandler(OnError);
 
             // setup background group posts worker handlers
             this.backgroundGroupsWorker.DoWork
-                += new DoWorkEventHandler(groupsWork);
+                += new DoWorkEventHandler(GroupsWork);
 
             this.backgroundGroupsWorker.ProgressChanged
                 += new ProgressChangedEventHandler(groupsWorkProgressChanged);
@@ -388,33 +227,36 @@ namespace VKContentNet
 
         private void OnData(object restApi, OnDataEventArgs onDataArgs)
         {
-            switch (onDataArgs.function)
+            switch (onDataArgs.Function)
             {
-                case VKFunction.WallGet:
-                    OnWallGet(onDataArgs.data);
+                case VkFunction.WallGet:
+                    OnWallGet(onDataArgs.Data);
                     break;
-                case VKFunction.WallGetComments:
-                    OnWallGetComments(onDataArgs.data, onDataArgs.cookie);
+                case VkFunction.WallGetComments:
+                    OnWallGetComments(onDataArgs.Data, onDataArgs.Cookie);
                     break;
-                case VKFunction.GroupsGetById:
-                    OnGroupsGetById(onDataArgs.data, onDataArgs.cookie);
+                case VkFunction.GroupsGetById:
+                    OnGroupsGetById(onDataArgs.Data, onDataArgs.Cookie);
                     break;
-                case VKFunction.LoadUserInfo:
+                case VkFunction.GetProfiles:
                     //OnLoadUserInfo(onDataArgs.data);
                     break;
-                case VKFunction.LikesGetList:
-                    OnLikesGetList(onDataArgs.data, onDataArgs.cookie);
+                case VkFunction.LikesGetList:
+                    OnLikesGetList(onDataArgs.Data, onDataArgs.Cookie);
                     break;
-                case VKFunction.UsersGet:
-                    OnUsersGet(onDataArgs.data);
+                case VkFunction.UsersGet:
+                    OnUsersGet(onDataArgs.Data);
                     break;
-                case VKFunction.BoardGetTopics:
-                    OnBoardGetTopics(onDataArgs.data, onDataArgs.cookie);
+                case VkFunction.BoardGetTopics:
+                    OnBoardGetTopics(onDataArgs.Data, onDataArgs.Cookie);
                     break;
-                case VKFunction.BoardGetComments:
-                    OnBoardGetComments(onDataArgs.data, onDataArgs.cookie);
+                case VkFunction.BoardGetComments:
+                    OnBoardGetComments(onDataArgs.Data, onDataArgs.Cookie);
                     break;
-                case VKFunction.StatsGet:
+                case VkFunction.PhotosSearch:
+                    // OnPhotosSearch(onDataArgs.Data, onDataArgs.Cookie);
+                    break;
+                case VkFunction.StatsGet:
                     //OnStatsGet(onDataArgs.data);
                     break;
                 default:
@@ -427,14 +269,14 @@ namespace VKContentNet
         }
 
         // main error handler
-        private void OnError(object restApi, OnErrorEventArgs onErrorArgs)
+        private void OnError(object restApi, VkRestApi.OnErrorEventArgs onErrorArgs)
         {
             // TODO: notify user about the error
-            Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.details);
+            Debug.WriteLine("Function " + onErrorArgs.Function + ", returned error: " + onErrorArgs.Details);
 
             if (errorLogWriter != null)
             {
-                updateErrorLogFile(onErrorArgs, errorLogWriter);
+                Utils.PrintFileContent(errorLogWriter, onErrorArgs);
             }
 
             /*
@@ -502,10 +344,12 @@ namespace VKContentNet
                     errorLogWriter.Close();
                     errorLogWriter = null;
                 }
-                String fileName = generateErrorLogFileName();
+
+                IEntity temp = new VkRestApi.OnErrorEventArgs();
+                String fileName = Utils.GenerateFileName(this.WorkingFolderTextBox.Text, 0, temp, "", "log");
                 errorLogWriter = File.CreateText(fileName);
                 errorLogWriter.AutoFlush = true;
-                printErrorLogHeader(errorLogWriter);
+                Utils.PrintFileContent(errorLogWriter, temp);
 
                 ActivateControls();
             }
@@ -516,7 +360,7 @@ namespace VKContentNet
         {
             var groupsDialog = new FindGroupsDialog();
 
-            if (groupsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            if (groupsDialog.ShowDialog() == DialogResult.OK)
             {
                 //SearchParameters searchParameters = groupsDialog.searchParameters;
                 //this.backgroundFinderWorker.RunWorkerAsync(searchParameters);
@@ -526,24 +370,24 @@ namespace VKContentNet
                 if (isGroup)
                 {
                     // lookup a group by id
-                    var context = new VKRestContext(this.userId, this.authToken);
+                    var context = new VkRestApi.VkRestContext(this.userId, this.authToken);
                     var sb = new StringBuilder();
                     sb.Append("group_id=").Append(gid).Append("&");
                     sb.Append("fields=").Append(GROUP_FIELDS).Append("&");
-                    context.parameters = sb.ToString();
-                    context.cookie = groupsDialog.groupId.ToString();
-                    Debug.WriteLine("Download parameters: " + context.parameters);
+                    context.Parameters = sb.ToString();
+                    context.Cookie = groupsDialog.groupId.ToString();
+                    Debug.WriteLine("Download parameters: " + context.Parameters);
 
                     // call VK REST API
-                    vkRestApi.CallVKFunction(VKFunction.GroupsGetById, context);
+                    vkRestApi.CallVkFunction(VkFunction.GroupsGetById, context);
 
                     // wait for the user data
                     ReadyEvent.WaitOne();
                 }
                 else
                 {
-                    var context = new VKRestContext(gid.ToString(), this.authToken);
-                    vkRestApi.CallVKFunction(VKFunction.LoadUserInfo, context);
+                    var context = new VkRestApi.VkRestContext(gid.ToString(), this.authToken);
+                    vkRestApi.CallVkFunction(VkFunction.GetProfiles, context);
                     ReadyEvent.WaitOne();
                 }
             }
@@ -557,8 +401,8 @@ namespace VKContentNet
         {
             String gId = cookie; // gropu id sent as a cooky
 
-            if (data[VKRestApi.RESPONSE_BODY] == null ||
-                data[VKRestApi.RESPONSE_BODY].Count() == 0)
+            if (data[VkRestApi.RESPONSE_BODY] == null ||
+                data[VkRestApi.RESPONSE_BODY].Count() == 0)
             {
                 this.groupId = 0;
                 this.groupId2.Text = gId;
@@ -568,7 +412,7 @@ namespace VKContentNet
             }
 
             // process response body
-            var groupObject = data[VKRestApi.RESPONSE_BODY][0].ToObject<JObject>();
+            var groupObject = data[VkRestApi.RESPONSE_BODY][0].ToObject<JObject>();
             if (groupObject == null)
             {
                 this.groupId = 0;
@@ -603,10 +447,10 @@ namespace VKContentNet
             this.contentNetworkAnalyzer.addVertex((long)this.groupId,
                 g.name, "User", groupObject);
 
-            String fileName = generateGroupFileName(groupId);
+            String fileName = Utils.GenerateFileName(this.WorkingFolderTextBox.Text, groupId, g);
             StreamWriter writer = File.CreateText(fileName);
-            printGroupHeader(writer);
-            updateGroupFile(new List<Group>{g}, writer);
+            Utils.PrintFileHeader(writer, g);
+            Utils.PrintFileContent(writer, g);
             writer.Close();
 
             this.groupId2.Text = g.id.ToString();
@@ -623,11 +467,9 @@ namespace VKContentNet
 
         private void DownloadGroupPosts_Click(object sender, EventArgs e)
         {
-            var postsDialog = new DownloadGroupPostsDialog();
-            postsDialog.groupId = Math.Abs(this.groupId); // pass saved groupId
-            postsDialog.isGroup = this.isGroup;
+            var postsDialog = new DownloadGroupPostsDialog {groupId = Math.Abs(this.groupId), isGroup = this.isGroup};
 
-            if (postsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            if (postsDialog.ShowDialog() == DialogResult.OK)
             {
                 updateStatus(-1, "Start");
                 var param = new GroupPostsParam(this.groupId,
@@ -647,10 +489,10 @@ namespace VKContentNet
         {
             var communicationDialog = new GenerateCommunicationNetworkDialog();
 
-            if (communicationDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            if (communicationDialog.ShowDialog() == DialogResult.OK)
             {
                 updateStatus(-1, "Start");
-                var param = new GraphParam((GraphParam.Type)communicationDialog.type);
+                var param = new GraphParam((GraphParam.GraphType)communicationDialog.type);
 
                 isRunning = true;
                 this.backgroundNetWorker.RunWorkerAsync(param);
@@ -669,7 +511,7 @@ namespace VKContentNet
         }
 
         // Async workers
-        private void groupsWork(Object sender, DoWorkEventArgs args)
+        private void GroupsWork(Object sender, DoWorkEventArgs args)
         {
             // Do not access the form's BackgroundWorker reference directly. 
             // Instead, use the reference provided by the sender parameter.
@@ -677,6 +519,13 @@ namespace VKContentNet
 
             // Extract the argument.
             var param = args.Argument as GroupPostsParam;
+
+            if (bw == null ||
+                param == null)
+            {
+                throw new ArgumentException("Illegal argumets for Group Work");
+            }
+
             if (param.from <= param.to)
             {
                 this.postsFromDate = param.from;
@@ -688,13 +537,27 @@ namespace VKContentNet
                 this.postsToDate = param.from;
             }
 
-            var context = new VKRestContext(this.userId, this.authToken);
+            // working directory
+            String workingDir = this.WorkingFolderTextBox.Text;
+
+            // clear all
+            this.postsWithComments.Clear(); // reset reference list
+            this.likes.Clear(); // reset likes
+            this.posters.Clear(); // reset postersd
+            this.posterIds.Clear(); // clear poster ids
+            this.visitorIds.Clear(); // clear visitor ids
+            this.postInfo.Clear(); // clear post infos
+            this.topics.Clear(); // clear topics infos
+            this.u2uMatrix.Clear(); // clear u2u matrix
+
+            var context = new VkRestApi.VkRestContext(this.userId, this.authToken);
             var sb = new StringBuilder();
-            isRunning = true;
+            long timeLastCall = 0;
 
             // gather group statistics
             if (param.justStats)
             {
+                ResetCountersAndGetReady();
 
                 bw.ReportProgress(1, "Getting group stats");
 
@@ -703,72 +566,43 @@ namespace VKContentNet
                 sb.Append("group_id=").Append(groupId).Append("&");
                 sb.Append("date_from=").Append(this.postsFromDate.ToString("yyyy-MM-dd")).Append("&");
                 sb.Append("date_to=").Append(this.postsToDate.ToString("yyyy-MM-dd"));
-                context.parameters = sb.ToString();
-                Debug.WriteLine("Download parameters: " + context.parameters);
+                context.Parameters = sb.ToString();
+                Debug.WriteLine("Download parameters: " + context.Parameters);
 
                 // call VK REST API
-                vkRestApi.CallVKFunction(VKFunction.StatsGet, context);
-
+                vkRestApi.CallVkFunction(VkFunction.StatsGet, context);
                 return;
             }
 
-            // create stream writers
-            // 1) group posts
-            String fileName = generateGroupPostsFileName(groupId);
+            // group posts
+            IEntity e = new Post();
+            String fileName = Utils.GenerateFileName(workingDir, groupId, e);
             groupPostsWriter = File.CreateText(fileName);
-            printGroupPostsHeader(groupPostsWriter);
+            Utils.PrintFileHeader(groupPostsWriter, e);
 
-            this.postsWithComments.Clear(); // reset comments reference list
-            this.likes.Clear(); // reset likes
-            this.posters.Clear(); // reset posters
-            this.posterIds.Clear(); // clear poster ids
-            this.visitorIds.Clear(); // clear visitor ids
-            this.postInfo.Clear(); // clear post infos
-            this.topics.Clear(); // clear topics infos
-            this.u2uMatrix.Clear(); // clear u2u matrix
+            ResetCountersAndGetReady();
 
-            this.totalCount = 0;
-            this.currentOffset = 0;
-            this.step = 1;
-
-            long timeLastCall = 0;
-
-            // TEMP
-            isRunning = false;
-
-            // get group posts 100 at a time and store them in the file
             // request group posts
-            while (isRunning)
+            bw.ReportProgress(-1, "Getting posts");
+            while (ShellContinue(bw))
             {
-                if (bw.CancellationPending)
-                    break;
-
-                if (currentOffset > totalCount)
-                {
-                    // done
-                    break;
-                }
-
-                bw.ReportProgress(step, "Getting " + currentOffset + " posts out of " + totalCount);
-
                 sb.Length = 0;
                 sb.Append("owner_id=").Append(groupId.ToString()).Append("&");
                 sb.Append("offset=").Append(currentOffset).Append("&");
                 sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
-                context.parameters = sb.ToString();
-                Debug.WriteLine("Download parameters: " + context.parameters);
+                context.Parameters = sb.ToString();
+                Debug.WriteLine("Download parameters: " + context.Parameters);
 
-                context.cookie = currentOffset.ToString();
+                context.Cookie = currentOffset.ToString();
 
                 // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                 timeLastCall = Utils.sleepTime(timeLastCall);
                 // call VK REST API
-                vkRestApi.CallVKFunction(VKFunction.WallGet, context);
+                vkRestApi.CallVkFunction(VkFunction.WallGet, context);
 
                 // wait for the user data
                 ReadyEvent.WaitOne();
-
-                currentOffset += POSTS_PER_REQUEST;
+                bw.ReportProgress(step, "Getting " + currentOffset + " posts out of " + totalCount);
             }
 
             groupPostsWriter.Close();
@@ -777,55 +611,43 @@ namespace VKContentNet
                 !bw.CancellationPending)
             {
                 // group comments
-                fileName = generateGroupCommentsFileName(groupId);
+                e = new Comment();
+                fileName = Utils.GenerateFileName(workingDir, groupId, e);
                 groupCommentsWriter = File.CreateText(fileName);
-                printGroupCommentsHeader(groupCommentsWriter);
+                Utils.PrintFileHeader(groupCommentsWriter, e);
 
                 // request group comments
                 bw.ReportProgress(-1, "Getting comments");
-                this.step = (int) (10000/this.postsWithComments.Count);
 
                 timeLastCall = 0;
 
-                for (int i = 0; i < this.postsWithComments.Count; i++)
+                for (int i = 0; i < this.postsWithComments.Count && !bw.CancellationPending; i++)
                 {
-                    isRunning = true;
-                    this.totalCount = 0;
-                    this.currentOffset = 0;
+                    ResetCountersAndGetReady();
+                    this.step = (int)(10000 / this.postsWithComments.Count);
 
                     bw.ReportProgress(step,
                         "Getting " + (i + 1) + " post comments out of " + this.postsWithComments.Count);
 
-                    while (this.isRunning)
+                    while (ShellContinue(bw))
                     {
-                        if (bw.CancellationPending)
-                            break;
-
-                        if (currentOffset > totalCount)
-                        {
-                            // done
-                            break;
-                        }
-
                         sb.Length = 0;
                         sb.Append("owner_id=").Append(groupId).Append("&"); // group id
                         sb.Append("post_id=").Append(postsWithComments[i]).Append("&"); // post id
                         sb.Append("need_likes=").Append(1).Append("&"); // request likes info
                         sb.Append("offset=").Append(currentOffset).Append("&");
                         sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
-                        context.parameters = sb.ToString();
-                        context.cookie = postsWithComments[i].ToString(); // pass post id as a cookie
-                        Debug.WriteLine("Request parameters: " + context.parameters);
+                        context.Parameters = sb.ToString();
+                        context.Cookie = postsWithComments[i].ToString(); // pass post id as a cookie
+                        Debug.WriteLine("Request parameters: " + context.Parameters);
 
                         // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                         timeLastCall = Utils.sleepTime(timeLastCall);
                         // call VK REST API
-                        vkRestApi.CallVKFunction(VKFunction.WallGetComments, context);
+                        vkRestApi.CallVkFunction(VkFunction.WallGetComments, context);
 
                         // wait for the user data
                         ReadyEvent.WaitOne();
-
-                        currentOffset += POSTS_PER_REQUEST;
                     }
                 }
 
@@ -856,14 +678,14 @@ namespace VKContentNet
                     sb.Append("owner_id=").Append(likes[i].owner_id).Append("&"); // group id
                     sb.Append("item_id=").Append(likes[i].item_id).Append("&"); // post id
                     sb.Append("count=").Append(LIKES_PER_REQUEST).Append("&");
-                    context.parameters = sb.ToString();
-                    context.cookie = likes[i].item_id.ToString(); // pass post/comment id as a cookie
-                    Debug.WriteLine("Request parameters: " + context.parameters);
+                    context.Parameters = sb.ToString();
+                    context.Cookie = likes[i].item_id.ToString(); // pass post/comment id as a cookie
+                    Debug.WriteLine("Request parameters: " + context.Parameters);
 
                     // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                     timeLastCall = Utils.sleepTime(timeLastCall);
                     // call VK REST API
-                    vkRestApi.CallVKFunction(VKFunction.LikesGetList, context);
+                    vkRestApi.CallVkFunction(VkFunction.LikesGetList, context);
 
                     // wait for the user data
                     ReadyEvent.WaitOne();
@@ -877,9 +699,10 @@ namespace VKContentNet
                 !bw.CancellationPending)
             {
                 // group visitors profiles
-                fileName = generateGroupVisitorsFileName(groupId);
+                e = new Profile();
+                fileName = Utils.GenerateFileName(workingDir, groupId, e);
                 groupVisitorsWriter = File.CreateText(fileName);
-                printGroupVisitorsHeader(groupVisitorsWriter);
+                Utils.PrintFileHeader(groupVisitorsWriter, e);
 
                 // request visitors info
                 bw.ReportProgress(-1, "Getting visitors");
@@ -907,13 +730,13 @@ namespace VKContentNet
 
                     sb.Append("&").Append("fields=").Append(PROFILE_FIELDS);
 
-                    context.parameters = sb.ToString();
-                    Debug.WriteLine("Request parameters: " + context.parameters);
+                    context.Parameters = sb.ToString();
+                    Debug.WriteLine("Request parameters: " + context.Parameters);
 
                     // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                     timeLastCall = Utils.sleepTime(timeLastCall);
                     // call VK REST API
-                    vkRestApi.CallVKFunction(VKFunction.UsersGet, context);
+                    vkRestApi.CallVkFunction(VkFunction.UsersGet, context);
 
                     // wait for the user data
                     ReadyEvent.WaitOne();
@@ -933,49 +756,40 @@ namespace VKContentNet
             }
 
             // process group board topics and comments
-            fileName = generateGroupBoardTopicsFileName(groupId);
-            groupBoardTopisWriter = File.CreateText(fileName);
-            printGroupBoardTopicsHeader(groupBoardTopisWriter);
+            e = new BoardTopic();
+            fileName = Utils.GenerateFileName(workingDir, groupId, e);
+            groupBoardTopicsWriter = File.CreateText(fileName);
+            Utils.PrintFileHeader(groupBoardTopicsWriter, e);
 
-            fileName = generateGroupBoardCommentsFileName(groupId);
+            e = new Comment();
+            fileName = Utils.GenerateFileName(workingDir, groupId, e, "board");
             groupBoardCommentsWriter = File.CreateText(fileName);
-            printGroupBoardCommentsHeader(groupBoardCommentsWriter);
+            Utils.PrintFileHeader(groupBoardCommentsWriter, e);
 
-            this.totalCount = 0;
-            this.currentOffset = 0;
-            this.step = 1;
-            this.isRunning = true;
+            ResetCountersAndGetReady();
 
             bw.ReportProgress(-1, "Getting board topics");
 
             // get group board topics
-            while (this.isRunning &&
-                !bw.CancellationPending)
+            while (ShellContinue(bw))
             {
-                if (currentOffset > totalCount)
-                {
-                    // done
-                    break;
-                }
-
                 sb.Length = 0;
                 sb.Append("group_id=").Append(Math.Abs(groupId)).Append("&");
                 sb.Append("offset=").Append(currentOffset).Append("&");
                 sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
-                context.parameters = sb.ToString();
-                Debug.WriteLine("Download parameters: " + context.parameters);
+                context.Parameters = sb.ToString();
+                Debug.WriteLine("Download parameters: " + context.Parameters);
 
-                context.cookie = currentOffset.ToString();
+                context.Cookie = currentOffset.ToString();
 
                 // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                 timeLastCall = Utils.sleepTime(timeLastCall);
                 // call VK REST API
-                vkRestApi.CallVKFunction(VKFunction.BoardGetTopics, context);
+                vkRestApi.CallVkFunction(VkFunction.BoardGetTopics, context);
 
                 // wait for the user data
                 ReadyEvent.WaitOne();
                 bw.ReportProgress(step, "Getting board topics " + currentOffset + " out of " + totalCount);
-                currentOffset += POSTS_PER_REQUEST;
             }
 
             bw.ReportProgress(-1, "Getting board comments");
@@ -989,41 +803,31 @@ namespace VKContentNet
                 if (topics[i].is_closed || topics[i].comments == 0)
                     continue; // empty or closed topic - ignore
 
-                isRunning = true;
-                step = 1;
-                totalCount = 0;
-                currentOffset = 0;
+                ResetCountersAndGetReady();
 
-                while (isRunning)
+                while (ShellContinue(bw))
                 {
-                    if (bw.CancellationPending)
-                        break; // canceled
-
-                    if (currentOffset > totalCount)
-                        break; // done
-
                     sb.Length = 0;
                     sb.Append("group_id=").Append(Math.Abs(groupId)).Append("&"); // group id
                     sb.Append("topic_id=").Append(topics[i].id).Append("&"); // post id
                     sb.Append("offset=").Append(currentOffset).Append("&");
                     sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
-                    context.parameters = sb.ToString();
-                    context.cookie = topics[i].id.ToString(); // pass topic id as a cookie
-                    Debug.WriteLine("Request parameters: " + context.parameters);
+                    context.Parameters = sb.ToString();
+                    context.Cookie = topics[i].id.ToString(); // pass topic id as a cookie
+                    Debug.WriteLine("Request parameters: " + context.Parameters);
 
                     // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                     timeLastCall = Utils.sleepTime(timeLastCall);
                     // call VK REST API
-                    vkRestApi.CallVKFunction(VKFunction.BoardGetComments, context);
+                    vkRestApi.CallVkFunction(VkFunction.BoardGetComments, context);
 
                     // wait for the user data
                     ReadyEvent.WaitOne();
                     bw.ReportProgress(step, "Getting board topic comments " + currentOffset + " out of " + totalCount);
-                    currentOffset += POSTS_PER_REQUEST;
                 }
             }
 
-            groupBoardTopisWriter.Close();
+            groupBoardTopicsWriter.Close();
             groupBoardCommentsWriter.Close();
 
             // If the operation was canceled by the user,  
@@ -1032,6 +836,27 @@ namespace VKContentNet
 
             // complete the job
             //args.Result = 
+        }
+
+        // before new batch task
+        private void ResetCountersAndGetReady()
+        {
+            isRunning = true;
+            step = 1;
+            totalCount = 0;
+            currentOffset = 0;
+        }
+
+        // decide if running task shell continue to run
+        private bool ShellContinue(BackgroundWorker bw)
+        {
+            if (!isRunning)
+                return false;
+
+            if (bw.CancellationPending)
+                return false;
+
+            return currentOffset < totalCount || totalCount <= 0;
         }
 
         private void groupsWorkProgressChanged(Object sender, ProgressChangedEventArgs args)
@@ -1075,29 +900,50 @@ namespace VKContentNet
             // Extract the argument.
             var param = args.Argument as GraphParam;
 
-            isRunning = true;
+            if (bw == null ||
+                param == null)
+            {
+                throw new ArgumentException("Invalid network job argumets");
+            }
+
+            ResetCountersAndGetReady();
             contentNetworkAnalyzer.ResetEdges(); // remove all edges
+
+
+            var uTotal = u2uMatrix.Count;
+            var uCount = 0;
+
+            if (uTotal == 0)
+            {
+                args.Result = null;
+                return;
+            }
+
+            // report progress up to 50%, the other 50% - graph generation
+            this.step = (int)(5000 / uTotal);
 
             // generate U2U edges
             foreach (var entry in u2uMatrix)
             {
+                bw.ReportProgress(step, "Processing matrix entry " + (++uCount) + " out of " + uTotal);
+
                 var from = entry.Key;
                 foreach (var entry2 in entry.Value)
                 {
                     var to = entry2.Key;
                     var weight = entry2.Value;
-                    switch (param.type)
+                    switch (param.Type)
                     {
-                        case GraphParam.Type.Combined:
+                        case GraphParam.GraphType.Combined:
                             contentNetworkAnalyzer.AddEdge(from, to, "Link", "Communication", "", weight.combined, 0);
                             break;
-                        case GraphParam.Type.Comments:
+                        case GraphParam.GraphType.Comments:
                             if (weight.comments > 0)
                             {
                                 contentNetworkAnalyzer.AddEdge(from, to, "Link", "Comment", "", weight.comments, 0);                                
                             }
                             break;
-                        case GraphParam.Type.Likes:
+                        case GraphParam.GraphType.Likes:
                             if (weight.likes > 0)
                             {
                                 contentNetworkAnalyzer.AddEdge(from, to, "Link", "Like", "", weight.likes, 0);                                
@@ -1108,7 +954,7 @@ namespace VKContentNet
             }
 
             // generate U2U network
-            contentNetworkAnalyzer.graphName = param.type.ToString();
+            contentNetworkAnalyzer.graphName = param.Type.ToString();
             args.Result = contentNetworkAnalyzer.GenerateU2UNetwork();
         }
 
@@ -1140,7 +986,7 @@ namespace VKContentNet
                 if (network != null)
                 {
                     updateStatus(0, "Save Network Graph File");
-                    network.Save(generateU2UNetworkFileName(groupId, contentNetworkAnalyzer.graphName));
+                    network.Save(Utils.GenerateFileName(WorkingFolderTextBox.Text, groupId, contentNetworkAnalyzer.graphName, "user-network", "graphml"));
                 }
                 else
                 {
@@ -1154,7 +1000,6 @@ namespace VKContentNet
             ActivateControls();
         }
 
-        // Status report
         private void updateStatus(int progress, String status)
         {
             // if 0 - ignore progress param
@@ -1174,7 +1019,7 @@ namespace VKContentNet
         // process group posts
         private void OnWallGet(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isRunning = false;
                 return;
@@ -1182,7 +1027,7 @@ namespace VKContentNet
 
             if (this.totalCount == 0)
             {
-                this.totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>();
+                this.totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>();
                 if (this.totalCount == 0)
                 {
                     this.isRunning = false;
@@ -1192,16 +1037,17 @@ namespace VKContentNet
             }
 
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
 
-            //this.backgroundGroupsWorker.ReportProgress(0, "Processing next " + count + " posts out of " + totalCount);
+            if (!CheckAndIncrement(count))
+                return;
 
             var posts = new List<Post>();
 
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                var postObj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                var postObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
 
                 // see if post is in the range
                 var dt = Utils.getDateField("date", postObj);
@@ -1291,13 +1137,13 @@ namespace VKContentNet
             }
 
             // save the posts list
-            updateGroupPostsFile(posts, groupPostsWriter);
+            Utils.PrintFileContent(groupPostsWriter, posts);
         }
 
         // process group comments
         private void OnWallGetComments(JObject data, String cookie)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isRunning = false;
                 return;
@@ -1305,11 +1151,14 @@ namespace VKContentNet
 
             if (this.totalCount == 0)
             {
-                this.totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>();
+                this.totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>();
             }
 
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+
+            if (!CheckAndIncrement(count))
+                return;
 
             var comments = new List<Comment>();
             var post_id = Convert.ToInt64(cookie); // passed as a cookie
@@ -1317,7 +1166,7 @@ namespace VKContentNet
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                var postObj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                var postObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
 
                 var comment = new Comment();
                 comment.id = Utils.getLongField("id", postObj);
@@ -1383,26 +1232,30 @@ namespace VKContentNet
             }
 
             // save the posts list
-            updateGroupCommentsFile(comments, groupCommentsWriter);
+            Utils.PrintFileContent(groupCommentsWriter, comments);
         }
 
         // process likes user list
         private void OnLikesGetList(JObject data, string cookie)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isRunning = false;
                 return;
             }
 
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+
+            if (!CheckAndIncrement(count))
+                return;
+            
             long post_id = Convert.ToInt64(cookie); // passed as a cookie
 
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                long likerId = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<long>();
+                long likerId = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<long>();
                 // this user liked the subject - add him to the posters
                 if (!posters.ContainsKey(likerId))
                 {
@@ -1421,7 +1274,7 @@ namespace VKContentNet
         // process group board topics
         private void OnBoardGetTopics(JObject data, string cookie)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isRunning = false;
                 return;
@@ -1429,7 +1282,7 @@ namespace VKContentNet
 
             if (this.totalCount == 0)
             {
-                this.totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>();
+                this.totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>();
                 if (this.totalCount == 0)
                 {
                     this.isRunning = false;
@@ -1437,15 +1290,18 @@ namespace VKContentNet
                 }
                 this.step = (int)(10000 * POSTS_PER_REQUEST / this.totalCount);
             }
-
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+
+            if (!CheckAndIncrement(count))
+                return;
+
             // process a cookie
 
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                var obj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                var obj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
 
                 var topic = new BoardTopic();
                 topic.id = Utils.getLongField("id", obj);
@@ -1456,20 +1312,20 @@ namespace VKContentNet
                 topic.updated = Utils.getStringDateField("update", obj);
                 topic.updated_by = Utils.getLongField("updated_by", obj);
                 topic.is_closed = Utils.getLongField("is_closed", obj) == 1;
-                topic.is_fixed = Utils.getLongField("is_closed", obj) == 1;
+                topic.is_fixed = Utils.getLongField("is_fixed", obj) == 1;
                 topic.comments = Utils.getLongField("comments", obj);
 
                 topics.Add(topic);
             }
 
             // save the board topics
-            updateGroupBoardTopicsFile(topics, groupBoardTopisWriter);
+            Utils.PrintFileContent(groupBoardTopicsWriter, topics);
         }
 
         // process group board topic comments
         private void OnBoardGetComments(JObject data, string cookie)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isRunning = false;
                 return;
@@ -1477,7 +1333,7 @@ namespace VKContentNet
 
             if (this.totalCount == 0)
             {
-                this.totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>();
+                this.totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>();
                 if (this.totalCount == 0)
                 {
                     this.isRunning = false;
@@ -1487,14 +1343,18 @@ namespace VKContentNet
             }
 
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+
+            if (!CheckAndIncrement(count))
+                return;
+            
             var comments = new List<Comment>();
             var board_id = Convert.ToInt64(cookie); // passed as a cookie
 
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                var postObj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                var postObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
 
                 var comment = new Comment();
                 comment.id = Utils.getLongField("id", postObj);
@@ -1563,10 +1423,22 @@ namespace VKContentNet
             }
 
             // save the board comments
-            updateGroupBoardCommentsFile(comments, groupBoardCommentsWriter);
+            Utils.PrintFileContent(groupBoardCommentsWriter, comments);
         }
 
-        
+
+        private bool CheckAndIncrement(int count)
+        {
+            if (count == 0)
+            {
+                totalEmptyRetry++;
+                return !(totalEmptyRetry > MAX_EMPTY_RETRY);
+            }
+
+            currentOffset += count;
+            return true;
+        }
+
         private void updateU2UMatrixForPost(long from, long id, bool isComment)
         {
             long to = 0;
@@ -1622,14 +1494,14 @@ namespace VKContentNet
         // process user info
         private void OnUsersGet(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isRunning = false;
                 return;
             }
 
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY].Count();
+            int count = data[VkRestApi.RESPONSE_BODY].Count();
             Debug.WriteLine("Processing " + count + " users");
 
             var profiles = new List<Profile>();
@@ -1637,7 +1509,7 @@ namespace VKContentNet
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                var userObj = data[VKRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+                var userObj = data[VkRestApi.RESPONSE_BODY][i].ToObject<JObject>();
 
                 var profile = new Profile();
                 profile.id = Utils.getLongField("id", userObj);
@@ -1676,13 +1548,13 @@ namespace VKContentNet
             if (profiles.Count > 0)
             {
                 // update posters
-                updateGroupVisitorsFile(profiles, groupVisitorsWriter);
+                Utils.PrintFileContent(groupVisitorsWriter, profiles);
             }
         }
 
         private Dictionary<String, String> dictionaryFromPoster(Poster poster)
         {
-            Dictionary<String, String> dic = new Dictionary<String, String>();
+            var dic = new Dictionary<String, String>();
 
             dic.Add("posts", poster.posts.ToString());
             dic.Add("comments", poster.comments.ToString());
@@ -1693,200 +1565,13 @@ namespace VKContentNet
             return dic;
         }
 
-        // Error Log File
-        private string generateErrorLogFileName()
-        {
-            var fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
-            return fileName.Append("\\").Append("error-log").Append(".txt").ToString();
-        }
-
-        private void printErrorLogHeader(StreamWriter writer)
-        {
-            writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"",
-                    "function", "error_code", "error");
-        }
-
-        private void updateErrorLogFile(OnErrorEventArgs error, StreamWriter writer)
-        {
-            writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"",
-                error.function, error.code, error.error);
-        }
-
-        private void VKContentForm_FormClosing(object sender, System.Windows.Forms.FormClosingEventArgs e)
+        private void VKContentForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (errorLogWriter != null)
             {
                 errorLogWriter.Flush();
                 errorLogWriter.Close();
             }
-        }
-
-        // Group file name
-        private string generateGroupFileName(decimal groupId)
-        {
-            var fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
-
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group");
-            fileName.Append(".txt");
-
-            return fileName.ToString();
-        }
-
-        private void printGroupHeader(StreamWriter writer)
-        {
-            writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"",
-                    "id", "name", "screen_name", "is_closed", "type", "members_count", "city", "country", "photo", "description", "status");
-        }
-
-        private void updateGroupFile(IEnumerable<Group> groups, StreamWriter writer)
-        {
-            foreach (var g in groups)
-            {
-                writer.WriteLine("{0}\t{1}\t{2}\t\"{3}\"\t{4}\t{5}\t{6}\t{7}\t\"{8}\"\t\"{9}\"\t\"{10}\"",
-                    g.id, g.name, g.screen_name, g.is_closed, g.type, g.members_count, g.city, g.country, g.photo, g.description, g.status);
-            }
-        }
-        // Group posts file
-        private string generateGroupPostsFileName(decimal groupId)
-        {
-            var fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
-
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-posts");
-            fileName.Append(".txt");
-
-            return fileName.ToString();
-        }
-
-        private void printGroupPostsHeader(StreamWriter writer)
-        {
-            writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"",
-                    "id", "owner", "from", "signer", "date", "post_type", "comments", "likes", "reposts", "attachments", "text");
-        }
-
-        private void updateGroupPostsFile(IEnumerable<Post> posts, StreamWriter writer)
-        {
-            foreach (var p in posts)
-            {
-                writer.WriteLine("{0}\t{1}\t{2}\t{3}\t\"{4}\"\t\"{5}\"\t{6}\t{7}\t{8}\t{9}\t\"{10}\"",
-                    p.id, p.owner_id, p.from_id, p.signer_id, p.date, p.post_type, p.comments, p.likes, p.reposts, p.attachments, p.text);
-            }
-        }
-
-        // Group visitors profiles file
-        private string generateGroupVisitorsFileName(decimal groupId)
-        {
-            var fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
-
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-visitors");
-            fileName.Append(".txt");
-
-            return fileName.ToString();
-        }
-
-        private void printGroupVisitorsHeader(StreamWriter writer)
-        {
-            writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"",
-                    "id", "first_name", "last_name", "screen_name", "sex", "photo");
-        }
-
-        private void updateGroupVisitorsFile(IEnumerable<Profile> profiles, StreamWriter writer)
-        {
-            foreach (Profile p in profiles)
-            {
-                writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t{4}\t\"{5}\"",
-                    p.id, p.first_name, p.last_name, p.screen_name, p.sex, p.photo);
-            }
-        }
-
-        // Group comments file name
-        private string generateGroupCommentsFileName(decimal groupId)
-        {
-            var fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
-
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-comments");
-            fileName.Append(".txt");
-
-            return fileName.ToString();
-        }
-
-        private void printGroupCommentsHeader(StreamWriter writer)
-        {
-            writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"",
-                    "id", "post_id", "from", "date", "reply_to_user", "reply_to_comment", "likes", "attachments", "text");
-        }
-
-        private void updateGroupCommentsFile(IEnumerable<Comment> comments, StreamWriter writer)
-        {
-            foreach (var c in comments)
-            {
-                writer.WriteLine("{0}\t{1}\t{2}\t\"{3}\"\t{4}\t{5}\t{6}\t{7}\t\"{8}\"",
-                    c.id, c.post_id, c.from_id, c.date, c.reply_to_uid, c.reply_to_cid, c.likes, c.attachments, c.text);
-            }
-        }
-
-        // group board topics
-        private string generateGroupBoardTopicsFileName(decimal groupId)
-        {
-            var fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
-
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-board-topics");
-            fileName.Append(".txt");
-
-            return fileName.ToString();
-        }
-
-        private void printGroupBoardTopicsHeader(StreamWriter writer)
-        {
-            writer.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}",
-                    "id", "title", "created", "created_by", "updated", "updated_by", "is_closed", "is_fixed", "comments");
-        }
-
-        private void updateGroupBoardTopicsFile(IEnumerable<BoardTopic> topics, StreamWriter writer)
-        {
-            foreach (var t in topics)
-            {
-                writer.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}",
-                    t.id, t.title, t.created, t.created_by, t.updated, t.updated_by, t.is_closed, t.is_fixed, t.comments);
-            }
-        }
-
-        // group board topics comments
-        private string generateGroupBoardCommentsFileName(decimal groupId)
-        {
-            var fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
-
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-board-comments");
-            fileName.Append(".txt");
-
-            return fileName.ToString();
-        }
-
-        private void printGroupBoardCommentsHeader(StreamWriter writer)
-        {
-            writer.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}",
-                    "id", "post_id", "from", "date", "reply_to_user", "reply_to_comment", "likes", "attachments", "text");
-        }
-
-        private void updateGroupBoardCommentsFile(IEnumerable<Comment> comments, StreamWriter writer)
-        {
-            foreach (var c in comments)
-            {
-                writer.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t\"{8}\"",
-                    c.id, c.post_id, c.from_id, c.date, c.reply_to_uid, c.reply_to_cid, c.likes, c.attachments, c.text);
-            }
-        }
-
-        // User 2 User  Network file
-        private string generateU2UNetworkFileName(decimal groupId, string graphName)
-        {
-            var fileName = new StringBuilder(WorkingFolderTextBox.Text);
-
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString())
-                .Append("-")
-                .Append(graphName)
-                .Append("-user-network").Append(".graphml");
-
-            return fileName.ToString();
-        }
+        }        
     }
 }

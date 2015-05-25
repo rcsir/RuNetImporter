@@ -21,7 +21,7 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
 {
     public class VKNetworkAnalyzer : HttpNetworkAnalyzerBase
     {
-        private VKRestApi vkRestApi;
+        private VkRestApi vkRestApi;
 
         private static AutoResetEvent readyEvent = new AutoResetEvent(false);
 
@@ -49,26 +49,26 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
 
         public VKNetworkAnalyzer()
         {
-            vkRestApi = new VKRestApi();
+            vkRestApi = new VkRestApi();
             // set up data handler
-            vkRestApi.OnData += new VKRestApi.DataHandler(OnData);
+            vkRestApi.OnData += new VkRestApi.DataHandler(OnData);
             // set up error handler
-            vkRestApi.OnError += new VKRestApi.ErrorHandler(OnError);
+            vkRestApi.OnError += new VkRestApi.ErrorHandler(OnError);
         }
 
         // main data handler
         public void OnData(object vkRestApi, OnDataEventArgs onDataArgs)
         {
-            switch (onDataArgs.function)
+            switch (onDataArgs.Function)
             {
-                case VKFunction.LoadUserInfo:
-                    OnLoadUserInfo(onDataArgs.data);
+                case VkFunction.GetProfiles:
+                    OnLoadUserInfo(onDataArgs.Data);
                     break;
-                case VKFunction.LoadFriends:
-                    OnLoadFriends(onDataArgs.data);
+                case VkFunction.LoadFriends:
+                    OnLoadFriends(onDataArgs.Data);
                     break;
-                case VKFunction.GetMutual:
-                    OnGetMutual(onDataArgs.data, onDataArgs.cookie);
+                case VkFunction.FriendsGetMutual:
+                    OnGetMutual(onDataArgs.Data, onDataArgs.Cookie);
                     break;
                 default:
                     Debug.WriteLine("Error, unknown function.");
@@ -83,13 +83,13 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         }
 
         // main error handler
-        public void OnError(object vkRestApi, OnErrorEventArgs onErrorArgs)
+        public void OnError(object vkRestApi, VkRestApi.OnErrorEventArgs onErrorArgs)
         {
             // TODO: notify user about the error
-            Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
+            Debug.WriteLine("Function " + onErrorArgs.Function + ", returned error: " + onErrorArgs.Error);
 
             // this.error = new Exception("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
-            this.requestStatistics.OnUnexpectedException(new Exception("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error));
+            this.requestStatistics.OnUnexpectedException(new Exception("Function " + onErrorArgs.Function + ", returned error: " + onErrorArgs.Error));
 
             // indicate that we can continue
             readyEvent.Set();
@@ -98,9 +98,9 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         // process load user info response
         private void OnLoadUserInfo(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY].Count() > 0)
+            if (data[VkRestApi.RESPONSE_BODY].Count() > 0)
             {
-                JObject ego = data[VKRestApi.RESPONSE_BODY][0].ToObject<JObject>();
+                JObject ego = data[VkRestApi.RESPONSE_BODY][0].ToObject<JObject>();
                 Console.WriteLine("Ego: " + ego.ToString());
 
                 // ok, create the ego object here
@@ -121,12 +121,12 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         // process load user friends response
         private void OnLoadFriends(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY].Count() > 0)
+            if (data[VkRestApi.RESPONSE_BODY].Count() > 0)
             {
 
-                for (int i = 0; i < data[VKRestApi.RESPONSE_BODY].Count(); ++i)
+                for (int i = 0; i < data[VkRestApi.RESPONSE_BODY].Count(); ++i)
                 {
-                    JObject friend = data[VKRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+                    JObject friend = data[VkRestApi.RESPONSE_BODY][i].ToObject<JObject>();
                     // uid, first_name, last_name, nickname, sex, bdate, city, country, timezone
                     Console.WriteLine(i.ToString() + ") friend: " + friend.ToString());
 
@@ -147,13 +147,13 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         // process get mutual response
         private void OnGetMutual(JObject data, String cookie)
         {
-            if (data[VKRestApi.RESPONSE_BODY].Count() > 0)
+            if (data[VkRestApi.RESPONSE_BODY].Count() > 0)
             {
                 List<String> friendFriendsIds = new List<string>();
 
-                for (int i = 0; i < data[VKRestApi.RESPONSE_BODY].Count(); ++i)
+                for (int i = 0; i < data[VkRestApi.RESPONSE_BODY].Count(); ++i)
                 {
-                    String friendFriendsId = data[VKRestApi.RESPONSE_BODY][i].ToString();
+                    String friendFriendsId = data[VkRestApi.RESPONSE_BODY][i].ToString();
 
                     CreateFriendsMutualEdge(cookie, // target id we passed as a param
                                             friendFriendsId);
@@ -163,16 +163,16 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
 
         public XmlDocument analyze(String userId, String authToken)
         {
-            VKRestContext context = new VKRestContext(userId, authToken);
+            var context = new VkRestApi.VkRestContext(userId, authToken);
 
             this.requestStatistics = new RequestStatistics();
 
-            vkRestApi.CallVKFunction(VKFunction.LoadUserInfo, context);
+            vkRestApi.CallVkFunction(VkFunction.GetProfiles, context);
 
             // wait for the user data
             readyEvent.WaitOne();
-            context.parameters = "fields=uid,first_name,last_name,sex,bdate,photo_50,city,country,relation,nickname";
-            vkRestApi.CallVKFunction(VKFunction.LoadFriends, context);
+            context.Parameters = "fields=uid,first_name,last_name,sex,bdate,photo_50,city,country,relation,nickname";
+            vkRestApi.CallVkFunction(VkFunction.LoadFriends, context);
 
             // wait for the friends data
             readyEvent.WaitOne();
@@ -182,9 +182,9 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
                 // Append target friend ids
                 sb.Append(targetId);
 
-                context.parameters = sb.ToString();
-                context.cookie = targetId; // pass target id in the cookie context field
-                vkRestApi.CallVKFunction(VKFunction.GetMutual, context);
+                context.Parameters = sb.ToString();
+                context.Cookie = targetId; // pass target id in the cookie context field
+                vkRestApi.CallVkFunction(VkFunction.FriendsGetMutual, context);
 
                 // wait for the mutual data
                 readyEvent.WaitOne();
@@ -317,10 +317,10 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
                 this.includeEgo = args.includeMe;
 
                 // prepare rest contexts
-                VKRestContext context = new VKRestContext(args.userId, args.accessToken);
+                var context = new VkRestApi.VkRestContext(args.userId, args.accessToken);
 
                 // get ego node
-                vkRestApi.CallVKFunction(VKFunction.LoadUserInfo, context);
+                vkRestApi.CallVkFunction(VkFunction.GetProfiles, context);
 
                 // wait for the user data
                 readyEvent.WaitOne();
@@ -331,10 +331,10 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
                 // prepare fields context parameter
                 StringBuilder sb = new StringBuilder("fields=");
                 sb.Append(args.fields);
-                context.parameters = sb.ToString();
+                context.Parameters = sb.ToString();
 
                 // get friends node
-                vkRestApi.CallVKFunction(VKFunction.LoadFriends, context);
+                vkRestApi.CallVkFunction(VkFunction.LoadFriends, context);
 
                 // wait for the friends data
                 readyEvent.WaitOne();
@@ -346,18 +346,18 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
                 {
                     CheckCancellationPending();
                     current++;
-                    ReportProgress("Retrieving friends mutual " + current.ToString() + " out of " + total.ToString());
+                    ReportProgress("Retrieving friends mutual " + current + " out of " + total);
 
                     // Append target friend ids
                     sb.Length = 0;
                     sb.Append("target_uid=");
                     sb.Append(targetId);
 
-                    context.parameters = sb.ToString();
-                    context.cookie = targetId; // pass target id in the context's cookie field
+                    context.Parameters = sb.ToString();
+                    context.Cookie = targetId; // pass target id in the context's cookie field
                     
                     // get mutual friends 
-                    vkRestApi.CallVKFunction(VKFunction.GetMutual, context);
+                    vkRestApi.CallVkFunction(VkFunction.FriendsGetMutual, context);
 
                     // wait for the mutual data
                     readyEvent.WaitOne();

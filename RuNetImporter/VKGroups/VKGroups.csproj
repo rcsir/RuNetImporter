@@ -51,10 +51,10 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>5635948912853CB01FADF156474BEA9369E1DEA2</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>990445CE2039D8451F277388CFFDB89E614FB63C</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>VKGroups_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>VKGroups_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <GenerateManifests>true</GenerateManifests>
@@ -145,6 +145,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="VKGroups_1_TemporaryKey.pfx" />
     <None Include="VKGroups_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>

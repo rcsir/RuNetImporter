@@ -1,17 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Xml;
 using rcsir.net.vk.importer.Dialogs;
 using rcsir.net.vk.importer.api;
 using rcsir.net.vk.importer.NetworkAnalyzer;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace TestVKImporter
@@ -19,7 +13,7 @@ namespace TestVKImporter
     public partial class TestVKImpotrerForm : Form
     {
         private VKLoginDialog vkLoginDialog;
-        private VKRestApi vkRestApi;
+        private VkRestApi vkRestApi;
 
         public TestVKImpotrerForm()
         {
@@ -29,19 +23,19 @@ namespace TestVKImporter
             // subscribe for login events
             vkLoginDialog.OnUserLogin += new VKLoginDialog.UserLoginHandler(UserLogin);
 
-            vkRestApi = new VKRestApi();
+            vkRestApi = new VkRestApi();
             // set up data handler
-            vkRestApi.OnData += new VKRestApi.DataHandler(OnData);
+            vkRestApi.OnData += new VkRestApi.DataHandler(OnData);
             // set up error handler
-            vkRestApi.OnError += new VKRestApi.ErrorHandler(OnError);
+            vkRestApi.OnError += new VkRestApi.ErrorHandler(OnError);
         }
 
         public void OnData(object vkRestApi, OnDataEventArgs onDataArgs)
         {
-            switch (onDataArgs.function)
+            switch (onDataArgs.Function)
             {
-                case VKFunction.LoadUserInfo:
-                    OnLoadUserInfo(onDataArgs.data);
+                case VkFunction.GetProfiles:
+                    OnLoadUserInfo(onDataArgs.Data);
                     break;
                 default:
                     Debug.WriteLine("Error, unknown function.");
@@ -50,18 +44,18 @@ namespace TestVKImporter
         }
 
         // main error handler
-        public void OnError(object vkRestApi, OnErrorEventArgs onErrorArgs)
+        public void OnError(object vkRestApi, VkRestApi.OnErrorEventArgs onErrorArgs)
         {
             // TODO: notify user about the error
-            Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
+            Debug.WriteLine("Function " + onErrorArgs.Function + ", returned error: " + onErrorArgs.Error);
         }
 
         // process load user info response
         private void OnLoadUserInfo(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY].Count() > 0)
+            if (data[VkRestApi.RESPONSE_BODY].Count() > 0)
             {
-                JObject ego = data[VKRestApi.RESPONSE_BODY][0].ToObject<JObject>();
+                JObject ego = data[VkRestApi.RESPONSE_BODY][0].ToObject<JObject>();
                 Console.WriteLine("Ego: " + ego.ToString());
 
                 this.userInfoTextBox.Clear();
@@ -104,8 +98,8 @@ namespace TestVKImporter
                 this.userIdTextBox.Text = userId;
             }
 
-            VKRestContext context = new VKRestContext(userId, vkLoginDialog.authToken);
-            vkRestApi.CallVKFunction(VKFunction.LoadUserInfo, context);
+            var context = new VkRestApi.VkRestContext(userId, vkLoginDialog.authToken);
+            vkRestApi.CallVkFunction(VkFunction.GetProfiles, context);
         }
 
         private void GenerateGraphButton_Click(object sender, EventArgs e)

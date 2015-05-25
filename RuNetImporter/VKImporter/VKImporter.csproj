@@ -50,7 +50,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Api\Utils.cs" />
+    <Compile Include="api\entity\BoardTopic.cs" />
+    <Compile Include="api\entity\Comment.cs" />
+    <Compile Include="api\entity\IEntity.cs" />
+    <Compile Include="api\entity\Group.cs" />
+    <Compile Include="api\entity\Like.cs" />
+    <Compile Include="api\entity\PhotoInfo.cs" />
+    <Compile Include="api\entity\Post.cs" />
+    <Compile Include="api\entity\Profile.cs" />
+    <Compile Include="api\Utils.cs" />
     <Compile Include="Dialogs\VKDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -64,7 +72,7 @@
       <DependentUpon>VKLoginDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="GraphDataProvider\VKGraphDataProvider.cs" />
-    <Compile Include="Api\VKRestApi.cs" />
+    <Compile Include="api\VKRestApi.cs" />
     <Compile Include="NetworkAnalyzer\VKNetworkAnalyzer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Secret.Designer.cs">
@@ -73,7 +81,9 @@
       <DependentUpon>Secret.resx</DependentUpon>
     </Compile>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="api\PhotoInfo.txt" />
+  </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Dialogs\VKDialog.resx">
       <DependentUpon>VKDialog.cs</DependentUpon>

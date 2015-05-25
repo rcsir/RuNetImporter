@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -8,10 +9,11 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 using Newtonsoft.Json.Linq;
+using rcsir.net.vk.importer.api.entity;
 
 namespace rcsir.net.vk.importer.api
 {
-    public class Utils
+    public static class Utils
     {
         // JObject utils
         public static String getStringField(String name, JObject o)
@@ -106,7 +108,7 @@ namespace rcsir.net.vk.importer.api
         public static DateTime timeToDateTime(long unixTimeStamp)
         {
             // Unix timestamp is seconds past epoch
-            System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+            var dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
             dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
             return dtDateTime;
         }
@@ -130,5 +132,43 @@ namespace rcsir.net.vk.importer.api
             return getTimeNowMillis();
         }
 
+        // file utils
+        // generate file name
+        public static string GenerateFileName(String workingDir, decimal id, IEntity entity, String subName = "", String extension = "txt")
+        {
+            return GenerateFileName(workingDir, id, entity.Name(), subName, extension);
+        }
+
+        public static string GenerateFileName(String workingDir, decimal id, String entityName, String subName = "", String extension = "txt")
+        {
+            var fileName = new StringBuilder(workingDir);
+            fileName.Append("\\").Append(Math.Abs(id)).Append("-").Append(entityName);
+            if (!String.IsNullOrEmpty(subName))
+            {
+                fileName.Append("-").Append(subName);
+            }
+            fileName.Append(".").Append(extension);
+            return fileName.ToString();
+        }
+
+        // print file header to a stream
+        public static void PrintFileHeader(StreamWriter writer, IEntity entity)
+        {
+            writer.WriteLine(entity.FileHeader());
+        }
+
+        // print records to a stream 
+        public static void PrintFileContent(StreamWriter writer, IEnumerable<IEntity> entities)
+        {
+            foreach (var e in entities)
+            {
+                writer.WriteLine(e.ToFileLine());
+            }
+        }
+        // print single record to a stream
+        public static void PrintFileContent(StreamWriter writer, IEntity entity)
+        {
+            writer.WriteLine(entity.ToFileLine());
+        }
     }
 }

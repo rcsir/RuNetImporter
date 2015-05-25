@@ -31,7 +31,7 @@ namespace VKGroups
         private static readonly string GROUP_FIELDS = "members_count,city,country,description,status";
 
         private VKLoginDialog vkLoginDialog;
-        private VKRestApi vkRestApi;
+        private VkRestApi vkRestApi;
         private String userId;
         private String authToken;
         private long expiresAt;
@@ -288,11 +288,11 @@ namespace VKGroups
             // subscribe for login events
             vkLoginDialog.OnUserLogin += new VKLoginDialog.UserLoginHandler(OnUserLogin);
 
-            vkRestApi = new VKRestApi();
+            vkRestApi = new VkRestApi();
             // set up data handler
-            vkRestApi.OnData += new VKRestApi.DataHandler(OnData);
+            vkRestApi.OnData += new VkRestApi.DataHandler(OnData);
             // set up error handler
-            vkRestApi.OnError += new VKRestApi.ErrorHandler(OnError);
+            vkRestApi.OnError += new VkRestApi.ErrorHandler(OnError);
 
             // setup background group posts worker handlers
             this.backgroundGroupsWorker.DoWork
@@ -409,16 +409,16 @@ namespace VKGroups
                 if (isGroup)
                 {
                     // lookup a group by id
-                    VKRestContext context = new VKRestContext(this.userId, this.authToken);
-                    StringBuilder sb = new StringBuilder();
+                    var context = new VkRestApi.VkRestContext(this.userId, this.authToken);
+                    var sb = new StringBuilder();
                     sb.Append("group_id=").Append(gid).Append("&");
                     sb.Append("fields=").Append(GROUP_FIELDS).Append("&");
-                    context.parameters = sb.ToString();
-                    context.cookie = groupsDialog.groupId.ToString();
-                    Debug.WriteLine("Download parameters: " + context.parameters);
+                    context.Parameters = sb.ToString();
+                    context.Cookie = groupsDialog.groupId.ToString();
+                    Debug.WriteLine("Download parameters: " + context.Parameters);
 
                     // call VK REST API
-                    vkRestApi.CallVKFunction(VKFunction.GroupsGetById, context);
+                    vkRestApi.CallVkFunction(VkFunction.GroupsGetById, context);
 
                     // wait for the user data
                     readyEvent.WaitOne();
@@ -426,8 +426,8 @@ namespace VKGroups
                 } 
                 else
                 {
-                    VKRestContext context = new VKRestContext(gid.ToString(), this.authToken);
-                    vkRestApi.CallVKFunction(VKFunction.LoadUserInfo, context);
+                    var context = new VkRestApi.VkRestContext(gid.ToString(), this.authToken);
+                    vkRestApi.CallVkFunction(VkFunction.GetProfiles, context);
                     readyEvent.WaitOne();
                 }
             }
@@ -575,40 +575,40 @@ namespace VKGroups
 
         private void OnData(object vkRestApi, OnDataEventArgs onDataArgs)
         {
-            switch (onDataArgs.function)
+            switch (onDataArgs.Function)
             {
-                case VKFunction.WallGet:
-                    OnWallGet(onDataArgs.data);
+                case VkFunction.WallGet:
+                    OnWallGet(onDataArgs.Data);
                     break;
-                case VKFunction.WallGetComments:
-                    OnWallGetComments(onDataArgs.data, onDataArgs.cookie);
+                case VkFunction.WallGetComments:
+                    OnWallGetComments(onDataArgs.Data, onDataArgs.Cookie);
                     break;
-                case VKFunction.GroupsGetMembers:
-                    OnGroupsGetMembers(onDataArgs.data, onDataArgs.cookie);
+                case VkFunction.GroupsGetMembers:
+                    OnGroupsGetMembers(onDataArgs.Data, onDataArgs.Cookie);
                     break;
-                case VKFunction.GetFriends:
-                    OnGetFriends(onDataArgs.data, onDataArgs.cookie);
+                case VkFunction.FriendsGet:
+                    OnGetFriends(onDataArgs.Data, onDataArgs.Cookie);
                     break;
-                case VKFunction.GroupsGetById:
-                    OnGroupsGetById(onDataArgs.data, onDataArgs.cookie);
+                case VkFunction.GroupsGetById:
+                    OnGroupsGetById(onDataArgs.Data, onDataArgs.Cookie);
                     break;
-                case VKFunction.LoadUserInfo:
-                    OnLoadUserInfo(onDataArgs.data);
+                case VkFunction.GetProfiles:
+                    OnLoadUserInfo(onDataArgs.Data);
                     break;
-                case VKFunction.LikesGetList:
-                    OnLikesGetList(onDataArgs.data);
+                case VkFunction.LikesGetList:
+                    OnLikesGetList(onDataArgs.Data);
                     break;
-                case VKFunction.UsersGet:
-                    OnUsersGet(onDataArgs.data);
+                case VkFunction.UsersGet:
+                    OnUsersGet(onDataArgs.Data);
                     break;
-                case VKFunction.LoadFriends:
-                    OnLoadFriends(onDataArgs.data);
+                case VkFunction.LoadFriends:
+                    OnLoadFriends(onDataArgs.Data);
                     break;
-                case VKFunction.GetMutual:
-                    OnGetMutual(onDataArgs.data, onDataArgs.cookie);
+                case VkFunction.FriendsGetMutual:
+                    OnGetMutual(onDataArgs.Data, onDataArgs.Cookie);
                     break;
-                case VKFunction.StatsGet:
-                    OnStatsGet(onDataArgs.data);
+                case VkFunction.StatsGet:
+                    OnStatsGet(onDataArgs.Data);
                     break;
                 default:
                     Debug.WriteLine("Error, unknown function.");
@@ -620,10 +620,10 @@ namespace VKGroups
         }
 
         // main error handler
-        private void OnError(object vkRestApi, OnErrorEventArgs onErrorArgs)
+        private void OnError(object vkRestApi, VkRestApi.OnErrorEventArgs onErrorArgs)
         {
             // TODO: notify user about the error
-            Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.details);
+            Debug.WriteLine("Function " + onErrorArgs.Function + ", returned error: " + onErrorArgs.Details);
 
             if (errorLogWriter != null)
             {
@@ -643,7 +643,7 @@ namespace VKGroups
 
         private void OnGroupsGetById(JObject data, String cookie)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 // todo: show err
                 Debug.WriteLine("Group is not found");
@@ -653,13 +653,13 @@ namespace VKGroups
             String gId = cookie; // gropu id sent as a cooky
 
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY].Count();
+            int count = data[VkRestApi.RESPONSE_BODY].Count();
 
             List<Group> groups = new List<Group>();
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject groupObject = data[VKRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+                JObject groupObject = data[VkRestApi.RESPONSE_BODY][i].ToObject<JObject>();
 
                 if (groupObject == null)
                     continue;
@@ -716,9 +716,9 @@ namespace VKGroups
         // process load user info response
         private void OnLoadUserInfo(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY].Count() > 0)
+            if (data[VkRestApi.RESPONSE_BODY].Count() > 0)
             {
-                JObject ego = data[VKRestApi.RESPONSE_BODY][0].ToObject<JObject>();
+                JObject ego = data[VkRestApi.RESPONSE_BODY][0].ToObject<JObject>();
                 Console.WriteLine("Ego: " + ego.ToString());
 
                 // group members network document
@@ -764,8 +764,8 @@ namespace VKGroups
                 this.postsToDate = param.from;
             }
 
-            VKRestContext context = new VKRestContext(this.userId, this.authToken);
-            StringBuilder sb = new StringBuilder();
+            var context = new VkRestApi.VkRestContext(this.userId, this.authToken);
+            var sb = new StringBuilder();
             isRunning = true;
 
             // gather group statistics
@@ -778,11 +778,11 @@ namespace VKGroups
                 sb.Append("group_id=").Append(Math.Abs(groupId).ToString()).Append("&");
                 sb.Append("date_from=").Append(this.postsFromDate.ToString("yyyy-MM-dd")).Append("&");
                 sb.Append("date_to=").Append(this.postsToDate.ToString("yyyy-MM-dd"));
-                context.parameters = sb.ToString();
-                Debug.WriteLine("Download parameters: " + context.parameters);
+                context.Parameters = sb.ToString();
+                Debug.WriteLine("Download parameters: " + context.Parameters);
 
                 // call VK REST API
-                vkRestApi.CallVKFunction(VKFunction.StatsGet, context);
+                vkRestApi.CallVkFunction(VkFunction.StatsGet, context);
 
                 return;
             }
@@ -824,15 +824,15 @@ namespace VKGroups
                 sb.Append("owner_id=").Append(groupId.ToString()).Append("&");
                 sb.Append("offset=").Append(currentOffset).Append("&");
                 sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
-                context.parameters = sb.ToString();
-                Debug.WriteLine("Download parameters: " + context.parameters);
+                context.Parameters = sb.ToString();
+                Debug.WriteLine("Download parameters: " + context.Parameters);
 
-                context.cookie = currentOffset.ToString();
+                context.Cookie = currentOffset.ToString();
 
                 // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                 timeLastCall = sleepTime(timeLastCall); 
                 // call VK REST API
-                vkRestApi.CallVKFunction(VKFunction.WallGet, context);
+                vkRestApi.CallVkFunction(VkFunction.WallGet, context);
 
                 // wait for the user data
                 readyEvent.WaitOne();
@@ -880,14 +880,14 @@ namespace VKGroups
                         sb.Append("need_likes=").Append(1).Append("&"); // request likes info
                         sb.Append("offset=").Append(currentOffset).Append("&");
                         sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
-                        context.parameters = sb.ToString();
-                        context.cookie = postsWithComments[i].ToString(); // pass post id as a cookie
-                        Debug.WriteLine("Request parameters: " + context.parameters);
+                        context.Parameters = sb.ToString();
+                        context.Cookie = postsWithComments[i].ToString(); // pass post id as a cookie
+                        Debug.WriteLine("Request parameters: " + context.Parameters);
 
                         // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                         timeLastCall = sleepTime(timeLastCall);
                         // call VK REST API
-                        vkRestApi.CallVKFunction(VKFunction.WallGetComments, context);
+                        vkRestApi.CallVkFunction(VkFunction.WallGetComments, context);
 
                         // wait for the user data
                         readyEvent.WaitOne();
@@ -924,13 +924,13 @@ namespace VKGroups
                     sb.Append("owner_id=").Append(likes[i].owner_id).Append("&"); // group id
                     sb.Append("item_id=").Append(likes[i].item_id).Append("&"); // post id
                     sb.Append("count=").Append(LIKES_PER_REQUEST).Append("&");
-                    context.parameters = sb.ToString();
-                    Debug.WriteLine("Request parameters: " + context.parameters);
+                    context.Parameters = sb.ToString();
+                    Debug.WriteLine("Request parameters: " + context.Parameters);
 
                     // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                     timeLastCall = sleepTime(timeLastCall);
                     // call VK REST API
-                    vkRestApi.CallVKFunction(VKFunction.LikesGetList, context);
+                    vkRestApi.CallVkFunction(VkFunction.LikesGetList, context);
 
                     // wait for the user data
                     readyEvent.WaitOne();
@@ -982,13 +982,13 @@ namespace VKGroups
 
                     sb.Append("&").Append("fields=").Append(PROFILE_FIELDS);
 
-                    context.parameters = sb.ToString();
-                    Debug.WriteLine("Request parameters: " + context.parameters);
+                    context.Parameters = sb.ToString();
+                    Debug.WriteLine("Request parameters: " + context.Parameters);
 
                     // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                     timeLastCall = sleepTime(timeLastCall);
                     // call VK REST API
-                    vkRestApi.CallVKFunction(VKFunction.UsersGet, context);
+                    vkRestApi.CallVkFunction(VkFunction.UsersGet, context);
 
                     // wait for the user data
                     readyEvent.WaitOne();
@@ -1043,20 +1043,20 @@ namespace VKGroups
         {
             // Do not access the form's BackgroundWorker reference directly. 
             // Instead, use the reference provided by the sender parameter.
-            BackgroundWorker bw = sender as BackgroundWorker;
+            var bw = sender as BackgroundWorker;
 
             isMembersRunning = true;
 
             // Extract the argument. 
-            decimal groupId = (decimal)args.Argument;
+            var groupId = (decimal)args.Argument;
 
             // process group members
             String fileName = generateGroupMembersFileName(groupId);
             groupMembersWriter = File.CreateText(fileName);
             printGroupMembersHeader(groupMembersWriter);
 
-            VKRestContext context = new VKRestContext(this.userId, this.authToken);
-            StringBuilder sb = new StringBuilder();
+            var context = new VkRestApi.VkRestContext(this.userId, this.authToken);
+            var sb = new StringBuilder();
 
             this.memberIds.Clear(); // clear member ids
 
@@ -1087,15 +1087,15 @@ namespace VKGroups
                 sb.Append("offset=").Append(currentOffset).Append("&");
                 sb.Append("count=").Append(MEMBERS_PER_REQUEST).Append("&");
                 sb.Append("fields=").Append(PROFILE_FIELDS).Append("&");
-                context.parameters = sb.ToString();
-                Debug.WriteLine("Request parameters: " + context.parameters);
+                context.Parameters = sb.ToString();
+                Debug.WriteLine("Request parameters: " + context.Parameters);
 
-                context.cookie = currentOffset.ToString();
+                context.Cookie = currentOffset.ToString();
 
                 // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                 timeLastCall = sleepTime(timeLastCall);
                 // call VK REST API
-                vkRestApi.CallVKFunction(VKFunction.GroupsGetMembers, context);
+                vkRestApi.CallVkFunction(VkFunction.GroupsGetMembers, context);
 
                 // wait for the members data
                 readyEvent.WaitOne();
@@ -1156,15 +1156,15 @@ namespace VKGroups
             isNetworkRunning = true;
 
             // Extract the argument. 
-            decimal groupId = (decimal)args.Argument;
+            var groupId = (decimal)args.Argument;
 
             // gather the list of all users friends to build the group network
             this.totalCount = 0;
             this.currentOffset = 0;
             this.step = 1;
 
-            VKRestContext context = new VKRestContext(this.userId, this.authToken);
-            StringBuilder sb = new StringBuilder();
+            var context = new VkRestApi.VkRestContext(this.userId, this.authToken);
+            var sb = new StringBuilder();
 
             // consolidate all group ids
             HashSet<long> members = this.memberIds;
@@ -1189,13 +1189,13 @@ namespace VKGroups
 
                 sb.Length = 0;
                 sb.Append("user_id=").Append(mId);
-                context.parameters = sb.ToString();
-                context.cookie = mId.ToString(); // pass member id as a cookie
-                Debug.WriteLine("Request parameters: " + context.parameters);
+                context.Parameters = sb.ToString();
+                context.Cookie = mId.ToString(); // pass member id as a cookie
+                Debug.WriteLine("Request parameters: " + context.Parameters);
 
                 // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                 timeLastCall = sleepTime(timeLastCall);
-                vkRestApi.CallVKFunction(VKFunction.GetFriends, context);
+                vkRestApi.CallVkFunction(VkFunction.FriendsGet, context);
 
                 // wait for the friends data
                 readyEvent.WaitOne();
@@ -1290,13 +1290,13 @@ namespace VKGroups
                 this.egoNetAnalyzer.Clear();
 
                 // for each member get his ego net
-                VKRestContext context = new VKRestContext(mId.ToString(), this.authToken);
-                StringBuilder sb = new StringBuilder();
+                var context = new VkRestApi.VkRestContext(mId.ToString(), this.authToken);
+                var sb = new StringBuilder();
 
                 sb.Length = 0;
                 sb.Append("fields=").Append(PROFILE_FIELDS);
-                context.parameters = sb.ToString();
-                vkRestApi.CallVKFunction(VKFunction.LoadFriends, context);
+                context.Parameters = sb.ToString();
+                vkRestApi.CallVkFunction(VkFunction.LoadFriends, context);
 
                 // wait for the friends data
                 readyEvent.WaitOne();
@@ -1305,12 +1305,12 @@ namespace VKGroups
                 {
                     sb.Length = 0;
                     sb.Append("target_uid=").Append(targetId); // Append target friend ids
-                    context.parameters = sb.ToString();
-                    context.cookie = targetId.ToString(); // pass target id in the cookie context field
+                    context.Parameters = sb.ToString();
+                    context.Cookie = targetId.ToString(); // pass target id in the cookie context field
 
                     // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                     timeLastCall = sleepTime(timeLastCall);
-                    vkRestApi.CallVKFunction(VKFunction.GetMutual, context);
+                    vkRestApi.CallVkFunction(VkFunction.FriendsGetMutual, context);
 
                     // wait for the friends data
                     readyEvent.WaitOne();
@@ -1383,7 +1383,7 @@ namespace VKGroups
         // process group posts
         private void OnWallGet(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isRunning = false;
                 return;
@@ -1391,7 +1391,7 @@ namespace VKGroups
 
             if(this.totalCount == 0)
             {
-                this.totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>();
+                this.totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>();
                 if (this.totalCount == 0)
                 {
                     this.isRunning = false;
@@ -1401,7 +1401,7 @@ namespace VKGroups
             }
 
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
 
             //this.backgroundGroupsWorker.ReportProgress(0, "Processing next " + count + " posts out of " + totalCount);
 
@@ -1411,7 +1411,7 @@ namespace VKGroups
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject postObj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject postObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
 
                 // see if post is in the range
                 DateTime dt = getDateField("date", postObj);
@@ -1504,7 +1504,7 @@ namespace VKGroups
         // process group comments
         private void OnWallGetComments(JObject data, String cookie)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isRunning = false;
                 return;
@@ -1512,11 +1512,11 @@ namespace VKGroups
 
             if (this.totalCount == 0)
             {
-                this.totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>();
+                this.totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>();
             }
             
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
 
             long gId = (long)(this.isGroup ? decimal.Negate(this.groupId) : this.groupId);
             List<Comment> comments = new List<Comment>();
@@ -1524,7 +1524,7 @@ namespace VKGroups
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject postObj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject postObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
                 
                 Comment comment = new Comment();
                 comment.id = getLongField("id", postObj);
@@ -1584,19 +1584,19 @@ namespace VKGroups
         // process likes user list
         private void OnLikesGetList(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isRunning = false;
                 return;
             }
 
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
 
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                long likerId = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<long>();
+                long likerId = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<long>();
                 // this user liked the subject - add him to the posters
                 if (!posters.ContainsKey(likerId))
                 {
@@ -1612,7 +1612,7 @@ namespace VKGroups
         // process group member
         private void OnGroupsGetMembers(JObject data, String cookie)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isMembersRunning = false;
                 return;
@@ -1620,19 +1620,19 @@ namespace VKGroups
 
             if (this.totalCount == 0)
             {
-                this.totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>();
+                this.totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>();
                 this.step = (int)(10000 * MEMBERS_PER_REQUEST / this.totalCount);
             }
 
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
 
             List<Profile> profiles = new List<Profile>();
 
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject profileObj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject profileObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
 
                 if (profileObj != null)
                 {
@@ -1691,7 +1691,7 @@ namespace VKGroups
         // process friends list
         private void OnGetFriends(JObject data, String cookie)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isNetworkRunning = false;
                 return;
@@ -1701,7 +1701,7 @@ namespace VKGroups
             long mId = Convert.ToInt64(memberId);
 
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY].Count();
+            int count = data[VkRestApi.RESPONSE_BODY].Count();
             Debug.WriteLine("Processing " + count + " friends of user id " + memberId);
 
             // update vertex with friends count
@@ -1718,7 +1718,7 @@ namespace VKGroups
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                long friendId = data[VKRestApi.RESPONSE_BODY][i].ToObject<long>();
+                long friendId = data[VkRestApi.RESPONSE_BODY][i].ToObject<long>();
                 this.groupNetworkAnalyzer.AddFriendsEdge(mId, friendId); // if friendship exists, the new edge will be added
             }
         }
@@ -1726,14 +1726,14 @@ namespace VKGroups
         // process user info
         private void OnUsersGet(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isRunning = false;
                 return;
             }
 
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY].Count();
+            int count = data[VkRestApi.RESPONSE_BODY].Count();
             Debug.WriteLine("Processing " + count + " users");
 
             List<Profile> profiles = new List<Profile>();
@@ -1741,7 +1741,7 @@ namespace VKGroups
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject userObj = data[VKRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+                JObject userObj = data[VkRestApi.RESPONSE_BODY][i].ToObject<JObject>();
             
                 Profile profile = new Profile();
                 profile.id = getLongField("id", userObj);
@@ -1780,19 +1780,19 @@ namespace VKGroups
         // process load user friends response
         private void OnLoadFriends(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isEgoNetWorkRunning = false;
                 return;
             }
             
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
 
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject friend = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject friend = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
 
                 long id = friend["id"].ToObject<long>();
                 // add user id to the friends list
@@ -1806,20 +1806,20 @@ namespace VKGroups
         // process get mutual response
         private void OnGetMutual(JObject data, String cookie)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isEgoNetWorkRunning = false;
                 return;
             }
 
             long mId = Convert.ToInt64(cookie); // members id passed as a cookie
-            if (data[VKRestApi.RESPONSE_BODY].Count() > 0)
+            if (data[VkRestApi.RESPONSE_BODY].Count() > 0)
             {
                 List<String> friendFriendsIds = new List<string>();
 
-                for (int i = 0; i < data[VKRestApi.RESPONSE_BODY].Count(); ++i)
+                for (int i = 0; i < data[VkRestApi.RESPONSE_BODY].Count(); ++i)
                 {
-                    long friendFriendsId = data[VKRestApi.RESPONSE_BODY][i].ToObject<long>();
+                    long friendFriendsId = data[VkRestApi.RESPONSE_BODY][i].ToObject<long>();
                     // add friend vertex
                     this.egoNetAnalyzer.AddFriendsEdge(mId, friendFriendsId); // member id is in the cookie
                 }
@@ -1829,14 +1829,14 @@ namespace VKGroups
         // process stats
         private void OnStatsGet(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.isRunning = false;
                 return;
             }
 
             // now calc items in response
-            int count = data[VKRestApi.RESPONSE_BODY].Count();
+            int count = data[VkRestApi.RESPONSE_BODY].Count();
             Debug.WriteLine("Processing " + count + " stats days");
 
             //List<DayStats> profiles = new List<DayStats>();
@@ -1844,7 +1844,7 @@ namespace VKGroups
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject statsObj = data[VKRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+                JObject statsObj = data[VkRestApi.RESPONSE_BODY][i].ToObject<JObject>();
                 String date = getStringField("day", statsObj);
             }
         }
@@ -2020,10 +2020,10 @@ namespace VKGroups
                     "function", "error_code", "error");
         }
 
-        private void updateErrorLogFile(OnErrorEventArgs error, StreamWriter writer)
+        private void updateErrorLogFile(VkRestApi.OnErrorEventArgs error, StreamWriter writer)
         {
             writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"",
-                error.function, error.code, error.error);
+                error.Function, error.Code, error.Error);
         }
 
         // Utiliti

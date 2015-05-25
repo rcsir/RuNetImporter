@@ -49,31 +49,31 @@
             // 
             // groupDescription
             // 
-            this.groupDescription.Location = new System.Drawing.Point(267, 326);
-            this.groupDescription.Margin = new System.Windows.Forms.Padding(6);
+            this.groupDescription.Location = new System.Drawing.Point(178, 209);
+            this.groupDescription.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.groupDescription.Multiline = true;
             this.groupDescription.Name = "groupDescription";
             this.groupDescription.ReadOnly = true;
-            this.groupDescription.Size = new System.Drawing.Size(440, 137);
+            this.groupDescription.Size = new System.Drawing.Size(295, 89);
             this.groupDescription.TabIndex = 20;
             this.groupDescription.TabStop = false;
             // 
             // groupId2
             // 
-            this.groupId2.Location = new System.Drawing.Point(15, 326);
-            this.groupId2.Margin = new System.Windows.Forms.Padding(6);
+            this.groupId2.Location = new System.Drawing.Point(10, 209);
+            this.groupId2.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.groupId2.Name = "groupId2";
             this.groupId2.ReadOnly = true;
-            this.groupId2.Size = new System.Drawing.Size(236, 31);
+            this.groupId2.Size = new System.Drawing.Size(159, 22);
             this.groupId2.TabIndex = 19;
             this.groupId2.TabStop = false;
             // 
             // FindGroupsButton
             // 
-            this.FindGroupsButton.Location = new System.Drawing.Point(15, 257);
-            this.FindGroupsButton.Margin = new System.Windows.Forms.Padding(6);
+            this.FindGroupsButton.Location = new System.Drawing.Point(10, 164);
+            this.FindGroupsButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.FindGroupsButton.Name = "FindGroupsButton";
-            this.FindGroupsButton.Size = new System.Drawing.Size(696, 58);
+            this.FindGroupsButton.Size = new System.Drawing.Size(464, 37);
             this.FindGroupsButton.TabIndex = 18;
             this.FindGroupsButton.Text = "Find Groups...";
             this.FindGroupsButton.UseVisualStyleBackColor = true;
@@ -81,19 +81,19 @@
             // 
             // WorkingFolderTextBox
             // 
-            this.WorkingFolderTextBox.Location = new System.Drawing.Point(15, 207);
-            this.WorkingFolderTextBox.Margin = new System.Windows.Forms.Padding(6);
+            this.WorkingFolderTextBox.Location = new System.Drawing.Point(10, 132);
+            this.WorkingFolderTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.WorkingFolderTextBox.Name = "WorkingFolderTextBox";
             this.WorkingFolderTextBox.ReadOnly = true;
-            this.WorkingFolderTextBox.Size = new System.Drawing.Size(692, 31);
+            this.WorkingFolderTextBox.Size = new System.Drawing.Size(463, 22);
             this.WorkingFolderTextBox.TabIndex = 17;
             // 
             // WorkingFolderButton
             // 
-            this.WorkingFolderButton.Location = new System.Drawing.Point(15, 137);
-            this.WorkingFolderButton.Margin = new System.Windows.Forms.Padding(6);
+            this.WorkingFolderButton.Location = new System.Drawing.Point(10, 88);
+            this.WorkingFolderButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.WorkingFolderButton.Name = "WorkingFolderButton";
-            this.WorkingFolderButton.Size = new System.Drawing.Size(696, 58);
+            this.WorkingFolderButton.Size = new System.Drawing.Size(464, 37);
             this.WorkingFolderButton.TabIndex = 16;
             this.WorkingFolderButton.Text = "Working Folder...";
             this.WorkingFolderButton.UseVisualStyleBackColor = true;
@@ -101,19 +101,19 @@
             // 
             // userIdTextBox
             // 
-            this.userIdTextBox.Location = new System.Drawing.Point(15, 87);
-            this.userIdTextBox.Margin = new System.Windows.Forms.Padding(6);
+            this.userIdTextBox.Location = new System.Drawing.Point(10, 56);
+            this.userIdTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.userIdTextBox.Name = "userIdTextBox";
             this.userIdTextBox.ReadOnly = true;
-            this.userIdTextBox.Size = new System.Drawing.Size(692, 31);
+            this.userIdTextBox.Size = new System.Drawing.Size(463, 22);
             this.userIdTextBox.TabIndex = 15;
             // 
             // AuthorizeButton
             // 
-            this.AuthorizeButton.Location = new System.Drawing.Point(15, 18);
-            this.AuthorizeButton.Margin = new System.Windows.Forms.Padding(6);
+            this.AuthorizeButton.Location = new System.Drawing.Point(10, 12);
+            this.AuthorizeButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.AuthorizeButton.Name = "AuthorizeButton";
-            this.AuthorizeButton.Size = new System.Drawing.Size(696, 58);
+            this.AuthorizeButton.Size = new System.Drawing.Size(464, 37);
             this.AuthorizeButton.TabIndex = 14;
             this.AuthorizeButton.Text = "Authorize...";
             this.AuthorizeButton.UseVisualStyleBackColor = true;
@@ -121,20 +121,22 @@
             // 
             // GroupsProgressBar
             // 
-            this.GroupsProgressBar.Location = new System.Drawing.Point(15, 707);
-            this.GroupsProgressBar.Margin = new System.Windows.Forms.Padding(6);
+            this.GroupsProgressBar.Location = new System.Drawing.Point(10, 452);
+            this.GroupsProgressBar.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.GroupsProgressBar.Maximum = 10000;
             this.GroupsProgressBar.Name = "GroupsProgressBar";
-            this.GroupsProgressBar.Size = new System.Drawing.Size(702, 42);
+            this.GroupsProgressBar.Size = new System.Drawing.Size(468, 27);
+            this.GroupsProgressBar.Step = 1;
             this.GroupsProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.GroupsProgressBar.TabIndex = 23;
             // 
             // CancelOperation
             // 
             this.CancelOperation.Enabled = false;
-            this.CancelOperation.Location = new System.Drawing.Point(15, 638);
-            this.CancelOperation.Margin = new System.Windows.Forms.Padding(6);
+            this.CancelOperation.Location = new System.Drawing.Point(10, 408);
+            this.CancelOperation.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.CancelOperation.Name = "CancelOperation";
-            this.CancelOperation.Size = new System.Drawing.Size(234, 58);
+            this.CancelOperation.Size = new System.Drawing.Size(156, 37);
             this.CancelOperation.TabIndex = 22;
             this.CancelOperation.Text = "Cancel Operation";
             this.CancelOperation.UseVisualStyleBackColor = true;
@@ -142,27 +144,28 @@
             // 
             // groupsStatusStrip
             // 
+            this.groupsStatusStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.groupsStatusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.groupsStripStatusLabel});
-            this.groupsStatusStrip.Location = new System.Drawing.Point(0, 787);
+            this.groupsStatusStrip.Location = new System.Drawing.Point(0, 502);
             this.groupsStatusStrip.Name = "groupsStatusStrip";
-            this.groupsStatusStrip.Padding = new System.Windows.Forms.Padding(2, 0, 28, 0);
-            this.groupsStatusStrip.Size = new System.Drawing.Size(730, 37);
+            this.groupsStatusStrip.Padding = new System.Windows.Forms.Padding(1, 0, 19, 0);
+            this.groupsStatusStrip.Size = new System.Drawing.Size(487, 25);
             this.groupsStatusStrip.TabIndex = 21;
             this.groupsStatusStrip.Text = "statusStrip1";
             // 
             // groupsStripStatusLabel
             // 
             this.groupsStripStatusLabel.Name = "groupsStripStatusLabel";
-            this.groupsStripStatusLabel.Size = new System.Drawing.Size(80, 32);
+            this.groupsStripStatusLabel.Size = new System.Drawing.Size(49, 20);
             this.groupsStripStatusLabel.Text = "Status";
             // 
             // DownloadGroupPosts
             // 
-            this.DownloadGroupPosts.Location = new System.Drawing.Point(15, 484);
-            this.DownloadGroupPosts.Margin = new System.Windows.Forms.Padding(6);
+            this.DownloadGroupPosts.Location = new System.Drawing.Point(10, 310);
+            this.DownloadGroupPosts.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.DownloadGroupPosts.Name = "DownloadGroupPosts";
-            this.DownloadGroupPosts.Size = new System.Drawing.Size(696, 58);
+            this.DownloadGroupPosts.Size = new System.Drawing.Size(464, 37);
             this.DownloadGroupPosts.TabIndex = 24;
             this.DownloadGroupPosts.Text = "Download Posts and Comments...";
             this.DownloadGroupPosts.UseVisualStyleBackColor = true;
@@ -175,10 +178,10 @@
             // 
             // GenerateCommunicatinoNetwork
             // 
-            this.GenerateCommunicatinoNetwork.Location = new System.Drawing.Point(15, 554);
-            this.GenerateCommunicatinoNetwork.Margin = new System.Windows.Forms.Padding(6);
+            this.GenerateCommunicatinoNetwork.Location = new System.Drawing.Point(10, 355);
+            this.GenerateCommunicatinoNetwork.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.GenerateCommunicatinoNetwork.Name = "GenerateCommunicatinoNetwork";
-            this.GenerateCommunicatinoNetwork.Size = new System.Drawing.Size(696, 58);
+            this.GenerateCommunicatinoNetwork.Size = new System.Drawing.Size(464, 37);
             this.GenerateCommunicatinoNetwork.TabIndex = 25;
             this.GenerateCommunicatinoNetwork.Text = "Generate Communication Network...";
             this.GenerateCommunicatinoNetwork.UseVisualStyleBackColor = true;
@@ -191,9 +194,9 @@
             // 
             // VKContentForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(730, 824);
+            this.ClientSize = new System.Drawing.Size(487, 527);
             this.Controls.Add(this.GenerateCommunicatinoNetwork);
             this.Controls.Add(this.DownloadGroupPosts);
             this.Controls.Add(this.GroupsProgressBar);
@@ -207,6 +210,7 @@
             this.Controls.Add(this.userIdTextBox);
             this.Controls.Add(this.AuthorizeButton);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.Name = "VKContentForm";
             this.Text = "VK Content";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.VKContentForm_FormClosing);

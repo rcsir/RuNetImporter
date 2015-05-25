@@ -29,7 +29,7 @@ namespace VKFinder
         private long totalCount;
 
         private readonly VKLoginDialog vkLoginDialog;
-        private readonly VKRestApi vkRestApi;
+        private readonly VkRestApi vkRestApi;
         private String userId;
         private String authToken;
         private long expiresAt;
@@ -39,11 +39,11 @@ namespace VKFinder
         private bool withPhone = false;
 
         // places
-        private List<VKRegion> regions = new List<VKRegion>();
-        private VKCity SaintPetersburg = new VKCity(2, "Санкт-Петербург", true, "Санкт-Петербург");
-        private VKCity Moscow = new VKCity(1, "Москва", true, "Москва");
-        private VKCity Ekaterinburg = new VKCity(49, "Екатеринбург", true, "Екатеринбург");
-        private readonly Dictionary<string, List<VKCity>> citiesByDistrict = new Dictionary<string, List<VKCity>>();
+        private List<VkRegion> regions = new List<VkRegion>();
+        private VkCity SaintPetersburg = new VkCity(2, "Санкт-Петербург", true, "Санкт-Петербург");
+        private VkCity Moscow = new VkCity(1, "Москва", true, "Москва");
+        private VkCity Ekaterinburg = new VkCity(49, "Екатеринбург", true, "Екатеринбург");
+        private readonly Dictionary<string, List<VkCity>> citiesByDistrict = new Dictionary<string, List<VkCity>>();
 
         // document
         StreamWriter writer;
@@ -98,11 +98,11 @@ namespace VKFinder
             // subscribe for login events
             vkLoginDialog.OnUserLogin += new VKLoginDialog.UserLoginHandler(UserLogin);
 
-            vkRestApi = new VKRestApi();
+            vkRestApi = new VkRestApi();
             // set up data handler
-            vkRestApi.OnData += new VKRestApi.DataHandler(OnData);
+            vkRestApi.OnData += new VkRestApi.DataHandler(OnData);
             // set up error handler
-            vkRestApi.OnError += new VKRestApi.ErrorHandler(OnError);
+            vkRestApi.OnError += new VkRestApi.ErrorHandler(OnError);
 
             // folder for files
             this.folderBrowserDialog1.Description =
@@ -154,15 +154,15 @@ namespace VKFinder
                 if (this.citiesByDistrict.Count() == 0)
                 {
                     // add spb
-                    var spb = new List<VKCity> {SaintPetersburg};
+                    var spb = new List<VkCity> {SaintPetersburg};
                     this.citiesByDistrict.Add("Санкт-Петербург город", spb);
 
                     // add moscow
-                    var moscow = new List<VKCity> {Moscow};
+                    var moscow = new List<VkCity> {Moscow};
                     this.citiesByDistrict.Add("Москва город", moscow);
 
                     // add eburg
-                    var eburg = new List<VKCity> {Ekaterinburg};
+                    var eburg = new List<VkCity> {Ekaterinburg};
                     this.citiesByDistrict.Add("Екатеринбург город", eburg);
 
                     this.backgroundLoaderWorker.RunWorkerAsync(1); // param is not important
@@ -285,7 +285,7 @@ namespace VKFinder
             writer = File.CreateText(fileName);
             printHeader(writer);
 
-            VKRestContext context = new VKRestContext(this.userId, this.authToken);
+            var context = new VkRestApi.VkRestContext(this.userId, this.authToken);
 
             // loop by birth year and month to maximize number of matches (1000 at a time)
             StringBuilder sb = new StringBuilder();
@@ -300,7 +300,7 @@ namespace VKFinder
                     if (bw.CancellationPending)
                         break;
 
-                    bw.ReportProgress(step, "Searching in " + city.title);
+                    bw.ReportProgress(step, "Searching in " + city.Title);
 
                     this.run = true;
                     this.totalCount = 0;
@@ -316,9 +316,9 @@ namespace VKFinder
                         sb.Append("offset=").Append(currentOffset).Append("&");
                         sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
                         sb.Append(parameters);
-                        if (city.id > 0)
+                        if (city.Id > 0)
                         {
-                            sb.Append("city=").Append(city.id).Append("&");
+                            sb.Append("city=").Append(city.Id).Append("&");
                         }
 
                         // append bdate 
@@ -334,14 +334,14 @@ namespace VKFinder
                         // append required fields
                         sb.Append(REQUIRED_FIELDS);
 
-                        context.parameters = sb.ToString();
-                        Debug.WriteLine("Search parameters: " + context.parameters);
+                        context.Parameters = sb.ToString();
+                        Debug.WriteLine("Search parameters: " + context.Parameters);
 
-                        context.cookie = this.currentOffset.ToString();
+                        context.Cookie = this.currentOffset.ToString();
 
                         // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                         timeLastCall = sleepTime(timeLastCall);
-                        vkRestApi.CallVKFunction(VKFunction.UsersSearch, context);
+                        vkRestApi.CallVkFunction(VkFunction.UsersSearch, context);
 
                         // wait for the user data
                         readyEvent.WaitOne();
@@ -376,7 +376,7 @@ namespace VKFinder
 
             // Extract the argument. 
             // SearchParameters searchParameters = args.Argument as SearchParameters;
-            VKRestContext context = new VKRestContext(this.userId, this.authToken);
+            var context = new VkRestApi.VkRestContext(this.userId, this.authToken);
 
 
             // loop by birth year and month to maximize number of matches (1000 at a time)
@@ -394,12 +394,12 @@ namespace VKFinder
                 sb.Append("country_id=").Append(1).Append("&"); // Russia
                 sb.Append("offset=").Append(currentOffset).Append("&");
                 sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
-                context.parameters = sb.ToString();
-                Debug.WriteLine("request params: " + context.parameters);
+                context.Parameters = sb.ToString();
+                Debug.WriteLine("request params: " + context.Parameters);
 
                 // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                 timeLastCall = sleepTime(timeLastCall);
-                vkRestApi.CallVKFunction(VKFunction.DatabaseGetRegions, context);
+                vkRestApi.CallVkFunction(VkFunction.DatabaseGetRegions, context);
 
                 // wait for the user data
                 readyEvent.WaitOne();
@@ -420,12 +420,12 @@ namespace VKFinder
                 sb.Append("need_all=").Append(1).Append("&"); // all
                 sb.Append("offset=").Append(currentOffset).Append("&");
                 sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
-                context.parameters = sb.ToString();
-                Debug.WriteLine("request params: " + context.parameters);
+                context.Parameters = sb.ToString();
+                Debug.WriteLine("request params: " + context.Parameters);
 
                 // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                 timeLastCall = sleepTime(timeLastCall);
-                vkRestApi.CallVKFunction(VKFunction.DatabaseGetCities, context);
+                vkRestApi.CallVkFunction(VkFunction.DatabaseGetCities, context);
 
                 // wait for the user data
                 readyEvent.WaitOne();
@@ -477,19 +477,19 @@ namespace VKFinder
 
         private void OnData(object vkRestApi, OnDataEventArgs onDataArgs)
         {
-            switch (onDataArgs.function)
+            switch (onDataArgs.Function)
             {
-                case VKFunction.UsersSearch:
-                    OnUsersSearch(onDataArgs.data);
+                case VkFunction.UsersSearch:
+                    OnUsersSearch(onDataArgs.Data);
                     break;
-                case VKFunction.DatabaseGetCountries:
-                    OnGetCountries(onDataArgs.data);
+                case VkFunction.DatabaseGetCountries:
+                    OnGetCountries(onDataArgs.Data);
                     break;
-                case VKFunction.DatabaseGetRegions:
-                    OnGetRegions(onDataArgs.data);
+                case VkFunction.DatabaseGetRegions:
+                    OnGetRegions(onDataArgs.Data);
                     break;
-                case VKFunction.DatabaseGetCities:
-                    OnGetCities(onDataArgs.data);
+                case VkFunction.DatabaseGetCities:
+                    OnGetCities(onDataArgs.Data);
                     break;
                 default:
                     Debug.WriteLine("Error, unknown function.");
@@ -501,10 +501,10 @@ namespace VKFinder
         }
 
         // main error handler
-        private void OnError(object vkRestApi, OnErrorEventArgs onErrorArgs)
+        private void OnError(object vkRestApi, VkRestApi.OnErrorEventArgs onErrorArgs)
         {
             // notify user about the error
-            Debug.WriteLine("Function " + onErrorArgs.function + ", returned error: " + onErrorArgs.error);
+            Debug.WriteLine("Function " + onErrorArgs.Function + ", returned error: " + onErrorArgs.Error);
             
             // keep on going ... this.backgroundFinderWorker.CancelAsync();
             
@@ -518,7 +518,7 @@ namespace VKFinder
         // process users search response
         private void OnUsersSearch(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.run = false;
                 return;
@@ -526,10 +526,10 @@ namespace VKFinder
 
             if (totalCount <= 0)
             {
-                totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
+                totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
             }
 
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
 
             if (count <= 0)
             {
@@ -543,7 +543,7 @@ namespace VKFinder
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject personObj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject personObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
 
 
                 // TODO: check phone with regex.
@@ -590,7 +590,7 @@ namespace VKFinder
         // process countries response
         private void OnGetCountries(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.run = false;
                 return;
@@ -598,10 +598,10 @@ namespace VKFinder
 
             if (totalCount <= 0)
             {
-                totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
+                totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
             }
 
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
 
             if (count <= 0)
             {
@@ -609,16 +609,16 @@ namespace VKFinder
                 return;
             }
 
-            List<VKCountry> countries = new List<VKCountry>();
+            List<VkCountry> countries = new List<VkCountry>();
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject obj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject obj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
                 int id = getIntField("id", obj);
                 string title = getStringField("title", obj);
                 if(id > 0)
                 {
-                    countries.Add(new VKCountry(id, title));
+                    countries.Add(new VkCountry(id, title));
                 }
             }
 
@@ -631,7 +631,7 @@ namespace VKFinder
         // process regions response
         private void OnGetRegions(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.run = false;
                 return;
@@ -639,10 +639,10 @@ namespace VKFinder
 
             if (totalCount <= 0)
             {
-                totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
+                totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
             }
 
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
 
             if (count <= 0)
             {
@@ -653,12 +653,12 @@ namespace VKFinder
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject obj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject obj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
                 int id = getIntField("id", obj);
                 string title = getStringField("title", obj);
                 if (id > 0)
                 {
-                    regions.Add(new VKRegion(id, title));
+                    regions.Add(new VkRegion(id, title));
                 }
             }
 
@@ -671,7 +671,7 @@ namespace VKFinder
         // process cities response
         private void OnGetCities(JObject data)
         {
-            if (data[VKRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.RESPONSE_BODY] == null)
             {
                 this.run = false;
                 return;
@@ -679,10 +679,10 @@ namespace VKFinder
 
             if (totalCount <= 0)
             {
-                totalCount = data[VKRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
+                totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
             }
 
-            int count = data[VKRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
 
             if (count <= 0)
             {
@@ -693,7 +693,7 @@ namespace VKFinder
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject obj = data[VKRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject obj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
                 int id = getIntField("id", obj);
                 string title = getStringField("title", obj);
                 int important = getIntField("important", obj, 0);
@@ -712,14 +712,14 @@ namespace VKFinder
                         location = region;
                     }
 
-                    List<VKCity> cs;
+                    List<VkCity> cs;
                     if (!citiesByDistrict.TryGetValue(location, out cs))
                     {
-                        cs = new List<VKCity>();
+                        cs = new List<VkCity>();
                         citiesByDistrict.Add(location, cs);
                     }
 
-                    cs.Add(new VKCity(id, title, important > 0, region, area));
+                    cs.Add(new VkCity(id, title, important > 0, region, area));
                 }
             }
 
@@ -759,9 +759,9 @@ namespace VKFinder
                 fileName.Append(parameters.query);
 
             if (parameters.cities.Count() == 1)
-                fileName.Append(parameters.cities[0].title);
+                fileName.Append(parameters.cities[0].Title);
             else
-                fileName.Append(parameters.cities[0].title + "-and-more");
+                fileName.Append(parameters.cities[0].Title + "-and-more");
 
             fileName.Append('-');
 

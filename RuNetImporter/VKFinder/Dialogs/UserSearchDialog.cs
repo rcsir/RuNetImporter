@@ -14,10 +14,10 @@ namespace rcsir.net.vk.finder.Dialogs
     {
         public SearchParameters searchParameters { get; set; }
 
-        private Dictionary<string, List<VKCity>> citiesByDistrict;
+        private Dictionary<string, List<VkCity>> citiesByDistrict;
 
 
-        public UserSearchDialog(Dictionary<string, List<VKCity>> citiesByDistrict)
+        public UserSearchDialog(Dictionary<string, List<VkCity>> citiesByDistrict)
         {
             this.citiesByDistrict = citiesByDistrict;
             InitializeComponent();
@@ -43,9 +43,9 @@ namespace rcsir.net.vk.finder.Dialogs
             this.districtsComboBox.SelectedIndex = 0; // all is selected
 
             // sex combo
-            this.SexComboBox.Items.Add(new VKSex("any", 0));
-            this.SexComboBox.Items.Add(new VKSex("female", 1));
-            this.SexComboBox.Items.Add(new VKSex("male", 2));
+            this.SexComboBox.Items.Add(new VkSex("any", 0));
+            this.SexComboBox.Items.Add(new VkSex("female", 1));
+            this.SexComboBox.Items.Add(new VkSex("male", 2));
             this.SexComboBox.SelectedIndex = 2; // male
         }
 
@@ -62,22 +62,22 @@ namespace rcsir.net.vk.finder.Dialogs
 
             this.searchParameters.query = this.QueryTextBox.Text.Trim();
 
-            this.searchParameters.cities = new List<VKCity>();
+            this.searchParameters.cities = new List<VkCity>();
             if (this.townsCheckedListBox.CheckedItems.Count > 0)
             {
                 foreach (var itemChecked in this.townsCheckedListBox.CheckedItems)
                 {
-                    this.searchParameters.cities.Add((VKCity)itemChecked);
+                    this.searchParameters.cities.Add((VkCity)itemChecked);
                 }
             }
             else
             {
-                this.searchParameters.cities.Add( new VKCity(0,"Any")); // add any city item
+                this.searchParameters.cities.Add( new VkCity(0,"Any")); // add any city item
             }
 
             if (this.SexComboBox.SelectedItem != null)
             {
-                this.searchParameters.sex = (VKSex)this.SexComboBox.SelectedItem;
+                this.searchParameters.sex = (VkSex)this.SexComboBox.SelectedItem;
             }
             else
             {
@@ -152,8 +152,8 @@ namespace rcsir.net.vk.finder.Dialogs
     public class SearchParameters
     {
         public String query;
-        public List<VKCity> cities;
-        public VKSex sex;
+        public List<VkCity> cities;
+        public VkSex sex;
         public decimal yearStart;
         public decimal yearEnd;
         public decimal monthStart;
