@@ -1,21 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 
 namespace rcsir.net.vk.content.Dialogs
 {
     public partial class DownloadGroupPostsDialog : Form
     {
-        public decimal groupId { get; set; }
-        public bool isGroup { get; set; }
-        public DateTime fromDate { get; set; }
-        public DateTime toDate { get; set; }
-        public Boolean justGroupStats { get; set; }
+        public decimal GroupId { get; set; }
+        public bool IsGroup { get; set; }
+        public DateTime FromDate { get; set; }
+        public DateTime ToDate { get; set; }
+        public Boolean JustGroupStats { get; set; }
 
         public DownloadGroupPostsDialog()
         {
@@ -24,18 +18,18 @@ namespace rcsir.net.vk.content.Dialogs
 
         private void OKButton_Click(object sender, EventArgs e)
         {
-            this.fromDate = this.dateTimeFromPicker.Value;
-            this.toDate = this.dateTimeToPicker.Value;
-            this.justGroupStats = this.groupStatCheckBox.Checked;
+            FromDate = dateTimeFromPicker.Value;
+            ToDate = dateTimeToPicker.Value;
+            JustGroupStats = groupStatCheckBox.Checked;
         }
 
         private void DownloadGroupPostsDialog_Load(object sender, EventArgs e)
         {
-            this.groupIdNumeric.Value = groupId;
-            this.isGroupcheckBox.Checked = isGroup;
+            groupIdNumeric.Value = GroupId;
+            isGroupcheckBox.Checked = IsGroup;
 
-            this.dateTimeFromPicker.Value = DateTime.Today;
-            this.dateTimeToPicker.Value = DateTime.Today.AddDays(1);
+            dateTimeFromPicker.Value = new DateTime(2000, 1, 1); // start from new millennium
+            dateTimeToPicker.Value = DateTime.Today.AddDays(1);
         }
 
         private void dateTimeToPicker_ValueChanged(object sender, EventArgs e)

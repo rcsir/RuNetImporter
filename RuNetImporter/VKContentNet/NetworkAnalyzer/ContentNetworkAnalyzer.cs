@@ -16,11 +16,11 @@ namespace rcsir.net.vk.content.NetworkAnalyzer
     class ContentNetworkAnalyzer : NetworkAnalyzerBase<long>
     {
         // content network
-        public string graphName { get; set; }
-        private VertexCollection<long> vertices = new VertexCollection<long>();
-        private EdgeCollection<long> edges = new EdgeCollection<long>();
+        public string GraphName { get; set; }
+        private readonly VertexCollection<long> vertices = new VertexCollection<long>();
+        private readonly EdgeCollection<long> edges = new EdgeCollection<long>();
 
-        private static List<AttributeUtils.Attribute> UserAttributes = new List<AttributeUtils.Attribute>()
+        private static readonly List<AttributeUtils.Attribute> UserAttributes = new List<AttributeUtils.Attribute>()
         {
             new AttributeUtils.Attribute("Name","name", "friends", false),
             new AttributeUtils.Attribute("First Name","first_name", "friends", true),
@@ -39,27 +39,24 @@ namespace rcsir.net.vk.content.NetworkAnalyzer
             new AttributeUtils.Attribute("Friends","friends", "friends", false),
             new AttributeUtils.Attribute("Receive Comments","rec_comments", "friends", false),
             new AttributeUtils.Attribute("Board Comments","board_comments", "friends", false),
+            new AttributeUtils.Attribute("Replies","replies", "friends", false),
         };
-
-        public ContentNetworkAnalyzer()
-        {
-        }
 
         public override List<AttributeUtils.Attribute> GetDefaultNetworkAttributes()
         {
             return UserAttributes;
         }
 
-        private AttributesDictionary<String> createAttributes(JObject obj)
+        public AttributesDictionary<String> CreateAttributes(JObject obj)
         {
-            AttributesDictionary<String> attributes = new AttributesDictionary<String>(UserAttributes);
-            List<AttributeUtils.Attribute> keys = new List<AttributeUtils.Attribute>(attributes.Keys);
-            foreach (AttributeUtils.Attribute key in keys)
+            var attributes = new AttributesDictionary<String>(UserAttributes);
+            var keys = new List<AttributeUtils.Attribute>(attributes.Keys);
+            foreach (var key in keys)
             {
-                String name = key.value;
+                var name = key.value;
                 if (obj[name] != null)
                 {
-                    String value = "";
+                    var value = "";
 
                     if(name == "city" ||
                         name == "country")
@@ -84,14 +81,14 @@ namespace rcsir.net.vk.content.NetworkAnalyzer
             if (vertex.Attributes.ContainsKey("photo_50") &&
                 vertex.Attributes["photo_50"] != null)
             {
-                xmlDocument.AppendGraphMLAttributeValue(node, ImageFileID, vertex.Attributes["photo_50"].ToString());
+                xmlDocument.AppendGraphMLAttributeValue(node, ImageFileID, vertex.Attributes["photo_50"]);
             }
         }
 
-        public void addVertex(long id, string name, string type, JObject member)
+        public void AddVertex(long id, string name, string type, JObject member)
         {
-            AttributesDictionary<String> attributes = createAttributes(member);
-            this.vertices.Add(new Vertex<long>(id, name, type, attributes));
+            AttributesDictionary<String> attributes = CreateAttributes(member);
+            vertices.Add(new Vertex<long>(id, name, type, attributes));
         }
 
         // remove all edges
@@ -103,8 +100,8 @@ namespace rcsir.net.vk.content.NetworkAnalyzer
         public void AddEdge(long user1, long user2, string type, string relationship,
             string comment, int weight, int timestamp)
         {
-            Vertex<long> vertex1 = vertices.FirstOrDefault(x => x.ID == user1);
-            Vertex<long> vertex2 = vertices.FirstOrDefault(x => x.ID == user2);
+            var vertex1 = vertices.FirstOrDefault(x => x.ID == user1);
+            var vertex2 = vertices.FirstOrDefault(x => x.ID == user2);
 
             if (vertex1 != null && vertex2 != null)
             {
@@ -118,7 +115,7 @@ namespace rcsir.net.vk.content.NetworkAnalyzer
             }
         }
 
-        public void updateVertexAttributes(long id, Dictionary<String, String> attributes)
+        public void UpdateVertexAttributes(long id, Dictionary<String, String> attributes)
         {
             Vertex<long> v = vertices[id];
 
@@ -140,7 +137,7 @@ namespace rcsir.net.vk.content.NetworkAnalyzer
             }
         }
 
-        public void updateVertexAttributes(long id, String key, String value)
+        public void UpdateVertexAttributes(long id, String key, String value)
         {
             Vertex<long> v = vertices[id];
 
