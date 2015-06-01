@@ -62,23 +62,20 @@ namespace VKContentNet
         // group's U2U collections
         private class PostCount
         {
-            public PostCount(int likes, int comments, int reply)
+            public PostCount(int likes, int comments)
             {
                 Likes = likes;
                 Comments = comments;
-                Replies = reply;
             }
 
-            public void Increment(int like, int comment, int reply)
+            public void Increment(int like, int comment)
             {
                 Likes += like;
                 Comments += comment;
-                Replies += reply;
             }
 
             public int Likes { get; private set; }
             public int Comments { get; private set; }
-            public int Replies { get; private set; }
         };
 
         readonly Dictionary<long, PostInfo> postInfo = new Dictionary<long, PostInfo>();
@@ -87,6 +84,7 @@ namespace VKContentNet
         
         // document
         private StreamWriter groupPostsWriter;
+        private StreamWriter groupPostsCopyHistoryWriter;
         private StreamWriter groupVisitorsWriter;
         private StreamWriter groupCommentsWriter;
         private StreamWriter groupBoardTopicsWriter;
@@ -95,6 +93,7 @@ namespace VKContentNet
 
         // Network Analyzer document
         private ContentNetworkAnalyzer contentNetworkAnalyzer;
+        private string networkEntities = "";
 
         // reply to pattern regex 
         const string ReplyToPattern = @"\[id(\d+)[:\|]";
@@ -118,13 +117,12 @@ namespace VKContentNet
             public Poster()
             {
                 Posts = 0;
-                RecComments = 0;
                 Comments = 0;
-                RecLikes = 0;
+                RecComments = 0;
                 Likes = 0;
+                RecLikes = 0;
                 Friends = 0;
                 BoardComments = 0;
-                Replies = 0;
             }
 
             public long Posts { get; set; }
@@ -134,23 +132,29 @@ namespace VKContentNet
             public long Likes { get; set; }
             public long Friends { get; set; }
             public long BoardComments { get; set; }
-            public long Replies { get; set; }
         };
 
         private class GroupPostsParam
         {
             public GroupPostsParam(decimal gid,
-                DateTime from, DateTime to, Boolean justStats)
+                DateTime from, DateTime to, 
+                Boolean groupWall,
+                Boolean groupTopics,
+                Boolean justStats)
             {
                 Gid = gid;
                 From = from;
                 To = to;
+                GroupWall = groupWall;
+                GroupTopics = groupTopics;
                 JustStats = justStats;
             }
 
             public decimal Gid { get; set; }
             public DateTime From { get; set; }
             public DateTime To { get; set; }
+            public Boolean GroupWall { get; set; }
+            public Boolean GroupTopics { get; set; }
             public Boolean JustStats { get; set; }
         };
 
@@ -161,18 +165,12 @@ namespace VKContentNet
             {
                 Comments = 1,
                 Likes = 2,
-                Reply = 3,
-                Combined = 4
+                Combined = 3
             };
-
-            public GraphParam()
-            {
-                this.Type = GraphType.Combined;
-            }
 
             public GraphParam(GraphType t)
             {
-                this.Type = t;
+                Type = t;
             }
 
             public GraphType Type { get; private set; }
@@ -186,6 +184,8 @@ namespace VKContentNet
             this.groupId = 0;
             this.isAuthorized = false;
             this.isWorkingFolderSet = false;
+
+            folderBrowserDialog1.RootFolder = Environment.SpecialFolder.Personal;
 
             vkLoginDialog = new VKLoginDialog();
             // subscribe for login events
@@ -212,10 +212,10 @@ namespace VKContentNet
                 += new DoWorkEventHandler(netWork);
 
             this.backgroundNetWorker.ProgressChanged
-                += new ProgressChangedEventHandler(netWorkProgressChanged);
+                += new ProgressChangedEventHandler(NetWorkProgressChanged);
 
             this.backgroundNetWorker.RunWorkerCompleted
-                += new RunWorkerCompletedEventHandler(netWorkCompleted);
+                += new RunWorkerCompletedEventHandler(NetWorkCompleted);
 
             ActivateControls();
         }
@@ -336,7 +336,7 @@ namespace VKContentNet
         private void AuthorizeButton_Click(object sender, EventArgs e)
         {
             // If true - will delete cookies and relogin, use false for dev. only !!!
-            vkLoginDialog.Login("friends", false); // default permission - friends
+            vkLoginDialog.Login("friends", true); // default permission - friends
         }
 
         private void WorkingFolderButton_Click(object sender, EventArgs e)
@@ -479,9 +479,12 @@ namespace VKContentNet
 
             if (postsDialog.ShowDialog() == DialogResult.OK)
             {
-                updateStatus(-1, "Start");
+                UpdateStatus(-1, "Start");
                 var param = new GroupPostsParam(this.groupId,
-                    postsDialog.FromDate, postsDialog.ToDate, postsDialog.JustGroupStats);
+                    postsDialog.FromDate, postsDialog.ToDate,
+                    postsDialog.GroupWall,
+                    postsDialog.GroupTopics,
+                    postsDialog.JustGroupStats);
 
                 isRunning = true;
                 backgroundGroupsWorker.RunWorkerAsync(param);
@@ -499,7 +502,7 @@ namespace VKContentNet
 
             if (communicationDialog.ShowDialog() == DialogResult.OK)
             {
-                updateStatus(-1, "Start");
+                UpdateStatus(-1, "Start");
                 var param = new GraphParam((GraphParam.GraphType)communicationDialog.type);
 
                 isRunning = true;
@@ -563,6 +566,9 @@ namespace VKContentNet
             var sb = new StringBuilder();
             long timeLastCall = 0;
 
+            networkEntities = param.GroupWall ? "wall" : "";
+            networkEntities += param.GroupTopics ? "-topics" : "";
+
             // gather group statistics
             if (param.JustStats)
             {
@@ -583,87 +589,182 @@ namespace VKContentNet
                 return;
             }
 
-            // group posts
-            IEntity e = new Post();
-            var fileName = Utils.GenerateFileName(workingDir, groupId, e);
-            groupPostsWriter = File.CreateText(fileName);
-            Utils.PrintFileHeader(groupPostsWriter, e);
+            IEntity e;
+            string fileName;
 
-            ResetCountersAndGetReady();
-
-            // request group posts
-            bw.ReportProgress(-1, "Getting posts");
-            while (ShellContinue(bw))
+            if (param.GroupWall)
             {
-                sb.Length = 0;
-                sb.Append("owner_id=").Append(groupId.ToString()).Append("&");
-                sb.Append("offset=").Append(currentOffset).Append("&");
-                sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
-                context.Parameters = sb.ToString();
-                Debug.WriteLine("Download parameters: " + context.Parameters);
+                // group posts
+                e = new Post();
+                fileName = Utils.GenerateFileName(workingDir, groupId, e);
+                groupPostsWriter = File.CreateText(fileName);
+                Utils.PrintFileHeader(groupPostsWriter, e);
 
-                context.Cookie = currentOffset.ToString();
+                e = new PostCopyHistory(0, null);
+                fileName = Utils.GenerateFileName(workingDir, groupId, e);
+                groupPostsCopyHistoryWriter = File.CreateText(fileName);
+                Utils.PrintFileHeader(groupPostsCopyHistoryWriter, e);
 
-                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                timeLastCall = Utils.sleepTime(timeLastCall);
-                // call VK REST API
-                vkRestApi.CallVkFunction(VkFunction.WallGet, context);
+                ResetCountersAndGetReady();
 
-                // wait for the user data
-                ReadyEvent.WaitOne();
-                bw.ReportProgress(step, "Getting " + currentOffset + " posts out of " + totalCount);
+                // request group posts
+                bw.ReportProgress(-1, "Getting posts");
+                while (ShellContinue(bw))
+                {
+                    sb.Length = 0;
+                    sb.Append("owner_id=").Append(groupId.ToString()).Append("&");
+                    sb.Append("offset=").Append(currentOffset).Append("&");
+                    sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
+                    context.Parameters = sb.ToString();
+                    Debug.WriteLine("Download parameters: " + context.Parameters);
+
+                    context.Cookie = currentOffset.ToString();
+
+                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                    timeLastCall = Utils.sleepTime(timeLastCall);
+                    // call VK REST API
+                    vkRestApi.CallVkFunction(VkFunction.WallGet, context);
+
+                    // wait for the user data
+                    ReadyEvent.WaitOne();
+                    bw.ReportProgress(step, "Getting " + currentOffset + " posts out of " + totalCount);
+                }
+
+                groupPostsWriter.Close();
+                groupPostsCopyHistoryWriter.Close();
+
+                if (postsWithComments.Count > 0 &&
+                    !bw.CancellationPending)
+                {
+                    // group comments
+                    e = new Comment();
+                    fileName = Utils.GenerateFileName(workingDir, groupId, e);
+                    groupCommentsWriter = File.CreateText(fileName);
+                    Utils.PrintFileHeader(groupCommentsWriter, e);
+
+                    // request group comments
+                    bw.ReportProgress(-1, "Getting comments");
+
+                    timeLastCall = 0;
+
+                    for (int i = 0; i < postsWithComments.Count && !bw.CancellationPending; i++)
+                    {
+                        ResetCountersAndGetReady();
+                        step = CalcStep(postsWithComments.Count);
+
+                        bw.ReportProgress(step,
+                            "Getting " + (i + 1) + " comments out of " + postsWithComments.Count);
+
+                        while (ShellContinue(bw))
+                        {
+                            sb.Length = 0;
+                            sb.Append("owner_id=").Append(groupId).Append("&"); // group id
+                            sb.Append("post_id=").Append(postsWithComments[i]).Append("&"); // post id
+                            sb.Append("need_likes=").Append(1).Append("&"); // request likes info
+                            sb.Append("offset=").Append(currentOffset).Append("&");
+                            sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
+                            context.Parameters = sb.ToString();
+                            context.Cookie = postsWithComments[i].ToString(); // pass post id as a cookie
+                            Debug.WriteLine("Request parameters: " + context.Parameters);
+
+                            // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                            timeLastCall = Utils.sleepTime(timeLastCall);
+                            // call VK REST API
+                            vkRestApi.CallVkFunction(VkFunction.WallGetComments, context);
+
+                            // wait for the user data
+                            ReadyEvent.WaitOne();
+                        }
+                    }
+
+                    groupCommentsWriter.Close();
+                }
             }
 
-            groupPostsWriter.Close();
-
-            if (postsWithComments.Count > 0 &&
-                !bw.CancellationPending)
+            if (param.GroupTopics)
             {
-                // group comments
-                e = new Comment();
+                // process group board topics and comments
+                e = new BoardTopic();
                 fileName = Utils.GenerateFileName(workingDir, groupId, e);
-                groupCommentsWriter = File.CreateText(fileName);
-                Utils.PrintFileHeader(groupCommentsWriter, e);
+                groupBoardTopicsWriter = File.CreateText(fileName);
+                Utils.PrintFileHeader(groupBoardTopicsWriter, e);
 
-                // request group comments
-                bw.ReportProgress(-1, "Getting comments");
+                e = new Comment();
+                fileName = Utils.GenerateFileName(workingDir, groupId, e, "board");
+                groupBoardCommentsWriter = File.CreateText(fileName);
+                Utils.PrintFileHeader(groupBoardCommentsWriter, e);
 
-                timeLastCall = 0;
+                ResetCountersAndGetReady();
 
-                for (int i = 0; i < postsWithComments.Count && !bw.CancellationPending; i++)
+                bw.ReportProgress(-1, "Getting board topics");
+
+                // get group board topics
+                while (ShellContinue(bw))
                 {
-                    ResetCountersAndGetReady();
-                    step = CalcStep(postsWithComments.Count);
+                    sb.Length = 0;
+                    sb.Append("group_id=").Append(Math.Abs(groupId)).Append("&");
+                    sb.Append("offset=").Append(currentOffset).Append("&");
+                    sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
+                    context.Parameters = sb.ToString();
+                    Debug.WriteLine("Download parameters: " + context.Parameters);
 
-                    bw.ReportProgress(step,
-                        "Getting " + (i + 1) + " comments out of " + postsWithComments.Count);
+                    context.Cookie = currentOffset.ToString();
+
+                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                    timeLastCall = Utils.sleepTime(timeLastCall);
+                    // call VK REST API
+                    vkRestApi.CallVkFunction(VkFunction.BoardGetTopics, context);
+
+                    // wait for the user data
+                    ReadyEvent.WaitOne();
+                    bw.ReportProgress(step, "Getting board topics " + currentOffset + " out of " + totalCount);
+                }
+
+                bw.ReportProgress(-1, "Getting board comments");
+
+                // collect comments from all board topics
+                for (var i = 0; i < topics.Count; i++)
+                {
+                    if (bw.CancellationPending)
+                        break; // canceled
+
+                    if (topics[i].is_closed || topics[i].comments == 0)
+                        continue; // empty or closed topic - ignore
+
+                    ResetCountersAndGetReady();
+                    step = CalcStep(topics.Count);
+                    bw.ReportProgress(step, "Getting comments for board " + i + " / " + topics.Count);
 
                     while (ShellContinue(bw))
                     {
                         sb.Length = 0;
-                        sb.Append("owner_id=").Append(groupId).Append("&"); // group id
-                        sb.Append("post_id=").Append(postsWithComments[i]).Append("&"); // post id
-                        sb.Append("need_likes=").Append(1).Append("&"); // request likes info
+                        sb.Append("group_id=").Append(Math.Abs(groupId)).Append("&"); // group id
+                        sb.Append("topic_id=").Append(topics[i].id).Append("&"); // post id
+                        sb.Append("need_likes=").Append(1).Append("&"); // need likes count
                         sb.Append("offset=").Append(currentOffset).Append("&");
                         sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
                         context.Parameters = sb.ToString();
-                        context.Cookie = postsWithComments[i].ToString(); // pass post id as a cookie
+                        context.Cookie = topics[i].id.ToString(); // pass topic id as a cookie
                         Debug.WriteLine("Request parameters: " + context.Parameters);
 
                         // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
                         timeLastCall = Utils.sleepTime(timeLastCall);
                         // call VK REST API
-                        vkRestApi.CallVkFunction(VkFunction.WallGetComments, context);
+                        vkRestApi.CallVkFunction(VkFunction.BoardGetComments, context);
 
                         // wait for the user data
                         ReadyEvent.WaitOne();
+                        bw.ReportProgress(0,
+                            "Getting comments " + currentOffset + " / " + totalCount + " for board " + i + " / " +
+                            topics.Count);
                     }
                 }
 
-                groupCommentsWriter.Close();
+                groupBoardTopicsWriter.Close();
+                groupBoardCommentsWriter.Close();
             }
 
-            // process the likes - they will be added to the posters
+            // process the likes from wall and board topics
             if (likes.Count > 0 &&
                 !bw.CancellationPending)
             {
@@ -701,84 +802,6 @@ namespace VKContentNet
                 }
             }
 
-
-            // process group board topics and comments
-            e = new BoardTopic();
-            fileName = Utils.GenerateFileName(workingDir, groupId, e);
-            groupBoardTopicsWriter = File.CreateText(fileName);
-            Utils.PrintFileHeader(groupBoardTopicsWriter, e);
-
-            e = new Comment();
-            fileName = Utils.GenerateFileName(workingDir, groupId, e, "board");
-            groupBoardCommentsWriter = File.CreateText(fileName);
-            Utils.PrintFileHeader(groupBoardCommentsWriter, e);
-
-            ResetCountersAndGetReady();
-
-            bw.ReportProgress(-1, "Getting board topics");
-
-            // get group board topics
-            while (ShellContinue(bw))
-            {
-                sb.Length = 0;
-                sb.Append("group_id=").Append(Math.Abs(groupId)).Append("&");
-                sb.Append("offset=").Append(currentOffset).Append("&");
-                sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
-                context.Parameters = sb.ToString();
-                Debug.WriteLine("Download parameters: " + context.Parameters);
-
-                context.Cookie = currentOffset.ToString();
-
-                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                timeLastCall = Utils.sleepTime(timeLastCall);
-                // call VK REST API
-                vkRestApi.CallVkFunction(VkFunction.BoardGetTopics, context);
-
-                // wait for the user data
-                ReadyEvent.WaitOne();
-                bw.ReportProgress(step, "Getting board topics " + currentOffset + " out of " + totalCount);
-            }
-
-            bw.ReportProgress(-1, "Getting board comments");
-
-            // collect comments from all board topics
-            for (var i = 0; i < topics.Count; i++)
-            {
-                if (bw.CancellationPending)
-                    break; // canceled
-
-                if (topics[i].is_closed || topics[i].comments == 0)
-                    continue; // empty or closed topic - ignore
-
-                ResetCountersAndGetReady();
-                step = CalcStep(topics.Count);
-                bw.ReportProgress(step, "Getting comments for board " + i + " / " + topics.Count);
-                
-                while (ShellContinue(bw))
-                {
-                    sb.Length = 0;
-                    sb.Append("group_id=").Append(Math.Abs(groupId)).Append("&"); // group id
-                    sb.Append("topic_id=").Append(topics[i].id).Append("&"); // post id
-                    sb.Append("offset=").Append(currentOffset).Append("&");
-                    sb.Append("count=").Append(POSTS_PER_REQUEST).Append("&");
-                    context.Parameters = sb.ToString();
-                    context.Cookie = topics[i].id.ToString(); // pass topic id as a cookie
-                    Debug.WriteLine("Request parameters: " + context.Parameters);
-
-                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                    timeLastCall = Utils.sleepTime(timeLastCall);
-                    // call VK REST API
-                    vkRestApi.CallVkFunction(VkFunction.BoardGetComments, context);
-
-                    // wait for the user data
-                    ReadyEvent.WaitOne();
-                    bw.ReportProgress(0, "Getting comments " + currentOffset +" / " + totalCount +" for board " + i + " / " + topics.Count );
-                }
-            }
-
-            groupBoardTopicsWriter.Close();
-            groupBoardCommentsWriter.Close();
-
             // now collect info about posters (users or visitors who left post, comment or like) 
             visitorIds.AddRange(posterIds);
 
@@ -787,7 +810,7 @@ namespace VKContentNet
             {
                 // group visitors profiles
                 e = new Profile();
-                fileName = Utils.GenerateFileName(workingDir, groupId, e);
+                fileName = Utils.GenerateFileName(workingDir, groupId, e, networkEntities);
                 groupVisitorsWriter = File.CreateText(fileName);
                 Utils.PrintFileHeader(groupVisitorsWriter, e);
 
@@ -885,7 +908,7 @@ namespace VKContentNet
         {
             var status = args.UserState as String;
             var progress = args.ProgressPercentage;
-            updateStatus(progress, status);
+            UpdateStatus(progress, status);
         }
 
         private void groupsWorkCompleted(object sender, RunWorkerCompletedEventArgs args)
@@ -895,18 +918,18 @@ namespace VKContentNet
             if (args.Error != null)
             {
                 MessageBox.Show(args.Error.Message);
-                updateStatus(0, "Error");
+                UpdateStatus(0, "Error");
             }
             else if (args.Cancelled)
             {
                 MessageBox.Show("Work canceled!");
-                updateStatus(0, "Canceled");
+                UpdateStatus(0, "Canceled");
             }
             else
             {
                 //var network = args.Result as XmlDocument;
                 //MessageBox.Show("Group posts download complete!");
-                updateStatus(10000, "Done");
+                UpdateStatus(10000, "Done");
             }
 
             ActivateControls();
@@ -957,37 +980,21 @@ namespace VKContentNet
                     switch (param.Type)
                     {
                         case GraphParam.GraphType.Combined:
-                            if (weight.Comments > 0)
+                            if (weight.Comments > 0 || weight.Likes > 0)
                             {
-                                contentNetworkAnalyzer.AddEdge(from, to, "Link", "Comment", "", weight.Comments, 0);                                
-                            }
-
-                            if (weight.Likes > 0)
-                            {
-                                contentNetworkAnalyzer.AddEdge(from, to, "Link", "Like", "", weight.Likes, 0);
-                            }
-
-                            if (weight.Replies > 0)
-                            {
-                                contentNetworkAnalyzer.AddEdge(from, to, "Link", "Reply", "", weight.Replies, 0);
+                                contentNetworkAnalyzer.AddEdge(from, to, "Link", "LikesAndComments", "", weight.Comments + weight.Likes, 0);                                
                             }
                             break;
                         case GraphParam.GraphType.Comments:
                             if (weight.Comments > 0)
                             {
-                                contentNetworkAnalyzer.AddEdge(from, to, "Link", "Comment", "", weight.Comments, 0);                                
+                                contentNetworkAnalyzer.AddEdge(from, to, "Link", "Comments", "", weight.Comments, 0);                                
                             }
                             break;
                         case GraphParam.GraphType.Likes:
                             if (weight.Likes > 0)
                             {
-                                contentNetworkAnalyzer.AddEdge(from, to, "Link", "Like", "", weight.Likes, 0);                                
-                            }
-                            break;
-                        case GraphParam.GraphType.Reply:
-                            if (weight.Replies > 0)
-                            {
-                                contentNetworkAnalyzer.AddEdge(from, to, "Link", "Reply", "", weight.Replies, 0);
+                                contentNetworkAnalyzer.AddEdge(from, to, "Link", "Likes", "", weight.Likes, 0);                                
                             }
                             break;
                     }
@@ -999,26 +1006,26 @@ namespace VKContentNet
             args.Result = contentNetworkAnalyzer.GenerateU2UNetwork();
         }
 
-        private void netWorkProgressChanged(Object sender, ProgressChangedEventArgs args)
+        private void NetWorkProgressChanged(Object sender, ProgressChangedEventArgs args)
         {
             var status = args.UserState as String;
             var progress = args.ProgressPercentage;
-            updateStatus(progress, status);
+            UpdateStatus(progress, status);
         }
 
-        private void netWorkCompleted(object sender, RunWorkerCompletedEventArgs args)
+        private void NetWorkCompleted(object sender, RunWorkerCompletedEventArgs args)
         {
             isRunning = false;
 
             if (args.Error != null)
             {
                 MessageBox.Show(args.Error.Message);
-                updateStatus(0, "Error");
+                UpdateStatus(0, "Error");
             }
             else if (args.Cancelled)
             {
                 MessageBox.Show("Communication Network Generation canceled!");
-                updateStatus(0, "Canceled");
+                UpdateStatus(0, "Canceled");
             }
             else
             {
@@ -1026,8 +1033,9 @@ namespace VKContentNet
                 var network = args.Result as XmlDocument;
                 if (network != null)
                 {
-                    updateStatus(0, "Save Network Graph File");
-                    network.Save(Utils.GenerateFileName(WorkingFolderTextBox.Text, groupId, contentNetworkAnalyzer.GraphName, "user-network", "graphml"));
+                    UpdateStatus(0, "Save Network Graph File");
+                    network.Save(Utils.GenerateFileName(WorkingFolderTextBox.Text, groupId, 
+                        contentNetworkAnalyzer.GraphName, networkEntities + "-network", "graphml"));
                 }
                 else
                 {
@@ -1035,13 +1043,13 @@ namespace VKContentNet
                 }
 
                 //MessageBox.Show("Network generation complete!");
-                updateStatus(10000, "Done");
+                UpdateStatus(10000, "Done");
             }
 
             ActivateControls();
         }
 
-        private void updateStatus(int progress, String status)
+        private void UpdateStatus(int progress, String status)
         {
             // if 0 - ignore progress param
             if (progress > 0)
@@ -1138,6 +1146,13 @@ namespace VKContentNet
                 // post text
                 post.text = Utils.getTextField("text", postObj);
 
+                // post may have a copy_history field, which is repost from other community - save it in a file
+                var copyHistory = Utils.GetArray("copy_history", postObj);
+                if (copyHistory != null)
+                {
+                    ProcessCopyHistory(post.id, copyHistory);
+                }
+
                 // if post has a signer - update posters with a signer
                 if (post.signer_id > 0)
                 {
@@ -1179,6 +1194,37 @@ namespace VKContentNet
 
             // save the posts list
             Utils.PrintFileContent(groupPostsWriter, posts);
+        }
+
+        private void ProcessCopyHistory(long id, IEnumerable<JToken> arr)
+        {
+            var postCopyHistory = new List<PostCopyHistory>();
+
+            foreach (var token in arr)
+            {
+                var postObj = token.ToObject<JObject>();
+                var post = new Post();
+                post.id = Utils.getLongField("id", postObj);
+                post.owner_id = Utils.getLongField("owner_id", postObj);
+                post.from_id = Utils.getLongField("from_id", postObj);
+                post.signer_id = Utils.getLongField("signer_id", postObj);
+                post.date = Utils.getStringDateField("date", postObj);
+                post.post_type = Utils.getStringField("post_type", postObj);
+                post.comments = Utils.getLongField("comments", "count", postObj);
+                post.likes = Utils.getLongField("likes", "count", postObj);
+                post.reposts = Utils.getLongField("reposts", "count", postObj);
+                // attachments count
+                if (postObj["attachments"] != null)
+                {
+                    post.attachments = postObj["attachments"].ToArray().Length;
+                }
+                // post text
+                post.text = Utils.getTextField("text", postObj);
+                postCopyHistory.Add(new PostCopyHistory(id, post));
+            }
+
+
+            Utils.PrintFileContent(groupPostsCopyHistoryWriter, postCopyHistory);
         }
 
         // process group comments
@@ -1246,10 +1292,6 @@ namespace VKContentNet
                 comment.text = Utils.getTextField("text", postObj);
 
                 // update posters
-/*
-                if (comment.from_id != this.groupId)
-                {
-*/
                 if (!posters.ContainsKey(comment.from_id))
                 {
                     posters[comment.from_id] = new Poster();
@@ -1261,9 +1303,7 @@ namespace VKContentNet
                 // add to the poster ids if different from the group
                 if (comment.from_id != this.groupId)
                     posterIds.Add(comment.from_id);
-/*
-                }
-*/
+
                 comments.Add(comment);
 
                 // add comment to post info
@@ -1273,15 +1313,30 @@ namespace VKContentNet
                 }
                 
                 // update u2u matrix
-                if (comment.reply_to_uid > 0)
+                var to = comment.reply_to_uid;
+                if (to <= 0)
                 {
-                    // direct
-                    UpdateU2UMatrix(comment.from_id, comment.reply_to_uid, true);
+                    // parse reply to from comment text 
+                    to = ParseCommentForReplyTo(comment.text);
+                }
+
+                if (to > 0)
+                {
+                    UpdateU2UMatrix(comment.from_id, to, true); // reply is comment
+                    posters[comment.from_id].Comments += 1;
+
+                    // there must by a poster down there - update posters
+                    if (!posters.ContainsKey(to))
+                    {
+                        posters[to] = new Poster();
+                    }
+
+                    posters[to].RecComments += 1; // increment number of received comments
                 }
                 else
                 {
-                    // from post
-                    var to = GetPosterFromPostId(post_id);
+                    // try to get TO from the post
+                    to = GetPosterFromPostId(post_id);
                     if (to != 0)
                     {
                         UpdateU2UMatrix(comment.from_id, to, true);
@@ -1292,20 +1347,8 @@ namespace VKContentNet
                         }
 
                         posters[to].RecComments += 1; // increment number of received comments
-
                     }
                 }
-
-                // parse reply to from comment text 
-                /*
-                 * For now, we are not going to process replies in wall comments, TBD
-                long to = parseCommentForReplyTo(comment.text);
-                if (to > 0 && to != comment.reply_to_uid)
-                {
-                    updateU2UMatrix(comment.from_id, to, true);
-                    posters[comment.from_id].replies += 1;
-                }
-                */
             }
 
             // save the posts list
@@ -1450,16 +1493,14 @@ namespace VKContentNet
                 comment.likes = Utils.getLongField("likes", "count", postObj);
 
                 // likes
-/*
                 if (comment.likes > 0)
                 {
                     var like = new Like();
-                    like.type = "comment";
+                    like.type = "topic_comment";
                     like.owner_id = (long)this.groupId;
                     like.item_id = comment.id;
-                    this.likes.Add(like);
+                    likes.Add(like);
                 }
-*/
 
                 // attachments count
                 if (postObj["attachments"] != null)
@@ -1471,10 +1512,6 @@ namespace VKContentNet
                 comment.text = Utils.getTextField("text", postObj);
 
                 // update posters
-/*
-                if (comment.from_id != this.groupId)
-                {
-*/
                 if (!posters.ContainsKey(comment.from_id))
                 {
                     posters[comment.from_id] = new Poster();
@@ -1486,9 +1523,7 @@ namespace VKContentNet
                 // add to the poster ids
                 if (comment.from_id != this.groupId)
                     posterIds.Add(comment.from_id);
-/*
-                }
-*/
+    
                 comments.Add(comment);
 
                 // add to board post info
@@ -1501,8 +1536,17 @@ namespace VKContentNet
                 var to = ParseCommentForReplyTo(comment.text);
                 if (to > 0)
                 {
-                    UpdateU2UMatrixForReply(comment.from_id, to);
-                    posters[comment.from_id].Replies += 1;
+                    UpdateU2UMatrix(comment.from_id, to, true); // reply is comment
+                    posters[comment.from_id].Comments += 1;
+
+                    // there must by a poster down there - update posters
+                    if (!posters.ContainsKey(to))
+                    {
+                        posters[to] = new Poster();
+                    }
+
+                    posters[to].RecComments += 1; // increment number of received comments
+
                 }
             }
 
@@ -1534,32 +1578,15 @@ namespace VKContentNet
             if (!u2uMatrix.ContainsKey(from))
             {
                 u2uMatrix[from] = new Dictionary<long, PostCount>();
-                u2uMatrix[from][to] = new PostCount(isComment ? 0 : 1, isComment ? 1 : 0, 0);
+                u2uMatrix[from][to] = new PostCount(isComment ? 0 : 1, isComment ? 1 : 0);
             }
             else if (!u2uMatrix[from].ContainsKey(to))
             {
-                u2uMatrix[from][to] = new PostCount(isComment ? 0 : 1, isComment ? 1 : 0, 0);
+                u2uMatrix[from][to] = new PostCount(isComment ? 0 : 1, isComment ? 1 : 0);
             }
             else
             {
-                u2uMatrix[from][to].Increment(isComment ? 0 : 1, isComment ? 1 : 0, 0);
-            }
-        }
-
-        private void UpdateU2UMatrixForReply(long from, long to)
-        {
-            if (!u2uMatrix.ContainsKey(from))
-            {
-                u2uMatrix[from] = new Dictionary<long, PostCount>();
-                u2uMatrix[from][to] = new PostCount(0, 0, 1);
-            }
-            else if (!u2uMatrix[from].ContainsKey(to))
-            {
-                u2uMatrix[from][to] = new PostCount(0, 0, 1);
-            }
-            else
-            {
-                u2uMatrix[from][to].Increment(0, 0, 1);
+                u2uMatrix[from][to].Increment(isComment ? 0 : 1, isComment ? 1 : 0);
             }
         }
 
@@ -1657,7 +1684,6 @@ namespace VKContentNet
             dic.Add("likes", poster.Likes.ToString());
             dic.Add("friends", poster.Friends.ToString());
             dic.Add("board_comments", poster.BoardComments.ToString());
-            dic.Add("replies", poster.Replies.ToString());
 
             return dic;
         }

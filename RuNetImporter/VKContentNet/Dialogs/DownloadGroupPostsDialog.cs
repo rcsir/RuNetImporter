@@ -10,6 +10,8 @@ namespace rcsir.net.vk.content.Dialogs
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
         public Boolean JustGroupStats { get; set; }
+        public Boolean GroupWall { get; set; }
+        public Boolean GroupTopics { get; set; }
 
         public DownloadGroupPostsDialog()
         {
@@ -21,6 +23,8 @@ namespace rcsir.net.vk.content.Dialogs
             FromDate = dateTimeFromPicker.Value;
             ToDate = dateTimeToPicker.Value;
             JustGroupStats = groupStatCheckBox.Checked;
+            GroupWall = groupWall.Checked;
+            GroupTopics = groupTopics.Checked;
         }
 
         private void DownloadGroupPostsDialog_Load(object sender, EventArgs e)

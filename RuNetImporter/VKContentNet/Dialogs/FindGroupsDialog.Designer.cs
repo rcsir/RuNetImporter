@@ -39,9 +39,10 @@
             // CancelSearchButton
             // 
             this.CancelSearchButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelSearchButton.Location = new System.Drawing.Point(202, 245);
+            this.CancelSearchButton.Location = new System.Drawing.Point(269, 302);
+            this.CancelSearchButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.CancelSearchButton.Name = "CancelSearchButton";
-            this.CancelSearchButton.Size = new System.Drawing.Size(75, 23);
+            this.CancelSearchButton.Size = new System.Drawing.Size(100, 28);
             this.CancelSearchButton.TabIndex = 3;
             this.CancelSearchButton.Text = "Cancel";
             this.CancelSearchButton.UseVisualStyleBackColor = true;
@@ -49,9 +50,10 @@
             // OKButton
             // 
             this.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.OKButton.Location = new System.Drawing.Point(283, 245);
+            this.OKButton.Location = new System.Drawing.Point(377, 302);
+            this.OKButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.OKButton.Name = "OKButton";
-            this.OKButton.Size = new System.Drawing.Size(75, 23);
+            this.OKButton.Size = new System.Drawing.Size(100, 28);
             this.OKButton.TabIndex = 2;
             this.OKButton.Text = "OK";
             this.OKButton.UseVisualStyleBackColor = true;
@@ -60,22 +62,24 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(43, 37);
+            this.label1.Location = new System.Drawing.Point(57, 46);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(80, 13);
+            this.label1.Size = new System.Drawing.Size(103, 17);
             this.label1.TabIndex = 7;
             this.label1.Text = "Group/User ID:";
             // 
             // groupIdNumeric
             // 
-            this.groupIdNumeric.Location = new System.Drawing.Point(129, 35);
+            this.groupIdNumeric.Location = new System.Drawing.Point(172, 43);
+            this.groupIdNumeric.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.groupIdNumeric.Maximum = new decimal(new int[] {
             1000000000,
             0,
             0,
             0});
             this.groupIdNumeric.Name = "groupIdNumeric";
-            this.groupIdNumeric.Size = new System.Drawing.Size(219, 20);
+            this.groupIdNumeric.Size = new System.Drawing.Size(292, 22);
             this.groupIdNumeric.TabIndex = 6;
             // 
             // isGroupcheckBox
@@ -83,9 +87,10 @@
             this.isGroupcheckBox.AutoSize = true;
             this.isGroupcheckBox.Checked = true;
             this.isGroupcheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.isGroupcheckBox.Location = new System.Drawing.Point(129, 71);
+            this.isGroupcheckBox.Location = new System.Drawing.Point(172, 87);
+            this.isGroupcheckBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.isGroupcheckBox.Name = "isGroupcheckBox";
-            this.isGroupcheckBox.Size = new System.Drawing.Size(65, 17);
+            this.isGroupcheckBox.Size = new System.Drawing.Size(84, 21);
             this.isGroupcheckBox.TabIndex = 8;
             this.isGroupcheckBox.Text = "is Group";
             this.isGroupcheckBox.UseVisualStyleBackColor = true;
@@ -93,17 +98,19 @@
             // FindGroupsDialog
             // 
             this.AcceptButton = this.OKButton;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelSearchButton;
-            this.ClientSize = new System.Drawing.Size(370, 280);
+            this.ClientSize = new System.Drawing.Size(493, 345);
             this.Controls.Add(this.isGroupcheckBox);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.groupIdNumeric);
             this.Controls.Add(this.CancelSearchButton);
             this.Controls.Add(this.OKButton);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "FindGroupsDialog";
-            this.Text = "Find a Group or a Wall";
+            this.Text = "Find a Community by ID";
             ((System.ComponentModel.ISupportInitialize)(this.groupIdNumeric)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

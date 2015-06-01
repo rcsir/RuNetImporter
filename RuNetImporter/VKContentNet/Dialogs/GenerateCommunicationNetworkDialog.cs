@@ -33,14 +33,11 @@ namespace rcsir.net.vk.content.Dialogs
                     case "Likes":
                         type = 2;
                         break;
-                    case "Reply":
+                    case "Combined":
                         type = 3;
                         break;
-                    case "Combined":
-                        type = 4;
-                        break;
                     default:
-                        type = 4;
+                        type = 3;
                         break;
                 }
             }

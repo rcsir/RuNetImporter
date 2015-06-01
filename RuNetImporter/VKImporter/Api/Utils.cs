@@ -92,6 +92,13 @@ namespace rcsir.net.vk.importer.api
             return "";
         }
 
+        // gets a named JToken array from the parent object
+        public static JToken[] GetArray(String name, JObject o)
+        {
+            var obj = o[name] != null ? o[name].ToArray() : null;
+            return obj;
+        }
+
         public static String getStringDateField(String name, JObject o)
         {
             long l = o[name] != null ? o[name].ToObject<long>() : 0;

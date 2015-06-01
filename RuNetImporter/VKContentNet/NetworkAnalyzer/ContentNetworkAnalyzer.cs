@@ -38,8 +38,7 @@ namespace rcsir.net.vk.content.NetworkAnalyzer
             new AttributeUtils.Attribute("Likes","likes", "friends", false),
             new AttributeUtils.Attribute("Friends","friends", "friends", false),
             new AttributeUtils.Attribute("Receive Comments","rec_comments", "friends", false),
-            new AttributeUtils.Attribute("Board Comments","board_comments", "friends", false),
-            new AttributeUtils.Attribute("Replies","replies", "friends", false),
+            new AttributeUtils.Attribute("Board Comments","board_comments", "friends", false)
         };
 
         public override List<AttributeUtils.Attribute> GetDefaultNetworkAttributes()

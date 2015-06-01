@@ -50,7 +50,7 @@
             // groupDescription
             // 
             this.groupDescription.Location = new System.Drawing.Point(178, 209);
-            this.groupDescription.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupDescription.Margin = new System.Windows.Forms.Padding(4);
             this.groupDescription.Multiline = true;
             this.groupDescription.Name = "groupDescription";
             this.groupDescription.ReadOnly = true;
@@ -61,7 +61,7 @@
             // groupId2
             // 
             this.groupId2.Location = new System.Drawing.Point(10, 209);
-            this.groupId2.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupId2.Margin = new System.Windows.Forms.Padding(4);
             this.groupId2.Name = "groupId2";
             this.groupId2.ReadOnly = true;
             this.groupId2.Size = new System.Drawing.Size(159, 22);
@@ -71,7 +71,7 @@
             // FindGroupsButton
             // 
             this.FindGroupsButton.Location = new System.Drawing.Point(10, 164);
-            this.FindGroupsButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.FindGroupsButton.Margin = new System.Windows.Forms.Padding(4);
             this.FindGroupsButton.Name = "FindGroupsButton";
             this.FindGroupsButton.Size = new System.Drawing.Size(464, 37);
             this.FindGroupsButton.TabIndex = 18;
@@ -82,7 +82,7 @@
             // WorkingFolderTextBox
             // 
             this.WorkingFolderTextBox.Location = new System.Drawing.Point(10, 132);
-            this.WorkingFolderTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.WorkingFolderTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.WorkingFolderTextBox.Name = "WorkingFolderTextBox";
             this.WorkingFolderTextBox.ReadOnly = true;
             this.WorkingFolderTextBox.Size = new System.Drawing.Size(463, 22);
@@ -91,7 +91,7 @@
             // WorkingFolderButton
             // 
             this.WorkingFolderButton.Location = new System.Drawing.Point(10, 88);
-            this.WorkingFolderButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.WorkingFolderButton.Margin = new System.Windows.Forms.Padding(4);
             this.WorkingFolderButton.Name = "WorkingFolderButton";
             this.WorkingFolderButton.Size = new System.Drawing.Size(464, 37);
             this.WorkingFolderButton.TabIndex = 16;
@@ -102,7 +102,7 @@
             // userIdTextBox
             // 
             this.userIdTextBox.Location = new System.Drawing.Point(10, 56);
-            this.userIdTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.userIdTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.userIdTextBox.Name = "userIdTextBox";
             this.userIdTextBox.ReadOnly = true;
             this.userIdTextBox.Size = new System.Drawing.Size(463, 22);
@@ -111,7 +111,7 @@
             // AuthorizeButton
             // 
             this.AuthorizeButton.Location = new System.Drawing.Point(10, 12);
-            this.AuthorizeButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.AuthorizeButton.Margin = new System.Windows.Forms.Padding(4);
             this.AuthorizeButton.Name = "AuthorizeButton";
             this.AuthorizeButton.Size = new System.Drawing.Size(464, 37);
             this.AuthorizeButton.TabIndex = 14;
@@ -122,7 +122,7 @@
             // GroupsProgressBar
             // 
             this.GroupsProgressBar.Location = new System.Drawing.Point(10, 452);
-            this.GroupsProgressBar.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.GroupsProgressBar.Margin = new System.Windows.Forms.Padding(4);
             this.GroupsProgressBar.Maximum = 10000;
             this.GroupsProgressBar.Name = "GroupsProgressBar";
             this.GroupsProgressBar.Size = new System.Drawing.Size(468, 27);
@@ -134,7 +134,7 @@
             // 
             this.CancelOperation.Enabled = false;
             this.CancelOperation.Location = new System.Drawing.Point(10, 408);
-            this.CancelOperation.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.CancelOperation.Margin = new System.Windows.Forms.Padding(4);
             this.CancelOperation.Name = "CancelOperation";
             this.CancelOperation.Size = new System.Drawing.Size(156, 37);
             this.CancelOperation.TabIndex = 22;
@@ -163,7 +163,7 @@
             // DownloadGroupPosts
             // 
             this.DownloadGroupPosts.Location = new System.Drawing.Point(10, 310);
-            this.DownloadGroupPosts.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.DownloadGroupPosts.Margin = new System.Windows.Forms.Padding(4);
             this.DownloadGroupPosts.Name = "DownloadGroupPosts";
             this.DownloadGroupPosts.Size = new System.Drawing.Size(464, 37);
             this.DownloadGroupPosts.TabIndex = 24;
@@ -179,7 +179,7 @@
             // GenerateCommunicatinoNetwork
             // 
             this.GenerateCommunicatinoNetwork.Location = new System.Drawing.Point(10, 355);
-            this.GenerateCommunicatinoNetwork.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.GenerateCommunicatinoNetwork.Margin = new System.Windows.Forms.Padding(4);
             this.GenerateCommunicatinoNetwork.Name = "GenerateCommunicatinoNetwork";
             this.GenerateCommunicatinoNetwork.Size = new System.Drawing.Size(464, 37);
             this.GenerateCommunicatinoNetwork.TabIndex = 25;
@@ -210,7 +210,8 @@
             this.Controls.Add(this.userIdTextBox);
             this.Controls.Add(this.AuthorizeButton);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
+            this.MaximizeBox = false;
             this.Name = "VKContentForm";
             this.Text = "VK Content";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.VKContentForm_FormClosing);
