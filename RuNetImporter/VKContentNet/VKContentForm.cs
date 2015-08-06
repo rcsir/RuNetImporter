@@ -336,7 +336,7 @@ namespace VKContentNet
         private void AuthorizeButton_Click(object sender, EventArgs e)
         {
             // If true - will delete cookies and relogin, use false for dev. only !!!
-            vkLoginDialog.Login("friends", true); // default permission - friends
+            vkLoginDialog.Login("friends", false); // default permission - friends
         }
 
         private void WorkingFolderButton_Click(object sender, EventArgs e)

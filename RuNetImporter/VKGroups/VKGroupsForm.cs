@@ -14,11 +14,12 @@ using System.Windows.Forms;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
+using rcsir.net.vk.importer.api.entity;
 using rcsir.net.vk.importer.Dialogs;
 using rcsir.net.vk.importer.api;
 using rcsir.net.vk.groups.Dialogs;
 using rcsir.net.vk.groups.NetworkAnalyzer;
+using Group = rcsir.net.vk.importer.api.entity.Group;
 
 namespace VKGroups
 {
@@ -47,9 +48,9 @@ namespace VKGroups
 
         // document
         StreamWriter groupPostsWriter;
-        StreamWriter groupVisitorsWriter;
         StreamWriter groupCommentsWriter;
         StreamWriter groupMembersWriter;
+        StreamWriter groupVisitorsWriter;
         // error log
         StreamWriter errorLogWriter;
 
@@ -77,128 +78,6 @@ namespace VKGroups
         EgoNetworkAnalyzer egoNetAnalyzer = new EgoNetworkAnalyzer();
         HashSet<long> friendIds = new HashSet<long>();
 
-        // group's post
-        private class Post
-        {
-            public Post()
-            {
-                id = 0;
-                owner_id = 0;
-                from_id = 0;
-                signer_id = 0;
-                date = "";
-                post_type = "";
-                comments = 0;
-                likes = 0;
-                reposts = 0;
-                attachments = 0;
-                text = "";
-            }
-
-            public long id { get; set; }
-            public long owner_id { get; set; }
-            public long from_id { get; set; }
-            public long signer_id { get; set; }
-            public string date { get; set; }
-            public string post_type { get; set; }
-            public long comments { get; set; }
-            public long likes { get; set; }
-            public long reposts { get; set; }
-            public long attachments { get; set; } 
-            public string text { get; set; }
-        };
-
-        // group's member profile
-        private class Profile
-        {
-            public Profile()
-            {
-                id = 0;
-                first_name = "";
-                last_name = "";
-                screen_name = "";
-                bdate = "";
-                city = "";
-                country = "";
-                photo = "";
-                sex = "";
-                relation = "";
-                education = "";
-                status = "";
-            }
-
-            public long id { get; set; }
-            public string first_name { get; set; }
-            public string last_name { get; set; }
-            public string screen_name { get; set; }
-            public string bdate { get; set; }
-            public string city { get; set; }
-            public string country { get; set; }
-            public string photo { get; set; }
-            public string sex { get; set; }
-            public string relation { get; set; }
-            public string education { get; set; }
-            public string status { get; set; }
-        };
-
-        // group's comment 
-        private class Comment
-        {
-            public Comment()
-            {
-                id = 0;
-                post_id = 0;
-                from_id = 0;
-                date = "";
-                reply_to_uid = 0;
-                reply_to_cid = 0;
-                likes = 0;
-                attachments = 0;
-                text = "";
-            }
-
-            public long id { get; set; }
-            public long post_id { get; set; }
-            public long from_id { get; set; }
-            public string date { get; set; }
-            public long reply_to_uid { get; set; } // user id
-            public long reply_to_cid { get; set; } // comment id 
-            public long likes { get; set; }
-            public long attachments { get; set; }
-            public string text { get; set; }
-        };
-
-        // group's info
-        private class Group
-        {
-            public Group()
-            {
-                id = 0;
-                name = "";
-                screen_name = "";
-                is_closed = "";
-                type = "";
-                members_count = "";
-                city = "";
-                country = "";
-                photo = "";
-                description = "";
-                status = "";
-            }
-
-            public long id { get; set; }
-            public string name { get; set; }
-            public string screen_name { get; set; }
-            public string is_closed { get; set; }
-            public string type { get; set; }
-            public string members_count { get; set; }
-            public string city { get; set; }
-            public string country { get; set; }
-            public string photo { get; set; }
-            public string description { get; set; }
-            public string status { get; set; }
-        };
-
         // group stats 
         private class GroupStats
         {
@@ -221,21 +100,6 @@ namespace VKGroups
             public uint subscribed { get; set; }
             public uint unsubscribed { get; set; }
 
-        };
-
-        // post's or comment's like info 
-        private class Like
-        {
-            public Like()
-            {
-                type = "";
-                owner_id = 0;
-                item_id = 0;
-            }
-
-            public string type { get; set; } // post, comment etc.
-            public long owner_id { get; set; }
-            public long item_id { get; set; }
         };
 
         // poster info 
@@ -397,9 +261,9 @@ namespace VKGroups
 
         private void FindGroupsButton_Click(object sender, EventArgs e)
         {
-            FindGroupsDialog groupsDialog = new FindGroupsDialog();
+            var groupsDialog = new FindGroupsDialog();
 
-            if (groupsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            if (groupsDialog.ShowDialog() == DialogResult.OK)
             {
                 //SearchParameters searchParameters = groupsDialog.searchParameters;
                 //this.backgroundFinderWorker.RunWorkerAsync(searchParameters);
@@ -439,7 +303,7 @@ namespace VKGroups
 
         private void DownloadGroupPosts_Click(object sender, EventArgs e)
         {
-            DownloadGroupPostsDialog postsDialog = new DownloadGroupPostsDialog();
+            var postsDialog = new DownloadGroupPostsDialog();
             postsDialog.groupId = this.groupId; // pass saved groupId
             postsDialog.isGroup = this.isGroup; 
 
@@ -448,7 +312,7 @@ namespace VKGroups
                 updateStatus(-1, "Start");
                 decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
 
-                GroupPostsParam param = new GroupPostsParam(gid, 
+                var param = new GroupPostsParam(gid, 
                     postsDialog.fromDate, postsDialog.toDate, postsDialog.justGroupStats);
 
                 isRunning = true;
@@ -463,11 +327,11 @@ namespace VKGroups
 
         private void DownloadGroupMembers_Click(object sender, EventArgs e)
         {
-            DownloadGroupMembersDialog membersDialog = new DownloadGroupMembersDialog();
+            var membersDialog = new DownloadGroupMembersDialog();
             membersDialog.groupId = this.groupId; // pass saved groupId
             membersDialog.isGroup = this.isGroup;
 
-            if (membersDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            if (membersDialog.ShowDialog() == DialogResult.OK)
             {
                 updateStatus(-1, "Start");
                 decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
@@ -484,11 +348,11 @@ namespace VKGroups
 
         private void DownloadMembersNetwork_Click(object sender, EventArgs e)
         {
-            DownloadMembersNetworkDialog networkDialog = new DownloadMembersNetworkDialog();
+            var networkDialog = new DownloadMembersNetworkDialog();
             networkDialog.groupId = this.groupId; // pass saved groupId
             networkDialog.isGroup = this.isGroup;
 
-            if (networkDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            if (networkDialog.ShowDialog() == DialogResult.OK)
             {
                 updateStatus(-1, "Start");
                 decimal gid = this.isGroup ? decimal.Negate(this.groupId) : this.groupId;
@@ -650,7 +514,7 @@ namespace VKGroups
                 return;
             }
 
-            String gId = cookie; // gropu id sent as a cooky
+            String gId = cookie; // group id sent as a cooky
 
             // now calc items in response
             int count = data[VkRestApi.RESPONSE_BODY].Count();
@@ -789,9 +653,11 @@ namespace VKGroups
 
             // create stream writers
             // 1) group posts
-            String fileName = generateGroupPostsFileName(groupId);
+            // group posts
+            IEntity e = new Post();
+            String fileName = Utils.GenerateFileName(this.WorkingFolderTextBox.Text, groupId, e);
             groupPostsWriter = File.CreateText(fileName);
-            printGroupPostsHeader(groupPostsWriter);
+            Utils.PrintFileHeader(groupPostsWriter, e);
 
             this.postsWithComments.Clear(); // reset comments reference list
             this.likes.Clear(); // reset likes
@@ -844,10 +710,11 @@ namespace VKGroups
 
             if (postsWithComments.Count > 0)
             {
-                // gropu comments
-                fileName = generateGroupCommentsFileName(groupId);
+                // group comments
+                e = new Comment();
+                fileName = Utils.GenerateFileName(this.WorkingFolderTextBox.Text, groupId, e);
                 groupCommentsWriter = File.CreateText(fileName);
-                printGroupCommentsHeader(groupCommentsWriter);
+                Utils.PrintFileHeader(groupCommentsWriter, e);
 
                 // request group comments
                 bw.ReportProgress(-1, "Getting comments");
@@ -950,9 +817,10 @@ namespace VKGroups
             if (visitorIds.Count > 0)
             {
                 // group visitors profiles
-                fileName = generateGroupVisitorsFileName(groupId);
+                e = new Profile();
+                fileName = Utils.GenerateFileName(this.WorkingFolderTextBox.Text, groupId, e, "visitor");
                 groupVisitorsWriter = File.CreateText(fileName);
-                printGroupVisitorsHeader(groupVisitorsWriter);
+                Utils.PrintFileHeader(groupVisitorsWriter, e);
 
                 // request visitors info
                 bw.ReportProgress(-1, "Getting visitors");
@@ -1051,9 +919,10 @@ namespace VKGroups
             var groupId = (decimal)args.Argument;
 
             // process group members
-            String fileName = generateGroupMembersFileName(groupId);
+            IEntity e = new Profile();
+            String fileName = Utils.GenerateFileName(this.WorkingFolderTextBox.Text, groupId, e, "members");
             groupMembersWriter = File.CreateText(fileName);
-            printGroupMembersHeader(groupMembersWriter);
+            Utils.PrintFileHeader(groupMembersWriter, e);
 
             var context = new VkRestApi.VkRestContext(this.userId, this.authToken);
             var sb = new StringBuilder();
@@ -1406,12 +1275,12 @@ namespace VKGroups
             //this.backgroundGroupsWorker.ReportProgress(0, "Processing next " + count + " posts out of " + totalCount);
 
             long gId = (long)(this.isGroup ? decimal.Negate(this.groupId) : this.groupId);
-            List<Post> posts = new List<Post>();
+            var posts = new List<Post>();
 
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject postObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                var postObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
 
                 // see if post is in the range
                 DateTime dt = getDateField("date", postObj);
@@ -1422,7 +1291,7 @@ namespace VKGroups
                     continue;
                 }
 
-                Post post = new Post();
+                var post = new Post();
                 post.id = getLongField("id", postObj);
                 post.owner_id = getLongField("owner_id", postObj);
                 post.from_id = getLongField("from_id", postObj);
@@ -1442,7 +1311,7 @@ namespace VKGroups
                 post.likes = getLongField("likes", "count", postObj);
                 if (post.likes > 0)
                 {
-                    Like like = new Like();
+                    var like = new Like();
                     like.type = "post";
                     like.owner_id = gId;
                     like.item_id = post.id;
@@ -1497,7 +1366,7 @@ namespace VKGroups
             if (posts.Count > 0)
             {
                 // save the posts list
-                updateGroupPostsFile(posts, groupPostsWriter);
+                Utils.PrintFileContent(groupPostsWriter, posts);
             }
         }
 
@@ -1577,7 +1446,7 @@ namespace VKGroups
             if (comments.Count > 0)
             {
                 // save the posts list
-                updateGroupCommentsFile(comments, groupCommentsWriter);
+                Utils.PrintFileContent(groupCommentsWriter, comments);
             }
         }
 
@@ -1684,7 +1553,7 @@ namespace VKGroups
             if (profiles.Count > 0)
             {
                 // save the posts list
-                updateGroupMembersFile(profiles, groupMembersWriter);
+                Utils.PrintFileContent(groupMembersWriter, profiles);
             }
         }
 
@@ -1697,11 +1566,11 @@ namespace VKGroups
                 return;
             }
 
-            String memberId = cookie; // memeber id sent as a cooky
+            String memberId = cookie; // member id sent as a cooky
             long mId = Convert.ToInt64(memberId);
 
             // now calc items in response
-            int count = data[VkRestApi.RESPONSE_BODY].Count();
+            var count = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>();
             Debug.WriteLine("Processing " + count + " friends of user id " + memberId);
 
             // update vertex with friends count
@@ -1718,7 +1587,7 @@ namespace VKGroups
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                long friendId = data[VkRestApi.RESPONSE_BODY][i].ToObject<long>();
+                var friendId = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<long>();
                 this.groupNetworkAnalyzer.AddFriendsEdge(mId, friendId); // if friendship exists, the new edge will be added
             }
         }
@@ -1772,7 +1641,7 @@ namespace VKGroups
             if (profiles.Count > 0)
             {
                 // update posters
-                updateGroupVisitorsFile(profiles, groupVisitorsWriter);
+                Utils.PrintFileContent(groupVisitorsWriter, profiles);
             }
         }
 
@@ -1875,110 +1744,6 @@ namespace VKGroups
             }
         }
 
-        // Group posts file
-        private string generateGroupPostsFileName(decimal groupId)
-        {
-            StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
-
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-posts");
-            fileName.Append(".txt");
-
-            return fileName.ToString();
-        }
-
-        private void printGroupPostsHeader(StreamWriter writer)
-        {
-            writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"",
-                    "id", "owner", "from", "signer", "date", "post_type", "comments", "likes", "reposts", "attachments", "text");
-        }
-
-        private void updateGroupPostsFile(List<Post> posts, StreamWriter writer)
-        {
-            foreach (Post p in posts)
-            {
-                writer.WriteLine("{0}\t{1}\t{2}\t{3}\t\"{4}\"\t\"{5}\"\t{6}\t{7}\t{8}\t{9}\t\"{10}\"",
-                    p.id, p.owner_id, p.from_id, p.signer_id, p.date, p.post_type, p.comments, p.likes, p.reposts, p.attachments, p.text);
-            }
-        }
-
-        // Group visitors profiles file
-        private string generateGroupVisitorsFileName(decimal groupId)
-        {
-            StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
-
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-visitors");
-            fileName.Append(".txt");
-
-            return fileName.ToString();
-        }
-
-        private void printGroupVisitorsHeader(StreamWriter writer)
-        {
-            writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"",
-                    "id", "first_name", "last_name", "screen_name", "sex", "photo");
-        }
-
-        private void updateGroupVisitorsFile(List<Profile> profiles, StreamWriter writer)
-        {
-            foreach (Profile p in profiles)
-            {
-                writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t{4}\t\"{5}\"",
-                    p.id, p.first_name, p.last_name, p.screen_name, p.sex, p.photo);
-            }
-        }
-
-        // Group members file
-        private string generateGroupMembersFileName(decimal groupId)
-        {
-            StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
-
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-members");
-            fileName.Append(".txt");
-
-            return fileName.ToString();
-        }
-
-        private void printGroupMembersHeader(StreamWriter writer)
-        {
-            writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"\t\"{11}\"",
-                    "id", "first_name", "last_name", "screen_name", "bdate", "city", "country", "photo", "sex", "relation",  "education", "status");
-        }
-
-        private void updateGroupMembersFile(List<Profile> profiles, StreamWriter writer)
-        {
-            foreach (Profile m in profiles)
-            {
-                writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"\t\"{11}\"",
-                    m.id, m.first_name, m.last_name, m.screen_name, m.bdate, m.city, m.country, m.photo, m.sex, m.relation, m.education, m.status);
-            }
-        }
-
-        // Group comments file name
-        private string generateGroupCommentsFileName(decimal groupId)
-        {
-            StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
-
-            fileName.Append("\\").Append(Math.Abs(groupId).ToString()).Append("-group-comments");
-            fileName.Append(".txt");
-
-            return fileName.ToString();
-        }
-        
-        private void printGroupCommentsHeader(StreamWriter writer)
-        {
-            writer.WriteLine("\"{0}\"\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"",
-                    "id", "post_id", "from", "date", "reply_to_user", "reply_to_comment", "likes", "attachments", "text");
-        }
-
-        private void updateGroupCommentsFile(List<Comment> comments, StreamWriter writer)
-        {
-            foreach (Comment c in comments)
-            {
-                writer.WriteLine("{0}\t{1}\t{2}\t\"{3}\"\t{4}\t{5}\t{6}\t{7}\t\"{8}\"",
-                    c.id, c.post_id, c.from_id, c.date, c.reply_to_uid, c.reply_to_cid, c.likes, c.attachments, c.text);
-            }
-        }
-
         // Group members Network file
         private string generateGroupMembersNetworkFileName(decimal groupId)
         {
@@ -2010,7 +1775,7 @@ namespace VKGroups
         // Error log file
         private string generateErrorLogFileName()
         {
-            StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
+            var fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
             return fileName.Append("\\").Append("error-log").Append(".txt").ToString();
         }
 
@@ -2026,11 +1791,11 @@ namespace VKGroups
                 error.Function, error.Code, error.Error);
         }
 
-        // Utiliti
+        // Utility
         private static DateTime timeToDateTime(long unixTimeStamp)
         {
-            // Unix timestamp is seconds past epoch
-            System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+            // Unix time-stamp is seconds past epoch
+            var dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
             dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
             return dtDateTime;
         }
