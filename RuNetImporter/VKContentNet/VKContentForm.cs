@@ -286,16 +286,55 @@ namespace VKContentNet
 
             if (errorLogWriter != null)
             {
-                Utils.PrintFileContent(errorLogWriter, onErrorArgs);
+                updateErrorLogFile(onErrorArgs, errorLogWriter);
             }
 
-            /*
-             * till we can distinguish between critical errors and warnings, just print errors in ths log file
-            MessageBox.Show(onErrorArgs.error,
-                onErrorArgs.function.ToString() + " Error",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning);
-            */
+            if (onErrorArgs.Code == VkRestApi.CriticalErrorCode)
+            {
+                var result = MessageBox.Show(
+                    onErrorArgs.Details + "\n Please fix connection problem or just wait.\n Press \'Yes\' to continue with the current request" +
+                    "\nPress \'No\' to continue with the next request.",
+                    onErrorArgs.Error,
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button1);
+
+                if (result == DialogResult.Yes)
+                {
+                    vkRestApi.CallVkFunction(onErrorArgs.Function, onErrorArgs.Context);
+                    return;
+                }
+            }
+            else
+            {
+                switch (onErrorArgs.Code)
+                {
+                    case 6:
+                        // this is too many requests error - repeat last API call
+                        Utils.sleepTime(0);
+                        vkRestApi.CallVkFunction(onErrorArgs.Function, onErrorArgs.Context);
+                        return;
+                    case 15:
+                        // user is not found - continue
+                        break;
+                    default:
+                        var result = MessageBox.Show(
+                            onErrorArgs.Details + "\n Please fix connection problem or just wait.\n Press \'Yes\' to continue with the current request" +
+                            "\nPress \'No\' to continue with the next request.",
+                            onErrorArgs.Error,
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning,
+                            MessageBoxDefaultButton.Button1);
+
+                        if (result == DialogResult.Yes)
+                        {
+                            vkRestApi.CallVkFunction(onErrorArgs.Function, onErrorArgs.Context);
+                            return;
+                        }
+                        break;
+                }
+            }
+
             // indicate that data is ready and we can continue
             ReadyEvent.Set();
         }
@@ -355,7 +394,7 @@ namespace VKContentNet
                 errorLogWriter = null;
             }
 
-            IEntity temp = new VkRestApi.OnErrorEventArgs();
+            IEntity temp = new VkRestApi.OnErrorEventArgs(VkFunction.FriendsGet,null,0,"");
             var fileName = Utils.GenerateFileName(this.WorkingFolderTextBox.Text, 0, temp, "", "log");
             errorLogWriter = File.CreateText(fileName);
             errorLogWriter.AutoFlush = true;
@@ -409,8 +448,8 @@ namespace VKContentNet
         {
             String gId = cookie; // group id is sent as a cooky
 
-            if (data[VkRestApi.RESPONSE_BODY] == null ||
-                data[VkRestApi.RESPONSE_BODY].Count() == 0)
+            if (data[VkRestApi.ResponseBody] == null ||
+                data[VkRestApi.ResponseBody].Count() == 0)
             {
                 this.groupId = 0;
                 this.groupId2.Text = gId;
@@ -420,7 +459,7 @@ namespace VKContentNet
             }
 
             // process response body
-            var groupObject = data[VkRestApi.RESPONSE_BODY][0].ToObject<JObject>();
+            var groupObject = data[VkRestApi.ResponseBody][0].ToObject<JObject>();
             if (groupObject == null)
             {
                 this.groupId = 0;
@@ -1068,7 +1107,7 @@ namespace VKContentNet
         // process group posts
         private void OnWallGet(JObject data)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 isRunning = false;
                 return;
@@ -1076,7 +1115,7 @@ namespace VKContentNet
 
             if (totalCount == 0)
             {
-                totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<int>();
+                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<int>();
                 if (totalCount == 0)
                 {
                     isRunning = false;
@@ -1086,7 +1125,7 @@ namespace VKContentNet
             }
 
             // calculate items in response
-            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (!CheckAndIncrement(count))
                 return;
@@ -1096,7 +1135,7 @@ namespace VKContentNet
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                var postObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                var postObj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
 
                 // see if post is in the range
                 var dt = Utils.getDateField("date", postObj);
@@ -1230,7 +1269,7 @@ namespace VKContentNet
         // process group comments
         private void OnWallGetComments(JObject data, String cookie)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 isRunning = false;
                 return;
@@ -1238,7 +1277,7 @@ namespace VKContentNet
 
             if (totalCount == 0)
             {
-                totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<int>();
+                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<int>();
                 if (totalCount == 0)
                 {
                     isRunning = false;
@@ -1248,7 +1287,7 @@ namespace VKContentNet
             }
 
             // calculate items in response
-            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (!CheckAndIncrement(count))
                 return;
@@ -1259,7 +1298,7 @@ namespace VKContentNet
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                var postObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                var postObj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
 
                 var comment = new Comment();
                 comment.id = Utils.getLongField("id", postObj);
@@ -1358,14 +1397,14 @@ namespace VKContentNet
         // process likes user list
         private void OnLikesGetList(JObject data, string cookie)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 isRunning = false;
                 return;
             }
 
             // calculate items in response
-            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (!CheckAndIncrement(count))
                 return;
@@ -1375,7 +1414,7 @@ namespace VKContentNet
             // process response body
             for (var i = 0; i < count; ++i)
             {
-                var likerId = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<long>();
+                var likerId = data[VkRestApi.ResponseBody]["items"][i].ToObject<long>();
                 // this user liked the subject - add him to the posters
                 if (!posters.ContainsKey(likerId))
                 {
@@ -1398,7 +1437,7 @@ namespace VKContentNet
         // process group board topics
         private void OnBoardGetTopics(JObject data, string cookie)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 isRunning = false;
                 return;
@@ -1406,7 +1445,7 @@ namespace VKContentNet
 
             if (totalCount == 0)
             {
-                totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<int>();
+                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<int>();
                 if (totalCount == 0)
                 {
                     isRunning = false;
@@ -1415,7 +1454,7 @@ namespace VKContentNet
                 step = CalcStep(totalCount, POSTS_PER_REQUEST);
             }
             // calculate items in response
-            var count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+            var count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (!CheckAndIncrement(count))
                 return;
@@ -1425,7 +1464,7 @@ namespace VKContentNet
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                var obj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                var obj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
 
                 var topic = new BoardTopic();
                 topic.id = Utils.getLongField("id", obj);
@@ -1451,7 +1490,7 @@ namespace VKContentNet
         // process group board topic comments
         private void OnBoardGetComments(JObject data, string cookie)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 isRunning = false;
                 return;
@@ -1459,7 +1498,7 @@ namespace VKContentNet
 
             if (totalCount == 0)
             {
-                totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<int>();
+                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<int>();
                 if (totalCount == 0)
                 {
                     isRunning = false;
@@ -1469,7 +1508,7 @@ namespace VKContentNet
             }
 
             // calculate items in response
-            var count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+            var count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (!CheckAndIncrement(count))
                 return;
@@ -1480,7 +1519,7 @@ namespace VKContentNet
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                var postObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                var postObj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
 
                 var comment = new Comment();
                 comment.id = Utils.getLongField("id", postObj);
@@ -1611,14 +1650,14 @@ namespace VKContentNet
         // process user info
         private void OnUsersGet(JObject data)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 isRunning = false;
                 return;
             }
 
             // calculate items in response
-            var count = data[VkRestApi.RESPONSE_BODY].Count();
+            var count = data[VkRestApi.ResponseBody].Count();
             Debug.WriteLine("Processing " + count + " users");
 
             var profiles = new List<Profile>();
@@ -1626,7 +1665,7 @@ namespace VKContentNet
             // process response body
             for (var i = 0; i < count; ++i)
             {
-                var userObj = data[VkRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+                var userObj = data[VkRestApi.ResponseBody][i].ToObject<JObject>();
 
                 var profile = new Profile();
                 profile.id = Utils.getLongField("id", userObj);
@@ -1695,6 +1734,12 @@ namespace VKContentNet
                 errorLogWriter.Flush();
                 errorLogWriter.Close();
             }
-        }        
+        }
+
+        private void updateErrorLogFile(VkRestApi.OnErrorEventArgs error, StreamWriter writer)
+        {
+            writer.WriteLine("{0}\t{1}\t{2}\t{3}",
+                error.Function, error.Code, error.Error, error.Details);
+        }
     }
 }

@@ -59,7 +59,6 @@
             this.userIdTextBox.ReadOnly = true;
             this.userIdTextBox.Size = new System.Drawing.Size(692, 31);
             this.userIdTextBox.TabIndex = 3;
-            this.userIdTextBox.TextChanged += new System.EventHandler(this.userIdTextBox_TextChanged);
             // 
             // AuthorizeButton
             // 
@@ -113,7 +112,6 @@
             this.WorkingFolderTextBox.ReadOnly = true;
             this.WorkingFolderTextBox.Size = new System.Drawing.Size(692, 31);
             this.WorkingFolderTextBox.TabIndex = 6;
-            this.WorkingFolderTextBox.TextChanged += new System.EventHandler(this.WorkingFolderTextBox_TextChanged);
             // 
             // FindGroupsButton
             // 
@@ -183,7 +181,6 @@
             this.groupId2.Size = new System.Drawing.Size(236, 31);
             this.groupId2.TabIndex = 12;
             this.groupId2.TabStop = false;
-            this.groupId2.TextChanged += new System.EventHandler(this.groupId2_TextChanged);
             // 
             // groupDescription
             // 
@@ -195,7 +192,6 @@
             this.groupDescription.Size = new System.Drawing.Size(440, 137);
             this.groupDescription.TabIndex = 13;
             this.groupDescription.TabStop = false;
-            this.groupDescription.TextChanged += new System.EventHandler(this.groupDescription_TextChanged);
             // 
             // DownloadMembersNetwork
             // 

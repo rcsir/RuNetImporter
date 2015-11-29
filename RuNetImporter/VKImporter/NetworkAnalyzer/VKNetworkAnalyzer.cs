@@ -98,9 +98,9 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         // process load user info response
         private void OnLoadUserInfo(JObject data)
         {
-            if (data[VkRestApi.RESPONSE_BODY].Count() > 0)
+            if (data[VkRestApi.ResponseBody].Count() > 0)
             {
-                JObject ego = data[VkRestApi.RESPONSE_BODY][0].ToObject<JObject>();
+                JObject ego = data[VkRestApi.ResponseBody][0].ToObject<JObject>();
                 Console.WriteLine("Ego: " + ego.ToString());
 
                 // ok, create the ego object here
@@ -121,12 +121,12 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         // process load user friends response
         private void OnLoadFriends(JObject data)
         {
-            if (data[VkRestApi.RESPONSE_BODY].Count() > 0)
+            if (data[VkRestApi.ResponseBody].Count() > 0)
             {
 
-                for (int i = 0; i < data[VkRestApi.RESPONSE_BODY].Count(); ++i)
+                for (int i = 0; i < data[VkRestApi.ResponseBody].Count(); ++i)
                 {
-                    JObject friend = data[VkRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+                    JObject friend = data[VkRestApi.ResponseBody][i].ToObject<JObject>();
                     // uid, first_name, last_name, nickname, sex, bdate, city, country, timezone
                     Console.WriteLine(i.ToString() + ") friend: " + friend.ToString());
 
@@ -147,13 +147,13 @@ namespace rcsir.net.vk.importer.NetworkAnalyzer
         // process get mutual response
         private void OnGetMutual(JObject data, String cookie)
         {
-            if (data[VkRestApi.RESPONSE_BODY].Count() > 0)
+            if (data[VkRestApi.ResponseBody].Count() > 0)
             {
                 List<String> friendFriendsIds = new List<string>();
 
-                for (int i = 0; i < data[VkRestApi.RESPONSE_BODY].Count(); ++i)
+                for (int i = 0; i < data[VkRestApi.ResponseBody].Count(); ++i)
                 {
-                    String friendFriendsId = data[VkRestApi.RESPONSE_BODY][i].ToString();
+                    String friendFriendsId = data[VkRestApi.ResponseBody][i].ToString();
 
                     CreateFriendsMutualEdge(cookie, // target id we passed as a param
                                             friendFriendsId);

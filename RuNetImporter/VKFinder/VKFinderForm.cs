@@ -518,7 +518,7 @@ namespace VKFinder
         // process users search response
         private void OnUsersSearch(JObject data)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 this.run = false;
                 return;
@@ -526,10 +526,10 @@ namespace VKFinder
 
             if (totalCount <= 0)
             {
-                totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
+                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>(); ;
             }
 
-            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (count <= 0)
             {
@@ -543,7 +543,7 @@ namespace VKFinder
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject personObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject personObj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
 
 
                 // TODO: check phone with regex.
@@ -590,7 +590,7 @@ namespace VKFinder
         // process countries response
         private void OnGetCountries(JObject data)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 this.run = false;
                 return;
@@ -598,10 +598,10 @@ namespace VKFinder
 
             if (totalCount <= 0)
             {
-                totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
+                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>(); ;
             }
 
-            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (count <= 0)
             {
@@ -613,7 +613,7 @@ namespace VKFinder
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject obj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject obj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
                 int id = getIntField("id", obj);
                 string title = getStringField("title", obj);
                 if(id > 0)
@@ -631,7 +631,7 @@ namespace VKFinder
         // process regions response
         private void OnGetRegions(JObject data)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 this.run = false;
                 return;
@@ -639,10 +639,10 @@ namespace VKFinder
 
             if (totalCount <= 0)
             {
-                totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
+                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>(); ;
             }
 
-            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (count <= 0)
             {
@@ -653,7 +653,7 @@ namespace VKFinder
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject obj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject obj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
                 int id = getIntField("id", obj);
                 string title = getStringField("title", obj);
                 if (id > 0)
@@ -671,7 +671,7 @@ namespace VKFinder
         // process cities response
         private void OnGetCities(JObject data)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 this.run = false;
                 return;
@@ -679,10 +679,10 @@ namespace VKFinder
 
             if (totalCount <= 0)
             {
-                totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>(); ;
+                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>(); ;
             }
 
-            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (count <= 0)
             {
@@ -693,7 +693,7 @@ namespace VKFinder
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject obj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject obj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
                 int id = getIntField("id", obj);
                 string title = getStringField("title", obj);
                 int important = getIntField("important", obj, 0);

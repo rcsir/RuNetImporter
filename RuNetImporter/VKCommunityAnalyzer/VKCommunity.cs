@@ -331,7 +331,7 @@ namespace VKCommunityAnalyzer
         // data handlers
         private void OnGroupsGetById(JObject data, String cookie)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 // todo: show err
                 Debug.WriteLine("Group is not found");
@@ -341,13 +341,13 @@ namespace VKCommunityAnalyzer
             String gId = cookie; // gropu id sent as a cooky
 
             // now calc items in response
-            int count = data[VkRestApi.RESPONSE_BODY].Count();
+            int count = data[VkRestApi.ResponseBody].Count();
 
             List<Group> groups = new List<Group>();
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject groupObject = data[VkRestApi.RESPONSE_BODY][i].ToObject<JObject>();
+                JObject groupObject = data[VkRestApi.ResponseBody][i].ToObject<JObject>();
 
                 if (groupObject == null)
                     continue;
@@ -644,7 +644,7 @@ namespace VKCommunityAnalyzer
         // process comunity members
         private void OnGroupsGetMembers(JObject data, String cookie)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 this.isMembersRunning = false;
                 return;
@@ -652,17 +652,17 @@ namespace VKCommunityAnalyzer
 
             if (this.totalCount == 0)
             {
-                this.totalCount = data[VkRestApi.RESPONSE_BODY]["count"].ToObject<long>();
+                this.totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>();
                 this.step = (int)(10000 * MEMBERS_PER_REQUEST / this.totalCount);
             }
 
             // now calc items in response
-            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.ResponseBody]["items"].Count();
 
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject profileObj = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject profileObj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
 
                 if (profileObj != null)
                 {
@@ -725,7 +725,7 @@ namespace VKCommunityAnalyzer
         // process load user friends response
         private void OnLoadFriends(JObject data, String cookie)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 this.isEgoNetWorkRunning = false;
                 return;
@@ -734,7 +734,7 @@ namespace VKCommunityAnalyzer
             long mId = Convert.ToInt64(cookie); // members id passed as a cookie
 
             // now calc items in response
-            int count = data[VkRestApi.RESPONSE_BODY]["items"].Count();
+            int count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (profiles.ContainsKey(mId))
             {
@@ -744,7 +744,7 @@ namespace VKCommunityAnalyzer
             // process response body
             for (int i = 0; i < count; ++i)
             {
-                JObject friend = data[VkRestApi.RESPONSE_BODY]["items"][i].ToObject<JObject>();
+                JObject friend = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
 
                 long id = friend["id"].ToObject<long>();
                 // add user id to the friends list
@@ -772,20 +772,20 @@ namespace VKCommunityAnalyzer
         // process get mutual response
         private void OnGetMutual(JObject data, String cookie)
         {
-            if (data[VkRestApi.RESPONSE_BODY] == null)
+            if (data[VkRestApi.ResponseBody] == null)
             {
                 this.isEgoNetWorkRunning = false;
                 return;
             }
 
             long mId = Convert.ToInt64(cookie); // members id passed as a cookie
-            if (data[VkRestApi.RESPONSE_BODY].Count() > 0)
+            if (data[VkRestApi.ResponseBody].Count() > 0)
             {
                 List<String> friendFriendsIds = new List<string>();
 
-                for (int i = 0; i < data[VkRestApi.RESPONSE_BODY].Count(); ++i)
+                for (int i = 0; i < data[VkRestApi.ResponseBody].Count(); ++i)
                 {
-                    long friendFriendsId = data[VkRestApi.RESPONSE_BODY][i].ToObject<long>();
+                    long friendFriendsId = data[VkRestApi.ResponseBody][i].ToObject<long>();
                     // add friend vertex
                     this.egoNetAnalyzer.AddFriendsEdge(mId, friendFriendsId); // member id is in the cookie
                 }

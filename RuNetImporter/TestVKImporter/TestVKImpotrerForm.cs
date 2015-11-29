@@ -53,9 +53,9 @@ namespace TestVKImporter
         // process load user info response
         private void OnLoadUserInfo(JObject data)
         {
-            if (data[VkRestApi.RESPONSE_BODY].Count() > 0)
+            if (data[VkRestApi.ResponseBody].Count() > 0)
             {
-                JObject ego = data[VkRestApi.RESPONSE_BODY][0].ToObject<JObject>();
+                JObject ego = data[VkRestApi.ResponseBody][0].ToObject<JObject>();
                 Console.WriteLine("Ego: " + ego.ToString());
 
                 this.userInfoTextBox.Clear();

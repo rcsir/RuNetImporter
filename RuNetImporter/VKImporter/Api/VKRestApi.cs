@@ -8,7 +8,7 @@ using rcsir.net.vk.importer.api.entity;
 
 namespace rcsir.net.vk.importer.api
 {
-    // VK enum for sex field
+    // VK enumeration for sex field
     public enum VkSexField
     {
         Any = 0,
@@ -16,7 +16,7 @@ namespace rcsir.net.vk.importer.api
         Male = 2
     };
 
-    // VK enum for status (relationship)
+    // VK enumeration for status (relationship)
     public enum VkRelationshipStatus
     {
         NotMarried = 1, 
@@ -187,24 +187,15 @@ namespace rcsir.net.vk.importer.api
         // onError event arguments
         public class OnErrorEventArgs : EventArgs, IEntity
         {
-            public OnErrorEventArgs() :
-                this(VkFunction.FriendsGet, "")
+            public OnErrorEventArgs(VkFunction function, VkRestContext context, long code, String error) :
+                this(function, context, code, error, "")
             {
             }
 
-            public OnErrorEventArgs(VkFunction function, String error) :
-                this(function, 0, error)
-            {
-            }
-
-            public OnErrorEventArgs(VkFunction function, long code, String error) :
-                this(function, code, error, "")
-            {
-            }
-
-            public OnErrorEventArgs(VkFunction function, long code, String error, String details)
+            public OnErrorEventArgs(VkFunction function, VkRestContext context, long code, String error, String details)
             {
                 Function = function;
+                Context = context;
                 Code = code;
                 Error = error;
                 Details = details;
@@ -214,6 +205,7 @@ namespace rcsir.net.vk.importer.api
             public long Code { get; private set; }
             public String Error { get; private set; }
             public String Details { get; private set; }
+            public VkRestContext Context { get; private set; }
 
             public string Name()
             {
@@ -222,14 +214,14 @@ namespace rcsir.net.vk.importer.api
 
             public string FileHeader()
             {
-                return String.Format("{0}\t{1}\t{2}",
-                        "function", "code", "error");
+                return String.Format("{0}\t{1}\t{2}\t{3}",
+                        "function", "code", "error", "details");
             }
 
             public string ToFileLine()
             {
-                return String.Format("{0}\t{1}\t{2}",
-                        Function, Code, Error);
+                return String.Format("{0}\t{1}\t{2}\t{3}",
+                        Function, Code, Error, Details);
             }
         }
 
@@ -269,13 +261,13 @@ namespace rcsir.net.vk.importer.api
             public readonly String UserId;
             public readonly String AuthToken;
             public String Parameters { get; set; }
-            public long Offset { get; set; } // commonly used in lookup api
-            public long Count { get; set; } // commonly used in lookup api 
+            public long Offset { get; set; } // commonly used in lookup API
+            public long Count { get; set; } // commonly used in lookup API 
             public String Cookie { get; set; }
             public String Lang { get; set; } // language - en, ru
         }
 
-        // params: fid, name, user_id name, version, isOpen
+        // parameters: function id, name, user_id name, version, isOpen
         // if isOpen is true - method does not require an access token
         private static readonly Method GetProfiles = new Method(VkFunction.GetProfiles, "getProfiles", "uid", "5.21", false);
         private static readonly Method LoadFriends = new Method(VkFunction.LoadFriends, "friends.get", "user_id", "5.21", true);
@@ -314,15 +306,19 @@ namespace rcsir.net.vk.importer.api
 
         public ErrorHandler OnError;
 
-        // API usrl
-        private readonly String api_url = "https://api.vk.com/method/";
+        // API URL
+        private const String ApiUrl = "https://api.vk.com/method/";
 
         // Request parameters
-        public static readonly String GET_METHOD = "Get";
-        public static readonly String CONTENT_TYPE = "application/json; charset=utf-8";
-        public static readonly String CONTENT_ACCEPT = "application/json"; // Determines the response type as XML or JSON etc
-        public static readonly String RESPONSE_BODY = "response";
-        public static readonly String ERROR_BODY = "error";
+        public const String GetMethod = "Get";
+        public const String ContentType = "application/json; charset=utf-8";
+        public const String ContentAccept = "application/json"; // Determines the response type as XML or JSON etc
+        public const String ResponseBody = "response";
+        public const String ErrorBody = "error";
+
+        // error constants
+        public const long CriticalErrorCode = -1;
+        public const String CriticalErrorText = "Critical Error";
 
         // functions switch
         public void CallVkFunction(VkFunction function, VkRestContext context)
@@ -388,7 +384,7 @@ namespace rcsir.net.vk.importer.api
 
         private void MakeVkCall( Method method, VkRestContext context)
         {
-            var sb = new StringBuilder(api_url);
+            var sb = new StringBuilder(ApiUrl);
             sb.Append(method.Name).Append('?');
             
             if (method.UserParam.Length > 0)
@@ -413,13 +409,16 @@ namespace rcsir.net.vk.importer.api
             sb.Append("lang=").Append(context.Lang);
 
             // make rest call
-            MakeRestCall(method.Fid, sb.ToString(), context.Cookie);
+            MakeRestCall(method.Fid, sb.ToString(), context);
             
         }
 
         // make REST call to VK services
-        private void MakeRestCall(VkFunction function, String uri, String cookie = null)
+        private void MakeRestCall(VkFunction function, String uri, VkRestContext context)
         {
+            if (OnData == null || OnError == null) 
+                throw new ArgumentException("OnData and OnError handlers must be provided");
+
             try
             {
                 // Create URI 
@@ -429,93 +428,91 @@ namespace rcsir.net.vk.importer.api
                 // Create the web request 
                 var request = WebRequest.Create(address) as HttpWebRequest;
 
+                if (request == null)
+                {
+                    var args = new OnErrorEventArgs(function, context, CriticalErrorCode, CriticalErrorText, "Request object is null");
+                    OnError(this, args);
+                    return;
+                }
+
                 // Set type to Get 
-                request.Method = GET_METHOD;
-                request.ContentType = CONTENT_TYPE;
-                request.Accept = CONTENT_ACCEPT;
+                request.Method = GetMethod;
+                request.ContentType = ContentType;
+                request.Accept = ContentAccept;
 
                 // Get response 
                 using (var response = request.GetResponse() as HttpWebResponse)
                 {
-                    Stream responseStream = null;
-                    responseStream = response.GetResponseStream();
+                    if (response == null)
+                    {
+                        var args = new OnErrorEventArgs(function, context, CriticalErrorCode, CriticalErrorText, "Response object is null");
+                        OnError(this, args);
+                        return;
+                    }
+
+                    var responseStream = response.GetResponseStream();
+                    if (responseStream == null)
+                    {
+                        var args = new OnErrorEventArgs(function, context, CriticalErrorCode, CriticalErrorText, "Response stream is null");
+                        OnError(this, args);
+                        return;
+                    }
+
                     var responseCode = (int)response.StatusCode;
                     if (responseCode < 300)
                     {
-                        string responseBody = ((new StreamReader(responseStream)).ReadToEnd());
-                        string contentType = response.ContentType;
-                        JObject o = JObject.Parse(responseBody);
-                        if (o[RESPONSE_BODY] != null)
+                        var responseBody = ((new StreamReader(responseStream)).ReadToEnd());
+                        //var contentType = response.ContentType;
+                        var o = JObject.Parse(responseBody);
+                        if (o[ResponseBody] != null)
                         {
-                            // Debug.WriteLine("REST response: " + o[RESPONSE_BODY].ToString());
-                            // OK - notify listeners
-                            if (OnData != null)
-                            {
-                                var args = new OnDataEventArgs(function, o, cookie);
-                                OnData(this, args);
-                            }
+                            var args = new OnDataEventArgs(function, o, context.Cookie);
+                            OnData(this, args);
                         }
-                        else if (o[ERROR_BODY] != null)
+                        else if (o[ErrorBody] != null)
                         {
-                            // Debug.WriteLine("REST error: " + o[ERROR_BODY].ToString());
-                            // Error - notify listeners
-                            if (OnError != null)
+                            long code = 0;
+                            var error = "";
+                            if (o[ErrorBody]["error_code"] != null)
                             {
-                                long code = 0;
-                                String error = "";
-                                if (o[ERROR_BODY]["error_code"] != null)
-                                {
-                                    code = o[ERROR_BODY]["error_code"].ToObject<long>();
-                                }
-                                if (o[ERROR_BODY]["error_msg"] != null)
-                                {
-                                    error = o[ERROR_BODY]["error_msg"].ToString();
-                                }
+                                code = o[ErrorBody]["error_code"].ToObject<long>();
+                            }
+                            if (o[ErrorBody]["error_msg"] != null)
+                            {
+                                error = o[ErrorBody]["error_msg"].ToString();
+                            }
 
-                                var args = new OnErrorEventArgs(function, code, error, o[ERROR_BODY].ToString());
-                                OnError(this, args);
-                            }
+                            var args = new OnErrorEventArgs(function, context, code, error, o[ErrorBody].ToString());
+                            OnError(this, args);
                         }
+                    }
+                    else
+                    {
+                        var args = new OnErrorEventArgs(function, context, CriticalErrorCode, CriticalErrorText, "Unexpected response code: " + responseCode);
+                        OnError(this, args);
                     }
                 }
             }
             catch (WebException exception)
             {
-                HandleWebException(function, exception);
+                HandleWebException(function, exception, context);
             }
         }
 
-        private void HandleWebException(VkFunction function, WebException ex)
+        private void HandleWebException(VkFunction function, WebException ex, VkRestContext context)
         {
             if (ex.Status == WebExceptionStatus.ProtocolError)
             {
                 var statusCode = (int)((HttpWebResponse)ex.Response).StatusCode;
-                Stream responseStream = ex.Response.GetResponseStream();
-                string responseText = (new StreamReader(responseStream)).ReadToEnd();
-
-                if (statusCode == 500)
-                {
-                    Debug.WriteLine("Error 500 - " + responseText);
-                }
-                else
-                {
-                    // Do Something for other status codes
-                    Debug.WriteLine("Error " + statusCode);
-                }
-
-                // Error - notify listeners
-                if (OnError != null)
-                {
-                    var errorsb = new StringBuilder();
-                    errorsb.Append("StatusCode: ").Append(statusCode).Append(',');
-                    errorsb.Append("Error: \'").Append(responseText).Append("\'");
-                    var args = new OnErrorEventArgs(function, errorsb.ToString());
-                    OnError(this, args);
-                }
+                var responseStream = ex.Response.GetResponseStream();
+                var responseText = responseStream!= null ? (new StreamReader(responseStream)).ReadToEnd() : "";
+                var args = new OnErrorEventArgs(function, context, statusCode, responseText);
+                OnError(this, args);
             }
             else
             {
-                throw (ex); // Or check for other WebExceptionStatus
+                var args = new OnErrorEventArgs(function, context, CriticalErrorCode, CriticalErrorText, ex.Message);
+                OnError(this, args);
             }
         }
     }
