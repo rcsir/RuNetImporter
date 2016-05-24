@@ -461,7 +461,21 @@ namespace rcsir.net.vk.importer.api
                     var responseCode = (int)response.StatusCode;
                     if (responseCode < 300)
                     {
-                        var responseBody = ((new StreamReader(responseStream)).ReadToEnd());
+
+                        string responseBody;
+
+                        try
+                        {
+                            responseBody = ((new StreamReader(responseStream)).ReadToEnd());
+                        }
+                        catch (IOException e)
+                        {
+                            var args = new OnErrorEventArgs(function, context, CriticalErrorCode, 
+                                CriticalErrorText, e.Message);
+                            OnError(this, args);
+                            return;                            
+                        }
+
                         //var contentType = response.ContentType;
                         var o = JObject.Parse(responseBody);
                         if (o[ResponseBody] != null)
