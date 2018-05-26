@@ -44,6 +44,8 @@
             this.backgroundGroupsWorker = new System.ComponentModel.BackgroundWorker();
             this.GenerateCommunicatinoNetwork = new System.Windows.Forms.Button();
             this.backgroundNetWorker = new System.ComponentModel.BackgroundWorker();
+            this.downloadLikesButton = new System.Windows.Forms.Button();
+            this.backgroundLikesWorker = new System.ComponentModel.BackgroundWorker();
             this.groupsStatusStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -121,7 +123,7 @@
             // 
             // GroupsProgressBar
             // 
-            this.GroupsProgressBar.Location = new System.Drawing.Point(10, 452);
+            this.GroupsProgressBar.Location = new System.Drawing.Point(10, 534);
             this.GroupsProgressBar.Margin = new System.Windows.Forms.Padding(4);
             this.GroupsProgressBar.Maximum = 10000;
             this.GroupsProgressBar.Name = "GroupsProgressBar";
@@ -133,7 +135,7 @@
             // CancelOperation
             // 
             this.CancelOperation.Enabled = false;
-            this.CancelOperation.Location = new System.Drawing.Point(10, 408);
+            this.CancelOperation.Location = new System.Drawing.Point(10, 490);
             this.CancelOperation.Margin = new System.Windows.Forms.Padding(4);
             this.CancelOperation.Name = "CancelOperation";
             this.CancelOperation.Size = new System.Drawing.Size(156, 37);
@@ -147,7 +149,7 @@
             this.groupsStatusStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.groupsStatusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.groupsStripStatusLabel});
-            this.groupsStatusStrip.Location = new System.Drawing.Point(0, 502);
+            this.groupsStatusStrip.Location = new System.Drawing.Point(0, 575);
             this.groupsStatusStrip.Name = "groupsStatusStrip";
             this.groupsStatusStrip.Padding = new System.Windows.Forms.Padding(1, 0, 19, 0);
             this.groupsStatusStrip.Size = new System.Drawing.Size(487, 25);
@@ -192,11 +194,30 @@
             this.backgroundNetWorker.WorkerReportsProgress = true;
             this.backgroundNetWorker.WorkerSupportsCancellation = true;
             // 
+            // downloadLikesButton
+            // 
+            this.downloadLikesButton.Location = new System.Drawing.Point(12, 399);
+            this.downloadLikesButton.Name = "downloadLikesButton";
+            this.downloadLikesButton.Size = new System.Drawing.Size(461, 36);
+            this.downloadLikesButton.TabIndex = 26;
+            this.downloadLikesButton.Text = "Download Likes Network...";
+            this.downloadLikesButton.UseVisualStyleBackColor = true;
+            this.downloadLikesButton.Click += new System.EventHandler(this.downloadLikesButton_Click);
+            // 
+            // backgroundLikesWorker
+            // 
+            this.backgroundLikesWorker.WorkerReportsProgress = true;
+            this.backgroundLikesWorker.WorkerSupportsCancellation = true;
+            this.backgroundLikesWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundLikesWorker_DoWork);
+            this.backgroundLikesWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundLikesWorker_ProgressChanged);
+            this.backgroundLikesWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundLikesWorker_RunWorkerCompleted);
+            // 
             // VKContentForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(487, 527);
+            this.ClientSize = new System.Drawing.Size(487, 600);
+            this.Controls.Add(this.downloadLikesButton);
             this.Controls.Add(this.GenerateCommunicatinoNetwork);
             this.Controls.Add(this.DownloadGroupPosts);
             this.Controls.Add(this.GroupsProgressBar);
@@ -241,6 +262,8 @@
         private System.ComponentModel.BackgroundWorker backgroundGroupsWorker;
         private System.Windows.Forms.Button GenerateCommunicatinoNetwork;
         private System.ComponentModel.BackgroundWorker backgroundNetWorker;
+        private System.Windows.Forms.Button downloadLikesButton;
+        private System.ComponentModel.BackgroundWorker backgroundLikesWorker;
     }
 }
 

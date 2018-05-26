@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace rcsir.net.vk.importer.api.entity
 {
@@ -10,14 +6,16 @@ namespace rcsir.net.vk.importer.api.entity
     {
         public Like()
         {
-            type = "";
-            owner_id = 0;
-            item_id = 0;
+            Type = "";
+            OwnerId = 0;
+            ItemId = 0;
+            Count = 0;
         }
 
-        public string type { get; set; } // post, comment etc.
-        public long owner_id { get; set; }
-        public long item_id { get; set; }
+        public string Type { get; set; } // post, comment etc.
+        public long OwnerId { get; set; }
+        public long ItemId { get; set; }
+        public long Count { get; set; }
 
         public string Name()
         {

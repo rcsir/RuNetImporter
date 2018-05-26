@@ -1,30 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
-using System.Diagnostics;
 using System.Threading;
-using System.IO;
-using rcsir.net.vk.importer.Dialogs;
-using rcsir.net.vk.importer.api;
-using rcsir.net.vk.finder.Dialogs;
-
-using Newtonsoft.Json;
+using System.Windows.Forms;
+using FileHelpers;
 using Newtonsoft.Json.Linq;
+using rcsir.net.vk.finder.Dialogs;
+using rcsir.net.vk.importer.api;
+using rcsir.net.vk.importer.api.entity;
+using rcsir.net.vk.importer.Dialogs;
 
-
-namespace VKFinder
+namespace rcsir.net.vk.finder
 {
-    public partial class VKFinderForm : Form
+    public partial class VkFinderForm : Form
     {
-        private static readonly string REQUIRED_FIELDS = "fields=photo,screen_name,sex,bdate,contacts,relation,status,city,country";
+        private const string RequiredFields = "fields=photo,screen_name,sex,bdate,contacts,relation,status,city,country";
 
-        private static readonly int ITEMS_PER_REQUEST = 1000;
+        private const int ItemsPerRequest = 1000;
         private long currentOffset;
         private long totalCount;
 
@@ -32,157 +29,156 @@ namespace VKFinder
         private readonly VkRestApi vkRestApi;
         private String userId;
         private String authToken;
-        private long expiresAt;
-        private static readonly AutoResetEvent readyEvent = new AutoResetEvent(false);
+        private static readonly AutoResetEvent ReadyEvent = new AutoResetEvent(false);
         private volatile bool run; // finder worker flag
-        //private volatile bool load; // loader worker flag
         private bool withPhone = false;
 
+        // special folder for application files
+        private readonly string localApplicationDataPath = "";
+
         // places
-        private List<VkRegion> regions = new List<VkRegion>();
-        private VkCity SaintPetersburg = new VkCity(2, "Санкт-Петербург", true, "Санкт-Петербург");
-        private VkCity Moscow = new VkCity(1, "Москва", true, "Москва");
-        private VkCity Ekaterinburg = new VkCity(49, "Екатеринбург", true, "Екатеринбург");
-        private readonly Dictionary<string, List<VkCity>> citiesByDistrict = new Dictionary<string, List<VkCity>>();
+        private List<Country> countries = new List<Country>(); 
+        private List<Region> regions = new List<Region>();
+        private List<City> cities = new List<City>();
 
         // document
-        StreamWriter writer;
+        StreamWriter documentWriter;
 
+        // error log
+        StreamWriter errorLogWriter;
+
+        private readonly FileHelperAsyncEngine<Country> countryEngine = new FileHelperAsyncEngine<Country>();
+        private readonly FileHelperAsyncEngine<Region> regionEngine = new FileHelperAsyncEngine<Region>();
+        private readonly FileHelperAsyncEngine<City> cityEngine = new FileHelperAsyncEngine<City>();
+
+        // person record
         private class Person
         {
             public Person()
             {
-                id = "";
-                firstName = "";
-                lastName = "";
-                screenName = "";
-                sex = "";
-                bdate = "";
-                photo = "";
-                mobilePhone = "";
-                homePhone = "";
-                city = "";
-                country = "";
-                relation = "";
-                status = "";
+                Id = "";
+                FirstName = "";
+                LastName = "";
+                ScreenName = "";
+                Sex = "";
+                Bdate = "";
+                Photo = "";
+                MobilePhone = "";
+                HomePhone = "";
+                City = "";
+                Country = "";
+                Relation = "";
+                Status = "";
 
             }
-            public String id { get; set; }
-            public String firstName { get; set; }
-            public String lastName { get; set; }
-            public String screenName { get; set; }
-            public String sex { get; set; }
-            public String bdate { get; set; }
-            public String photo { get; set; }
-            public String mobilePhone { get; set; }
-            public String homePhone { get; set; }
-            public String city { get; set; }
-            public String country { get; set; }
-            public String relation { get; set; }
-            public String status { get; set; }
+            public String Id { get; set; }
+            public String FirstName { get; set; }
+            public String LastName { get; set; }
+            public String ScreenName { get; set; }
+            public String Sex { get; set; }
+            public String Bdate { get; set; }
+            public String Photo { get; set; }
+            public String MobilePhone { get; set; }
+            public String HomePhone { get; set; }
+            public String City { get; set; }
+            public String Country { get; set; }
+            public String Relation { get; set; }
+            public String Status { get; set; }
 
         };
 
-        public VKFinderForm()
+        public VkFinderForm()
         {
             InitializeComponent();
 
-            this.userIdTextBox.Text = "Please authorize";
-            this.FindProgressBar.Minimum = 0;
-            this.FindProgressBar.Maximum = 10000;
-            this.FindProgressBar.Step = 1;
+            userIdTextBox.Text = "Please authorize";
+            FindProgressBar.Minimum = 0;
+            FindProgressBar.Maximum = 10000;
+            FindProgressBar.Step = 1;
 
-            updateStatus(0, "Ready");
+            localApplicationDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+            UpdateStatus(0, "Ready");
 
             vkLoginDialog = new VKLoginDialog();
             // subscribe for login events
-            vkLoginDialog.OnUserLogin += new VKLoginDialog.UserLoginHandler(UserLogin);
+            vkLoginDialog.OnUserLogin += UserLogin;
 
             vkRestApi = new VkRestApi();
             // set up data handler
-            vkRestApi.OnData += new VkRestApi.DataHandler(OnData);
+            vkRestApi.OnData += OnData;
             // set up error handler
-            vkRestApi.OnError += new VkRestApi.ErrorHandler(OnError);
+            vkRestApi.OnError += OnError;
 
             // folder for files
-            this.folderBrowserDialog1.Description =
+            folderBrowserDialog1.Description =
                 "Select the directory that you want to use to store files.";
-            // this.folderBrowserDialog1.ShowNewFolderButton = false;
             // Default to the My Documents folder. 
-            this.folderBrowserDialog1.RootFolder = Environment.SpecialFolder.Personal;
-            // this.folderBrowserDialog1.RootFolder = Environment.SpecialFolder.MyComputer;
-            this.WorkingFolderTextBox.Text = this.folderBrowserDialog1.SelectedPath;
+            folderBrowserDialog1.RootFolder = Environment.SpecialFolder.Personal;
+            WorkingFolderTextBox.Text = folderBrowserDialog1.SelectedPath;
 
             // set up background find worker handlers
-            this.backgroundFinderWorker.DoWork 
-                += new DoWorkEventHandler(findWork);
-
-            this.backgroundFinderWorker.ProgressChanged 
-                += new ProgressChangedEventHandler(findWorkProgressChanged);
-
-            this.backgroundFinderWorker.RunWorkerCompleted 
-                += new RunWorkerCompletedEventHandler(findWorkCompleted);
+            backgroundFinderWorker.DoWork += FindWork;
+            backgroundFinderWorker.ProgressChanged += FindWorkProgressChanged;
+            backgroundFinderWorker.RunWorkerCompleted += FindWorkCompleted;
 
             // set up background load worker handlers
-            this.backgroundLoaderWorker.DoWork
-                += new DoWorkEventHandler(loadWork);        
+            backgroundLoaderWorker.DoWork += LoadWork;        
         }
 
         private void VKFinderForm_Load(object sender, EventArgs e)
         {
-            this.ActivateControls();
+            ActivateControls();
         }
 
         private void AuthorizeButton_Click(object sender, EventArgs e)
         {
-            bool reLogin = true; // if true - will delete cookies and relogin, use false for dev.
+            const bool reLogin = true; // if true - will delete cookies and re-login, use false for test
             vkLoginDialog.Login("friends", reLogin); // default permission - friends
         }
 
         private void CancelButton_Click(object sender, EventArgs e)
         {
-            this.backgroundFinderWorker.CancelAsync();
+            backgroundFinderWorker.CancelAsync();
         }
         
         private void button1_Click(object sender, EventArgs e)
         {
             // Show the FolderBrowserDialog.
-            DialogResult result = folderBrowserDialog1.ShowDialog();
+            var result = folderBrowserDialog1.ShowDialog();
             if (result == DialogResult.OK)
             {
-                this.WorkingFolderTextBox.Text = folderBrowserDialog1.SelectedPath;
-                if (this.citiesByDistrict.Count() == 0)
+                WorkingFolderTextBox.Text = folderBrowserDialog1.SelectedPath;
+
+                // if error log exists - close it and create new one
+                if (errorLogWriter != null)
                 {
-                    // add spb
-                    var spb = new List<VkCity> {SaintPetersburg};
-                    this.citiesByDistrict.Add("Санкт-Петербург город", spb);
-
-                    // add moscow
-                    var moscow = new List<VkCity> {Moscow};
-                    this.citiesByDistrict.Add("Москва город", moscow);
-
-                    // add eburg
-                    var eburg = new List<VkCity> {Ekaterinburg};
-                    this.citiesByDistrict.Add("Екатеринбург город", eburg);
-
-                    this.backgroundLoaderWorker.RunWorkerAsync(1); // param is not important
+                    errorLogWriter.Close();
+                    errorLogWriter = null;
                 }
+                var fileName = GenerateErrorLogFileName();
+                errorLogWriter = File.CreateText(fileName);
+                errorLogWriter.AutoFlush = true;
+                printErrorLogHeader(errorLogWriter);
+
+                // Load regions and cities from VK or file
+                backgroundLoaderWorker.RunWorkerAsync(1); // parameter is not important
             }
 
-            this.ActivateControls();
+            ActivateControls();
         }
 
         private void FindUsersButton_Click(object sender, EventArgs e)
         {
-            UserSearchDialog searchDialog = new UserSearchDialog(this.citiesByDistrict);
+            var searchDialog = new UserSearchDialog(regions, cities);
 
-            if (searchDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            if (searchDialog.ShowDialog() == DialogResult.OK)
             {
-                SearchParameters searchParameters = searchDialog.searchParameters;
-                this.withPhone = searchParameters.withPhone;
+                var searchParameters = searchDialog.searchParameters;
+                withPhone = searchParameters.withPhone;
 
-                updateStatus(-1, "Start");
-                this.backgroundFinderWorker.RunWorkerAsync(searchParameters);
+                UpdateStatus(-1, "Start");
+                backgroundFinderWorker.RunWorkerAsync(searchParameters);
             }
             else
             {
@@ -192,41 +188,202 @@ namespace VKFinder
 
         private void ActivateControls()
         {
-            bool isAuthorized = (this.userId != null && 
-                                this.userId.Length > 0 &&
-                                this.WorkingFolderTextBox.Text.Count() > 0);
+            var isAuthorized = (!string.IsNullOrEmpty(userId) &&
+                                WorkingFolderTextBox.Text.Any());
 
             if (isAuthorized)
             {
                 // enable user controls
-                this.FindUsersButton.Enabled = true;
-                this.CancelFindButton.Enabled = true;
+                FindUsersButton.Enabled = true;
+                CancelFindButton.Enabled = true;
             }
             else
             {
                 // disable user controls
-                this.FindUsersButton.Enabled = false;
-                this.CancelFindButton.Enabled = false;
+                FindUsersButton.Enabled = false;
+                CancelFindButton.Enabled = false;
             }
         }
 
         // Async Workers
+        
+        // Load Countries, Regions and Cities from VK Database or a file
+        private void LoadWork(Object sender, DoWorkEventArgs args)
+        {
+            var bw = sender as BackgroundWorker;
+            var sb = new StringBuilder {Length = 0};
 
-        private void findWork(Object sender, DoWorkEventArgs args)
+            sb.Append(localApplicationDataPath).Append("\\").Append("vk_countries.csv");
+            var countriesFile = sb.ToString();
+
+            sb.Length = 0;
+            sb.Append(localApplicationDataPath).Append("\\").Append("vk_regions.csv");
+            var regionsFile = sb.ToString();
+
+            sb.Length = 0;
+            sb.Append(localApplicationDataPath).Append("\\").Append("vk_cities.csv");
+            var citiesFile = sb.ToString();
+
+            try
+            {
+                var engine1 = new FileHelperEngine<Country>();
+                countries = new List<Country>(engine1.ReadFileAsList(countriesFile));
+                
+                var engine2 = new FileHelperEngine<Region>();
+                regions = engine2.ReadFileAsList(regionsFile);
+
+                var engine3 = new FileHelperEngine<City>();
+                cities = engine3.ReadFileAsList(citiesFile);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Files do not exist, will generate them from VK");
+            }
+
+            if (countries.Any() && regions.Any() && cities.Any())
+            {
+                // loaded from file
+                return;
+            }
+
+            // Extract the argument. 
+            // SearchParameters searchParameters = args.Argument as SearchParameters;
+            var context = new VkRestApi.VkRestContext(userId, authToken);
+
+            // process countries
+            // right now we care only about Russia - 1
+            countries.Add(new Country(1, "Россия"));
+            
+            foreach (var country in countries)
+            {
+                // reset counters
+                run = true;
+                totalCount = 0;
+                currentOffset = 0;
+                long timeLastCall = 0;
+
+                // add region for major cities
+                regions.Add(new Region(0, country.Id, "Большие города"));
+
+                while (run &&
+                    currentOffset <= totalCount)
+                {
+                    sb.Length = 0;
+                    sb.Append("country_id=").Append(country.Id).Append("&");
+                    sb.Append("offset=").Append(currentOffset).Append("&");
+                    sb.Append("count=").Append(ItemsPerRequest).Append("&");
+                    context.Parameters = sb.ToString();
+                    context.Cookie = country.Id.ToString(); // send country ID as a cooky
+                    Debug.WriteLine("request parameters: " + context.Parameters);
+
+                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                    timeLastCall = Utils.SleepTime(timeLastCall);
+                    vkRestApi.CallVkFunction(VkFunction.DatabaseGetRegions, context);
+
+                    // wait for the data
+                    ReadyEvent.WaitOne();
+                    currentOffset += ItemsPerRequest;
+                }
+
+                // process important cities
+                // reset counters
+                run = true;
+                totalCount = 0;
+                currentOffset = 0;
+                timeLastCall = 0;
+
+                while (run &&
+                    currentOffset <= totalCount)
+                {
+                    sb.Length = 0;
+                    sb.Append("country_id=").Append(country.Id).Append("&"); // Russia
+                    sb.Append("need_all=").Append(0).Append("&"); // need only important one
+                    sb.Append("offset=").Append(currentOffset).Append("&");
+                    sb.Append("count=").Append(ItemsPerRequest).Append("&");
+                    context.Parameters = sb.ToString();
+                    context.Cookie = 0.ToString(); // set region for important cities to 0
+                    Debug.WriteLine("request parameters: " + context.Parameters);
+
+                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                    timeLastCall = Utils.SleepTime(timeLastCall);
+                    vkRestApi.CallVkFunction(VkFunction.DatabaseGetCities, context);
+
+                    // wait for the user data
+                    ReadyEvent.WaitOne();
+                    currentOffset += ItemsPerRequest;
+                }
+
+                // process cities for each region
+                foreach (var region in regions)
+                {
+                    // reset counters
+                    run = true;
+                    totalCount = 0;
+                    currentOffset = 0;
+                    timeLastCall = 0;
+
+                    while (run &&
+                           currentOffset <= totalCount)
+                    {
+                        sb.Length = 0;
+                        sb.Append("country_id=").Append(country.Id).Append("&"); 
+                        sb.Append("region_id=").Append(region.Id).Append("&"); // set region id
+                        sb.Append("need_all=").Append(0).Append("&"); // need only important one
+                        sb.Append("offset=").Append(currentOffset).Append("&");
+                        sb.Append("count=").Append(ItemsPerRequest).Append("&");
+                        context.Parameters = sb.ToString();
+                        context.Cookie = region.Id.ToString(); // set region id as a cooky
+                        Debug.WriteLine("request parameters: " + context.Parameters);
+
+                        // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                        timeLastCall = Utils.SleepTime(timeLastCall);
+                        vkRestApi.CallVkFunction(VkFunction.DatabaseGetCities, context);
+
+                        // wait for the user data
+                        ReadyEvent.WaitOne();
+                        currentOffset += ItemsPerRequest;
+                    }
+                }
+            }
+
+            // save countries
+            using (countryEngine.BeginWriteFile(countriesFile))
+            {
+                countryEngine.WriteNexts(countries);
+            }
+
+            using (regionEngine.BeginWriteFile(regionsFile))
+            {
+                regionEngine.WriteNexts(regions);
+            }
+
+            using (cityEngine.BeginWriteFile(citiesFile))
+            {
+                cityEngine.WriteNexts(cities);
+            }
+
+            //args.Result = TimeConsumingOperation(bw, arg);
+        }
+
+        private void FindWork(Object sender, DoWorkEventArgs args)
         {
             // Do not access the form's BackgroundWorker reference directly. 
             // Instead, use the reference provided by the sender parameter.
-            BackgroundWorker bw = sender as BackgroundWorker;
+            var bw = sender as BackgroundWorker;
+            if(bw == null)
+                throw new ArgumentNullException("sender");
 
             // Extract the argument. 
-            SearchParameters searchParameters = args.Argument as SearchParameters;
+            var searchParameters = args.Argument as SearchParameters;
+            if (searchParameters == null)
+                throw new ArgumentException("args.Argument");
 
-            string parameters = parseSearchParameters(searchParameters);
+            var parameters = parseSearchParameters(searchParameters);
 
-            Int32 startYear = (Int32)searchParameters.yearStart;
-            Int32 stopYear = (Int32)searchParameters.yearEnd;
-            Int32 startMonth = (Int32)searchParameters.monthStart;
-            Int32 stopMonth = (Int32)searchParameters.monthEnd;
+            var startYear = (Int32)searchParameters.yearStart;
+            var stopYear = (Int32)searchParameters.yearEnd;
+            var startMonth = (Int32)searchParameters.monthStart;
+            var stopMonth = (Int32)searchParameters.monthEnd;
 
             if (stopYear < startYear)
             {
@@ -252,8 +409,8 @@ namespace VKFinder
                 searchParameters.useSlowSearch = false;
             }
 
-            DateTime saveStartDate = new DateTime(startYear, startMonth, 1);
-            DateTime saveStopDate = new DateTime(stopYear, stopMonth, 1);
+            var saveStartDate = new DateTime(startYear, startMonth, 1);
+            var saveStopDate = new DateTime(stopYear, stopMonth, 1);
 
             if(searchParameters.useSlowSearch)
             {
@@ -262,7 +419,7 @@ namespace VKFinder
             }
 
             // figure out step
-            int step = 10000;
+            var step = 10000;
                 
             if( startYear > 1900)
             {
@@ -274,26 +431,26 @@ namespace VKFinder
                 else
                 {
                     // calculate number of months 
-                    step = (int)(10000 / ((saveStopDate.Year - saveStartDate.Year) * 12  + saveStopDate.Month - saveStartDate.Month + 1));
+                    step = 10000 / ((saveStopDate.Year - saveStartDate.Year) * 12  + saveStopDate.Month - saveStartDate.Month + 1);
                 }
             }
 
             step /= searchParameters.cities.Count();
 
-            // create stream writer
-            String fileName = generateFileName(searchParameters);
-            writer = File.CreateText(fileName);
-            printHeader(writer);
+            // create stream documentWriter
+            var fileName = GenerateFileName(searchParameters);
+            documentWriter = File.CreateText(fileName);
+            printHeader(documentWriter);
 
             var context = new VkRestApi.VkRestContext(this.userId, this.authToken);
 
             // loop by birth year and month to maximize number of matches (1000 at a time)
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             foreach (var city in searchParameters.cities)
             {
                 long timeLastCall = 0;
-                DateTime startDate = saveStartDate;
-                DateTime stopDate = saveStopDate;
+                var startDate = saveStartDate;
+                var stopDate = saveStopDate;
 
                 while (startDate <= stopDate)
                 {
@@ -302,26 +459,26 @@ namespace VKFinder
 
                     bw.ReportProgress(step, "Searching in " + city.Title);
 
-                    this.run = true;
-                    this.totalCount = 0;
-                    this.currentOffset = 0;
+                    run = true;
+                    totalCount = 0;
+                    currentOffset = 0;
 
-                    while (this.run &&
-                        this.currentOffset <= this.totalCount)
+                    while (run &&
+                        currentOffset <= totalCount)
                     {
                         if (bw.CancellationPending)
                             break;
 
                         sb.Length = 0;
                         sb.Append("offset=").Append(currentOffset).Append("&");
-                        sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
+                        sb.Append("count=").Append(ItemsPerRequest).Append("&");
                         sb.Append(parameters);
                         if (city.Id > 0)
                         {
                             sb.Append("city=").Append(city.Id).Append("&");
                         }
 
-                        // append bdate 
+                        // append birth date 
                         if (startYear > 1900)
                         {
                             sb.Append("birth_year=").Append(startDate.Year).Append("&");
@@ -332,21 +489,21 @@ namespace VKFinder
                             }
                         }
                         // append required fields
-                        sb.Append(REQUIRED_FIELDS);
+                        sb.Append(RequiredFields);
 
                         context.Parameters = sb.ToString();
                         Debug.WriteLine("Search parameters: " + context.Parameters);
 
-                        context.Cookie = this.currentOffset.ToString();
+                        context.Cookie = currentOffset.ToString();
 
                         // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                        timeLastCall = sleepTime(timeLastCall);
+                        timeLastCall = Utils.SleepTime(timeLastCall);
                         vkRestApi.CallVkFunction(VkFunction.UsersSearch, context);
 
                         // wait for the user data
-                        readyEvent.WaitOne();
+                        ReadyEvent.WaitOne();
 
-                        this.currentOffset += ITEMS_PER_REQUEST;
+                        currentOffset += ItemsPerRequest;
                     }
 
                     // increment date
@@ -354,8 +511,7 @@ namespace VKFinder
                 }
             }
 
-
-            writer.Close();
+            documentWriter.Close();
 
             //args.Result = TimeConsumingOperation(bw, arg);
 
@@ -368,114 +524,45 @@ namespace VKFinder
 
         }
 
-        private void loadWork(Object sender, DoWorkEventArgs args)
+        private void FindWorkProgressChanged(Object sender, ProgressChangedEventArgs args)
         {
-            // Do not access the form's BackgroundWorker reference directly. 
-            // Instead, use the reference provided by the sender parameter.
-            BackgroundWorker bw = sender as BackgroundWorker;
-
-            // Extract the argument. 
-            // SearchParameters searchParameters = args.Argument as SearchParameters;
-            var context = new VkRestApi.VkRestContext(this.userId, this.authToken);
-
-
-            // loop by birth year and month to maximize number of matches (1000 at a time)
-            StringBuilder sb = new StringBuilder();
-            this.run = true;
-            this.totalCount = 0;
-            this.currentOffset = 0;
-            long timeLastCall = 0;
-
-            // process regions
-            while (this.run &&
-                this.currentOffset <= this.totalCount)
-            {
-                sb.Length = 0;
-                sb.Append("country_id=").Append(1).Append("&"); // Russia
-                sb.Append("offset=").Append(currentOffset).Append("&");
-                sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
-                context.Parameters = sb.ToString();
-                Debug.WriteLine("request params: " + context.Parameters);
-
-                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                timeLastCall = sleepTime(timeLastCall);
-                vkRestApi.CallVkFunction(VkFunction.DatabaseGetRegions, context);
-
-                // wait for the user data
-                readyEvent.WaitOne();
-                this.currentOffset += ITEMS_PER_REQUEST;
-            }
-
-            this.run = true;
-            this.totalCount = 0;
-            this.currentOffset = 0;
-            timeLastCall = 0;
-            // process cities
-            while (this.run &&
-                this.currentOffset <= this.totalCount)
-            {
-                sb.Length = 0;
-                sb.Append("country_id=").Append(1).Append("&"); // Russia
-                sb.Append("region_id=").Append(1045244).Append("&"); // Leningradskaya obl.
-                sb.Append("need_all=").Append(1).Append("&"); // all
-                sb.Append("offset=").Append(currentOffset).Append("&");
-                sb.Append("count=").Append(ITEMS_PER_REQUEST).Append("&");
-                context.Parameters = sb.ToString();
-                Debug.WriteLine("request params: " + context.Parameters);
-
-                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                timeLastCall = sleepTime(timeLastCall);
-                vkRestApi.CallVkFunction(VkFunction.DatabaseGetCities, context);
-
-                // wait for the user data
-                readyEvent.WaitOne();
-                this.currentOffset += ITEMS_PER_REQUEST;
-            }
-
-            //args.Result = TimeConsumingOperation(bw, arg);
-
+            var status = args.UserState as String;
+            var progress = args.ProgressPercentage;
+            UpdateStatus(progress, status);
         }
 
-        private void findWorkProgressChanged(Object sender, ProgressChangedEventArgs args)
-        {
-            String status = args.UserState as String;
-            int progress = args.ProgressPercentage;
-            updateStatus(progress, status);
-        }
-
-        private void findWorkCompleted(object sender, RunWorkerCompletedEventArgs args)
+        private void FindWorkCompleted(object sender, RunWorkerCompletedEventArgs args)
         {
             if (args.Error != null)
             {
                 MessageBox.Show(args.Error.Message);
-                updateStatus(0, "Error");
+                UpdateStatus(0, "Error");
             }
             else if (args.Cancelled)
             {
                 MessageBox.Show("Search canceled!");
-                updateStatus(0, "Canceled");
+                UpdateStatus(0, "Canceled");
             }
             else
             {
                 //MessageBox.Show("Search complete!");
-                updateStatus(10000, "Done");
+                UpdateStatus(10000, "Done");
             }
         }
 
         private void UserLogin(object loginDialog, UserLoginEventArgs loginArgs)
         {
-            Debug.WriteLine("User Logged In: " + loginArgs.ToString());
+            Debug.WriteLine("User Logged In: " + loginArgs);
             
-            this.userId = loginArgs.userId;
-            this.authToken = loginArgs.authToken;
-            this.expiresAt = loginArgs.expiersIn; // todo: calc expiration time
+            userId = loginArgs.userId;
+            authToken = loginArgs.authToken;
 
-            this.userIdTextBox.Clear();
-            this.userIdTextBox.Text = "Authorized " + loginArgs.userId;
-            this.ActivateControls();
+            userIdTextBox.Clear();
+            userIdTextBox.Text = "Authorized " + loginArgs.userId;
+            ActivateControls();
         }
 
-        private void OnData(object vkRestApi, OnDataEventArgs onDataArgs)
+        private void OnData(object vkApi, OnDataEventArgs onDataArgs)
         {
             switch (onDataArgs.Function)
             {
@@ -486,10 +573,10 @@ namespace VKFinder
                     OnGetCountries(onDataArgs.Data);
                     break;
                 case VkFunction.DatabaseGetRegions:
-                    OnGetRegions(onDataArgs.Data);
+                    OnGetRegions(onDataArgs.Data, onDataArgs.Cookie);
                     break;
                 case VkFunction.DatabaseGetCities:
-                    OnGetCities(onDataArgs.Data);
+                    OnGetCities(onDataArgs.Data, onDataArgs.Cookie);
                     break;
                 default:
                     Debug.WriteLine("Error, unknown function.");
@@ -497,19 +584,67 @@ namespace VKFinder
             }
 
             // indicate that data is ready and we can continue
-            readyEvent.Set();
+            ReadyEvent.Set();
         }
 
         // main error handler
-        private void OnError(object vkRestApi, VkRestApi.OnErrorEventArgs onErrorArgs)
+        private void OnError(object vkApi, VkRestApi.OnErrorEventArgs onErrorArgs)
         {
-            // notify user about the error
-            Debug.WriteLine("Function " + onErrorArgs.Function + ", returned error: " + onErrorArgs.Error);
-            
-            // keep on going ... this.backgroundFinderWorker.CancelAsync();
-            
-            // indicate that we can continue
-            readyEvent.Set();
+            Debug.WriteLine("Function " + onErrorArgs.Function + ", returned error: " + onErrorArgs.Details);
+
+            if (errorLogWriter != null)
+            {
+                updateErrorLogFile(onErrorArgs, errorLogWriter);
+            }
+
+            if (onErrorArgs.Code == VkRestApi.CriticalErrorCode)
+            {
+                var result = MessageBox.Show(
+                    onErrorArgs.Details + "\n Please fix connection problem or just wait.\n Press \'Yes\' to continue with the current request" +
+                    "\nPress \'No\' to continue with the next request.",
+                    onErrorArgs.Error,
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button1);
+
+                if (result == DialogResult.Yes)
+                {
+                    vkRestApi.CallVkFunction(onErrorArgs.Function, onErrorArgs.Context);
+                    return;
+                }
+            }
+            else
+            {
+                switch (onErrorArgs.Code)
+                {
+                    case 6:
+                        // this is too many requests error - repeat last API call
+                        Utils.SleepTime(0);
+                        vkRestApi.CallVkFunction(onErrorArgs.Function, onErrorArgs.Context);
+                        return;
+                    case 15:
+                        // user is not found - continue
+                        break;
+                    default:
+                        var result = MessageBox.Show(
+                            onErrorArgs.Details + "\n Please fix connection problem or just wait.\n Press \'Yes\' to continue with the current request" +
+                            "\nPress \'No\' to continue with the next request.",
+                            onErrorArgs.Error,
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning,
+                            MessageBoxDefaultButton.Button1);
+
+                        if (result == DialogResult.Yes)
+                        {
+                            vkRestApi.CallVkFunction(onErrorArgs.Function, onErrorArgs.Context);
+                            return;
+                        }
+                        break;
+                }
+            }
+
+            // indicate that data is ready and we can continue
+            ReadyEvent.Set();
         }
 
         //================================
@@ -520,36 +655,34 @@ namespace VKFinder
         {
             if (data[VkRestApi.ResponseBody] == null)
             {
-                this.run = false;
+                run = false;
                 return;
             }
 
             if (totalCount <= 0)
             {
-                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>(); ;
+                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>();
             }
 
-            int count = data[VkRestApi.ResponseBody]["items"].Count();
+            var count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (count <= 0)
             {
-                this.run = false;
+                run = false;
                 return;
             }
 
-            this.backgroundFinderWorker.ReportProgress(0, "Processing " + count + " records out of " + totalCount);
+            backgroundFinderWorker.ReportProgress(0, "Processing " + count + " records out of " + totalCount);
 
-            List<Person> persons = new List<Person>();
+            var persons = new List<Person>();
             // process response body
-            for (int i = 0; i < count; ++i)
+            for (var i = 0; i < count; ++i)
             {
-                JObject personObj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
-
+                var personObj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
 
                 // TODO: check phone with regex.
-                String t1, t2;
-                t1 = personObj["mobile_phone"] != null ? parsePhone(personObj["mobile_phone"].ToString()) : "";
-                t2 = personObj["home_phone"] != null ? parsePhone(personObj["home_phone"].ToString()) : "";
+                var t1 = personObj["mobile_phone"] != null ? parsePhone(personObj["mobile_phone"].ToString()) : "";
+                var t2 = personObj["home_phone"] != null ? parsePhone(personObj["home_phone"].ToString()) : "";
 
                 if (withPhone &&
                     t1.Length < 7 &&
@@ -558,23 +691,23 @@ namespace VKFinder
                     continue; // invalid phone number
                 }
 
-                Person person = new Person();
-                person.mobilePhone = t1;
-                person.homePhone = t2;
-                person.id = personObj["id"].ToString();
-                person.firstName = personObj["first_name"].ToString();
-                person.lastName = personObj["last_name"].ToString();
-                person.screenName = personObj["screen_name"] != null ? personObj["screen_name"].ToString() : "";
-                person.sex = personObj["sex"] != null ? personObj["sex"].ToString() : "";
-                person.bdate = personObj["bdate"] != null ? personObj["bdate"].ToString() : "";
-                person.city = getStringField("city", "title", personObj);
-                person.country = getStringField("country", "title", personObj);
-                person.photo = personObj["photo"] != null ? personObj["photo"].ToString() : "";
-                person.relation = personObj["relation"] != null ? personObj["relation"].ToString() : "";
-                string t = personObj["status"] != null ? personObj["status"].ToString() : "";
+                var person = new Person();
+                person.MobilePhone = t1;
+                person.HomePhone = t2;
+                person.Id = personObj["id"].ToString();
+                person.FirstName = personObj["first_name"].ToString();
+                person.LastName = personObj["last_name"].ToString();
+                person.ScreenName = personObj["screen_name"] != null ? personObj["screen_name"].ToString() : "";
+                person.Sex = personObj["sex"] != null ? personObj["sex"].ToString() : "";
+                person.Bdate = personObj["bdate"] != null ? personObj["bdate"].ToString() : "";
+                person.City = Utils.GetStringField("city", "title", personObj);
+                person.Country = Utils.GetStringField("country", "title", personObj);
+                person.Photo = personObj["photo"] != null ? personObj["photo"].ToString() : "";
+                person.Relation = personObj["relation"] != null ? personObj["relation"].ToString() : "";
+                var t = personObj["status"] != null ? personObj["status"].ToString() : "";
                 if (t.Length > 0)
                 {
-                    person.status = Regex.Replace(t, @"\r\n?|\n", "");
+                    person.Status = Regex.Replace(t, @"\r\n?|\n", "");
                 }
             
                 persons.Add(person);
@@ -592,48 +725,43 @@ namespace VKFinder
         {
             if (data[VkRestApi.ResponseBody] == null)
             {
-                this.run = false;
+                run = false;
                 return;
             }
 
             if (totalCount <= 0)
             {
-                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>(); ;
+                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>();
             }
 
-            int count = data[VkRestApi.ResponseBody]["items"].Count();
+            var count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (count <= 0)
             {
-                this.run = false;
+                run = false;
                 return;
             }
 
-            List<VkCountry> countries = new List<VkCountry>();
+            var cs = new List<Country>();
             // process response body
-            for (int i = 0; i < count; ++i)
+            for (var i = 0; i < count; ++i)
             {
-                JObject obj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
-                int id = getIntField("id", obj);
-                string title = getStringField("title", obj);
+                var obj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
+                var id = Utils.GetIntField("id", obj);
+                var title = Utils.GetStringField("title", obj);
                 if(id > 0)
                 {
-                    countries.Add(new VkCountry(id, title));
+                    cs.Add(new Country(id, title));
                 }
-            }
-
-            if (countries.Count > 0)
-            {
-                //UpdateFile(countries);
             }
         }
 
         // process regions response
-        private void OnGetRegions(JObject data)
+        private void OnGetRegions(JObject data, string cookie)
         {
             if (data[VkRestApi.ResponseBody] == null)
             {
-                this.run = false;
+                run = false;
                 return;
             }
 
@@ -642,38 +770,35 @@ namespace VKFinder
                 totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>(); ;
             }
 
-            int count = data[VkRestApi.ResponseBody]["items"].Count();
+            var count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (count <= 0)
             {
-                this.run = false;
+                run = false;
                 return;
             }
 
+            var countryId = Convert.ToInt32(cookie); // country id is passed as a cookie
+
             // process response body
-            for (int i = 0; i < count; ++i)
+            for (var i = 0; i < count; ++i)
             {
-                JObject obj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
-                int id = getIntField("id", obj);
-                string title = getStringField("title", obj);
+                var obj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
+                var id = Utils.GetIntField("id", obj);
+                var title = Utils.GetStringField("title", obj);
                 if (id > 0)
                 {
-                    regions.Add(new VkRegion(id, title));
+                    regions.Add(new Region(id, countryId, title));
                 }
             }
-
-            //if (regions.Count > 0)
-            //{
-                //UpdateFile(regions);
-            //}
         }
 
         // process cities response
-        private void OnGetCities(JObject data)
+        private void OnGetCities(JObject data, string cookie)
         {
             if (data[VkRestApi.ResponseBody] == null)
             {
-                this.run = false;
+                run = false;
                 return;
             }
 
@@ -682,56 +807,42 @@ namespace VKFinder
                 totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>(); ;
             }
 
-            int count = data[VkRestApi.ResponseBody]["items"].Count();
+            var count = data[VkRestApi.ResponseBody]["items"].Count();
 
             if (count <= 0)
             {
-                this.run = false;
+                run = false;
                 return;
             }
 
+            var regionId = Convert.ToInt32(cookie); // region id is passed as a cookie
+
             // process response body
-            for (int i = 0; i < count; ++i)
+            for (var i = 0; i < count; ++i)
             {
-                JObject obj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
-                int id = getIntField("id", obj);
-                string title = getStringField("title", obj);
-                int important = getIntField("important", obj, 0);
-                string region = getStringField("region", obj);
-                string area = getStringField("area", obj);
-                if (id > 0)
+                var obj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
+                var id = Utils.GetIntField("id", obj);
+                var title = Utils.GetStringField("title", obj);
+                var important = Utils.GetIntField("important", obj);
+                var region = Utils.GetStringField("region", obj);
+                var area = Utils.GetStringField("area", obj);
+                if (id <= 0)
+                    continue;
+
+                if (region.Length == 0 &&
+                    area.Length == 0)
                 {
-                    String location = "";
-
-                    if (area.Count() > 0)
-                    {
-                        location = area;
-                    }
-                    else if (region.Count() > 0)
-                    {
-                        location = region;
-                    }
-
-                    List<VkCity> cs;
-                    if (!citiesByDistrict.TryGetValue(location, out cs))
-                    {
-                        cs = new List<VkCity>();
-                        citiesByDistrict.Add(location, cs);
-                    }
-
-                    cs.Add(new VkCity(id, title, important > 0, region, area));
+                    region = title; // major city - set title as a region
                 }
-            }
 
-            //if (cities.Count > 0)
-            //{
-                //UpdateFile(cities);
-            //}
+                var city = new City(id, title, important > 0, regionId, region, area);
+                cities.Add(city);
+            }
         }
 
         private string parseSearchParameters(SearchParameters parameters)
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
 
             if (parameters.query.Length > 0)
             {
@@ -749,9 +860,9 @@ namespace VKFinder
             return builder.ToString();
         }
 
-        private string generateFileName(SearchParameters parameters)
+        private string GenerateFileName(SearchParameters parameters)
         {
-            StringBuilder fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
+            var fileName = new StringBuilder(this.WorkingFolderTextBox.Text);
             
             fileName.Append('\\');
 
@@ -783,14 +894,14 @@ namespace VKFinder
 
         private string parsePhone(string phone)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             // remove any non number characters from the phone
-            for (int i = 0; i < phone.Length; i++)
+            foreach (var ch in phone)
             {
-                if(char.IsDigit(phone[i]))
+                if(char.IsDigit(ch))
                 {
-                    sb.Append(phone[i]);
+                    sb.Append(ch);
                 }
             }
 
@@ -803,161 +914,57 @@ namespace VKFinder
                     "id", "Имя", "Фамилия", "Псевдоним", "пол", "д.рождения", "мобильный", "домашний", "город", "страна", "фото", "отношения", "статус");
         }
 
-        private void UpdateFile(List<Person> persons)
+        private void UpdateFile(IEnumerable<Person> persons)
         {
-            foreach (Person p in persons)
+            foreach (var p in persons)
             {
-                writer.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"\t\"{11}\"\t\"{12}\"",
-                    p.id, p.firstName, p.lastName, p.screenName, p.sex, p.bdate, p.mobilePhone, p.homePhone, p.city, p.country, p.photo, p.relation, p.status);
+                documentWriter.WriteLine("{0}\t\"{1}\"\t\"{2}\"\t\"{3}\"\t\"{4}\"\t\"{5}\"\t\"{6}\"\t\"{7}\"\t\"{8}\"\t\"{9}\"\t\"{10}\"\t\"{11}\"\t\"{12}\"",
+                    p.Id, p.FirstName, p.LastName, p.ScreenName, p.Sex, p.Bdate, p.MobilePhone, p.HomePhone, p.City, p.Country, p.Photo, p.Relation, p.Status);
             }
         }
 
-        private void updateStatus(int progress, String status)
+        private void UpdateStatus(int progress, String status)
         {
             if (progress > 0)
             {
-                this.FindProgressBar.Increment(progress);
+                FindProgressBar.Increment(progress);
 
             } 
             else if (progress < 0)
             {
                 // reset 
-                this.FindProgressBar.Value = 0;
+                FindProgressBar.Value = 0;
             }
 
-            this.toolStripStatusLabel1.Text = status;
+            toolStripStatusLabel1.Text = status;
         }
 
-        // Utiliti
-        private static DateTime timeToDateTime(long unixTimeStamp)
+        // Error log file
+        private string GenerateErrorLogFileName()
         {
-            // Unix timestamp is seconds past epoch
-            System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
-            dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
-            return dtDateTime;
+            var fileName = new StringBuilder(WorkingFolderTextBox.Text);
+            return fileName.Append("\\").Append("error").Append(".log").ToString();
         }
 
-        long getTimeNowMillis()
+        private void printErrorLogHeader(StreamWriter writer)
         {
-            return DateTime.Now.Ticks / 10000;
+            writer.WriteLine("{0}\t{1}\t{2}\t{3}",
+                    "function", "error_code", "error", "details");
         }
 
-        long sleepTime(long timeLastCall)
+        private void updateErrorLogFile(VkRestApi.OnErrorEventArgs error, StreamWriter writer)
         {
-            long timeToSleep = 400 - (getTimeNowMillis() - timeLastCall);
-            if (timeToSleep > 0)
-                Thread.Sleep((int)timeToSleep);
-
-            return getTimeNowMillis();
+            writer.WriteLine("{0}\t{1}\t{2}\t{3}",
+                error.Function, error.Code, error.Error, error.Details);
         }
 
-        // JObject utils
-        private static String getStringField(String name, JObject o)
+        private void VKFinderForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            return o[name] != null ? o[name].ToString() : "";
-        }
-
-        private static long getLongField(String name, JObject o, long def = 0)
-        {
-            long result = def;
-
-            if (o[name] != null)
+            if (errorLogWriter != null)
             {
-                string value = o[name].ToString();
-
-                try
-                {
-                    result = Convert.ToInt64(value);
-                }
-                catch (OverflowException)
-                {
-                    Debug.WriteLine("The value is outside the range of the Int64 type: " + value);
-                }
-                catch (FormatException)
-                {
-                    Debug.WriteLine("The value is not in a recognizable format: " + value);
-                }
+                errorLogWriter.Flush();
+                errorLogWriter.Close();
             }
-
-            return result;
-        }
-
-        private static int getIntField(String name, JObject o, int def = 0)
-        {
-            int result = def;
-
-            if (o[name] != null)
-            {
-                string value = o[name].ToString();
-
-                try
-                {
-                    result = Convert.ToInt32(value);
-                }
-                catch (OverflowException)
-                {
-                    Debug.WriteLine("The value is outside the range of the Int32 type: " + value);
-                }
-                catch (FormatException)
-                {
-                    Debug.WriteLine("The value is not in a recognizable format: " + value);
-                }
-            }
-
-            return result;
-        }
-
-        private static String getStringField(String category, String name, JObject o)
-        {
-            if (o[category] != null &&
-                o[category][name] != null)
-            {
-                return o[category][name].ToString();
-            }
-            return "";
-        }
-
-        private static long getLongField(String category, String name, JObject o, long def = 0)
-        {
-            long result = def;
-
-            if (o[category] != null &&
-                o[category][name] != null)
-            {
-                string value = o[category][name].ToString();
-
-                try
-                {
-                    result = Convert.ToInt64(value);
-                }
-                catch (OverflowException)
-                {
-                    Debug.WriteLine("The value is outside the range of the Int64 type: " + value);
-                }
-                catch (FormatException)
-                {
-                    Debug.WriteLine("The value is not in a recognizable format: " + value);
-                }
-            }
-
-            return result;
-        }
-
-        private static String getTextField(String name, JObject o)
-        {
-            String t = o[name] != null ? o[name].ToString() : "";
-            if (t.Length > 0)
-            {
-                return Regex.Replace(t, @"\r\n?|\n", "");
-            }
-            return "";
-        }
-
-        private static String getStringDateField(String name, JObject o)
-        {
-            long l = o[name] != null ? o[name].ToObject<long>() : 0;
-            DateTime d = timeToDateTime(l);
-            return d.ToString("yyyy-MM-dd HH:mm:ss");
         }
     }
 }

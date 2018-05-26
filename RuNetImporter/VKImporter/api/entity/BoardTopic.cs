@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace rcsir.net.vk.importer.api.entity
 {
@@ -10,26 +6,26 @@ namespace rcsir.net.vk.importer.api.entity
     {
         public BoardTopic()
         {
-            id = 0;
-            title = "";
-            created = "";
-            created_by = 0;
-            updated = "";
-            updated_by = 0;
-            is_closed = false;
-            is_fixed = false;
-            comments = 0;
+            Id = 0;
+            Title = "";
+            Created = "";
+            CreatedBy = 0;
+            Updated = "";
+            UpdatedBy = 0;
+            IsClosed = false;
+            IsFixed = false;
+            Comments = 0;
         }
 
-        public long id { get; set; }
-        public string title { get; set; }
-        public string created { get; set; }
-        public long created_by { get; set; }
-        public string updated { get; set; }
-        public long updated_by { get; set; }
-        public bool is_closed { get; set; }
-        public bool is_fixed { get; set; }
-        public long comments { get; set; }
+        public long Id { get; set; }
+        public string Title { get; set; }
+        public string Created { get; set; }
+        public long CreatedBy { get; set; }
+        public string Updated { get; set; }
+        public long UpdatedBy { get; set; }
+        public bool IsClosed { get; set; }
+        public bool IsFixed { get; set; }
+        public long Comments { get; set; }
 
         public string Name()
         {
@@ -45,7 +41,7 @@ namespace rcsir.net.vk.importer.api.entity
         public string ToFileLine()
         {
             return String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}",
-                id, title, created, created_by, updated, updated_by, is_closed, is_fixed, comments);
+                Id, Title, Created, CreatedBy, Updated, UpdatedBy, IsClosed, IsFixed, Comments);
         }
     }
 }

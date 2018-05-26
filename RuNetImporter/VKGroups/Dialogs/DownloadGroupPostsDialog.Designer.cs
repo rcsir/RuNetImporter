@@ -44,9 +44,10 @@
             // CancelSearchButton
             // 
             this.CancelSearchButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelSearchButton.Location = new System.Drawing.Point(163, 235);
+            this.CancelSearchButton.Location = new System.Drawing.Point(217, 289);
+            this.CancelSearchButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.CancelSearchButton.Name = "CancelSearchButton";
-            this.CancelSearchButton.Size = new System.Drawing.Size(75, 23);
+            this.CancelSearchButton.Size = new System.Drawing.Size(100, 28);
             this.CancelSearchButton.TabIndex = 3;
             this.CancelSearchButton.Text = "Cancel";
             this.CancelSearchButton.UseVisualStyleBackColor = true;
@@ -54,9 +55,10 @@
             // OKButton
             // 
             this.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.OKButton.Location = new System.Drawing.Point(244, 235);
+            this.OKButton.Location = new System.Drawing.Point(325, 289);
+            this.OKButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.OKButton.Name = "OKButton";
-            this.OKButton.Size = new System.Drawing.Size(75, 23);
+            this.OKButton.Size = new System.Drawing.Size(100, 28);
             this.OKButton.TabIndex = 2;
             this.OKButton.Text = "OK";
             this.OKButton.UseVisualStyleBackColor = true;
@@ -64,7 +66,8 @@
             // 
             // groupIdNumeric
             // 
-            this.groupIdNumeric.Location = new System.Drawing.Point(98, 52);
+            this.groupIdNumeric.Location = new System.Drawing.Point(131, 64);
+            this.groupIdNumeric.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.groupIdNumeric.Maximum = new decimal(new int[] {
             1000000000,
             0,
@@ -72,15 +75,16 @@
             0});
             this.groupIdNumeric.Name = "groupIdNumeric";
             this.groupIdNumeric.ReadOnly = true;
-            this.groupIdNumeric.Size = new System.Drawing.Size(219, 20);
+            this.groupIdNumeric.Size = new System.Drawing.Size(292, 22);
             this.groupIdNumeric.TabIndex = 4;
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 54);
+            this.label1.Location = new System.Drawing.Point(16, 66);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(80, 13);
+            this.label1.Size = new System.Drawing.Size(103, 17);
             this.label1.TabIndex = 5;
             this.label1.Text = "Group/User ID:";
             // 
@@ -90,26 +94,29 @@
             this.isGroupcheckBox.AutoSize = true;
             this.isGroupcheckBox.Checked = true;
             this.isGroupcheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.isGroupcheckBox.Location = new System.Drawing.Point(98, 78);
+            this.isGroupcheckBox.Location = new System.Drawing.Point(131, 96);
+            this.isGroupcheckBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.isGroupcheckBox.Name = "isGroupcheckBox";
-            this.isGroupcheckBox.Size = new System.Drawing.Size(65, 17);
+            this.isGroupcheckBox.Size = new System.Drawing.Size(96, 21);
             this.isGroupcheckBox.TabIndex = 6;
-            this.isGroupcheckBox.Text = "is Group";
+            this.isGroupcheckBox.Text = "is a Group";
             this.isGroupcheckBox.UseVisualStyleBackColor = true;
             // 
             // dateTimeFromPicker
             // 
-            this.dateTimeFromPicker.Location = new System.Drawing.Point(98, 106);
+            this.dateTimeFromPicker.Location = new System.Drawing.Point(131, 130);
+            this.dateTimeFromPicker.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.dateTimeFromPicker.Name = "dateTimeFromPicker";
-            this.dateTimeFromPicker.Size = new System.Drawing.Size(219, 20);
+            this.dateTimeFromPicker.Size = new System.Drawing.Size(291, 22);
             this.dateTimeFromPicker.TabIndex = 7;
             this.dateTimeFromPicker.Value = new System.DateTime(2014, 11, 11, 0, 0, 0, 0);
             // 
             // dateTimeToPicker
             // 
-            this.dateTimeToPicker.Location = new System.Drawing.Point(98, 141);
+            this.dateTimeToPicker.Location = new System.Drawing.Point(131, 174);
+            this.dateTimeToPicker.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.dateTimeToPicker.Name = "dateTimeToPicker";
-            this.dateTimeToPicker.Size = new System.Drawing.Size(219, 20);
+            this.dateTimeToPicker.Size = new System.Drawing.Size(291, 22);
             this.dateTimeToPicker.TabIndex = 8;
             this.dateTimeToPicker.Value = new System.DateTime(2014, 11, 11, 18, 28, 14, 0);
             this.dateTimeToPicker.ValueChanged += new System.EventHandler(this.dateTimeToPicker_ValueChanged);
@@ -117,27 +124,30 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 112);
+            this.label2.Location = new System.Drawing.Point(16, 138);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(33, 13);
+            this.label2.Size = new System.Drawing.Size(44, 17);
             this.label2.TabIndex = 9;
             this.label2.Text = "From:";
             // 
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(12, 147);
+            this.label3.Location = new System.Drawing.Point(16, 181);
+            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(23, 13);
+            this.label3.Size = new System.Drawing.Size(29, 17);
             this.label3.TabIndex = 10;
             this.label3.Text = "To:";
             // 
             // groupStatCheckBox
             // 
             this.groupStatCheckBox.AutoSize = true;
-            this.groupStatCheckBox.Location = new System.Drawing.Point(98, 181);
+            this.groupStatCheckBox.Location = new System.Drawing.Point(131, 223);
+            this.groupStatCheckBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.groupStatCheckBox.Name = "groupStatCheckBox";
-            this.groupStatCheckBox.Size = new System.Drawing.Size(104, 17);
+            this.groupStatCheckBox.Size = new System.Drawing.Size(136, 21);
             this.groupStatCheckBox.TabIndex = 11;
             this.groupStatCheckBox.Text = "Just Group Stats";
             this.groupStatCheckBox.UseVisualStyleBackColor = true;
@@ -145,10 +155,10 @@
             // DownloadGroupPostsDialog
             // 
             this.AcceptButton = this.OKButton;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelSearchButton;
-            this.ClientSize = new System.Drawing.Size(329, 270);
+            this.ClientSize = new System.Drawing.Size(439, 332);
             this.Controls.Add(this.groupStatCheckBox);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
@@ -159,6 +169,7 @@
             this.Controls.Add(this.groupIdNumeric);
             this.Controls.Add(this.CancelSearchButton);
             this.Controls.Add(this.OKButton);
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "DownloadGroupPostsDialog";
             this.Text = "Download Posts";
             this.Load += new System.EventHandler(this.DownloadGroupPostsDialog_Load);

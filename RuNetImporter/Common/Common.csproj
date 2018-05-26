@@ -33,6 +33,12 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>runetimporter.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.NodeXL.ExcelTemplatePlugIns">
       <HintPath>..\..\..\..\NodeXLClassLibraries_1.0.1.332\Microsoft.NodeXL.ExcelTemplatePlugIns.dll</HintPath>
@@ -93,6 +99,10 @@
     <EmbeddedResource Include="Dialogs\PartialNetworkDialog.resx">
       <DependentUpon>PartialNetworkDialog.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="runetimporter.snk" />
+    <None Include="VKFinder_TemporaryKey.pfx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

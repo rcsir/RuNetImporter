@@ -9,7 +9,6 @@ namespace rcsir.net.vk.content.Dialogs
         public bool IsGroup { get; set; }
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
-        public Boolean JustGroupStats { get; set; }
         public Boolean GroupWall { get; set; }
         public Boolean GroupTopics { get; set; }
 
@@ -22,7 +21,6 @@ namespace rcsir.net.vk.content.Dialogs
         {
             FromDate = dateTimeFromPicker.Value;
             ToDate = dateTimeToPicker.Value;
-            JustGroupStats = groupStatCheckBox.Checked;
             GroupWall = groupWall.Checked;
             GroupTopics = groupTopics.Checked;
         }
@@ -40,6 +38,5 @@ namespace rcsir.net.vk.content.Dialogs
         {
 
         }
-
     }
 }

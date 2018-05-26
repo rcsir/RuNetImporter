@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
+using rcsir.net.vk.finder;
 
 namespace VKFinder
 {
@@ -15,7 +16,7 @@ namespace VKFinder
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new VKFinderForm());
+            Application.Run(new VkFinderForm());
         }
     }
 }

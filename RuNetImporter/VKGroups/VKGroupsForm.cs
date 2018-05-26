@@ -28,6 +28,7 @@ namespace VKGroups
         private static readonly int POSTS_PER_REQUEST = 100;
         private static readonly int MEMBERS_PER_REQUEST = 1000;
         private static readonly int LIKES_PER_REQUEST = 1000;
+        private static readonly int FRIENDS_PER_REQUEST = 5000;
         private static readonly string PROFILE_FIELDS = "first_name,last_name,screen_name,bdate,city,country,photo_50,sex,relation,status,education";
         private static readonly string GROUP_FIELDS = "members_count,city,country,description,status";
 
@@ -83,7 +84,7 @@ namespace VKGroups
         {
             public GroupStats()
             {
-                day = DateTime.Today;
+                day = "";
                 views = 0;
                 visitors = 0;
                 reach = 0;
@@ -92,13 +93,13 @@ namespace VKGroups
                 unsubscribed = 0;
             }
 
-            public DateTime day { get; set; }
-            public uint views { get; set; }
-            public uint visitors { get; set; }
-            public uint reach { get; set; }
-            public uint reach_subscribers { get; set; }
-            public uint subscribed { get; set; }
-            public uint unsubscribed { get; set; }
+            public string day { get; set; }
+            public long views { get; set; }
+            public long visitors { get; set; }
+            public long reach { get; set; }
+            public long reach_subscribers { get; set; }
+            public long subscribed { get; set; }
+            public long unsubscribed { get; set; }
 
         };
 
@@ -231,8 +232,9 @@ namespace VKGroups
         private void AuthorizeButton_Click(object sender, EventArgs e)
         {
             //var reLogin = true; // TODO: if true - will delete cookies and relogin, use false for dev.
-            var reLogin = false; 
-            vkLoginDialog.Login("friends", reLogin); // default permission - friends
+            var reLogin = false;
+            vkLoginDialog.Login("friends,groups", reLogin); // default permission - friends
+//            vkLoginDialog.Login("friends", reLogin); // default permission - friends
         }
 
         private void WorkingFolderButton_Click(object sender, EventArgs e)
@@ -455,6 +457,9 @@ namespace VKGroups
                 case VkFunction.GroupsGetMembers:
                     OnGroupsGetMembers(onDataArgs.Data, onDataArgs.Cookie);
                     break;
+                case VkFunction.GroupsGetInvitedUsers:
+                    OnGroupsGetInvitedUsers(onDataArgs.Data, onDataArgs.Cookie);
+                    break;
                 case VkFunction.FriendsGet:
                     OnGetFriends(onDataArgs.Data, onDataArgs.Cookie);
                     break;
@@ -520,7 +525,7 @@ namespace VKGroups
                 {
                     case 6:
                         // this is too many requests error - repeat last API call
-                        Utils.sleepTime(0);
+                        Utils.SleepTime(0);
                         vkRestApi.CallVkFunction(onErrorArgs.Function, onErrorArgs.Context);
                         return;
                     case 15:
@@ -573,17 +578,17 @@ namespace VKGroups
 
                 var g = new Group();
 
-                g.id = Utils.getLongField("id", groupObject);
-                g.name = Utils.getStringField("name", groupObject);
-                g.screen_name = Utils.getStringField("screen_name", groupObject);
-                g.is_closed = Utils.getStringField("is_closed", groupObject);
-                g.type = Utils.getStringField("type", groupObject);
-                g.members_count = Utils.getStringField("members_count", groupObject);
-                g.city = Utils.getStringField("city", "title", groupObject);
-                g.country = Utils.getStringField("country", "title", groupObject);
-                g.photo = Utils.getStringField("photo_50", groupObject);
-                g.description = Utils.getTextField("description", groupObject);
-                g.status = Utils.getTextField("status", groupObject);
+                g.Id = Utils.GetLongField("id", groupObject);
+                g.name = Utils.GetStringField("name", groupObject);
+                g.ScreenName = Utils.GetStringField("screen_name", groupObject);
+                g.IsClosed = Utils.GetStringField("is_closed", groupObject);
+                g.Type = Utils.GetStringField("type", groupObject);
+                g.MembersCount = Utils.GetStringField("members_count", groupObject);
+                g.City = Utils.GetStringField("city", "title", groupObject);
+                g.Country = Utils.GetStringField("country", "title", groupObject);
+                g.Photo = Utils.GetStringField("photo_50", groupObject);
+                g.Description = Utils.GetTextField("description", groupObject);
+                g.Status = Utils.GetTextField("status", groupObject);
 
                 groups.Add(g);
             }
@@ -591,7 +596,7 @@ namespace VKGroups
             if (groups.Count > 0)
             {
                 // update group id and group info
-                groupId = groups[0].id;
+                groupId = groups[0].Id;
 
                 // group members network document
                 groupNetworkAnalyzer = new GroupNetworkAnalyzer();
@@ -604,9 +609,9 @@ namespace VKGroups
 
                 groupId2.Text = groupId.ToString();
                 groupDescription.Text = groups[0].name;
-                groupDescription.AppendText("\r\n type: " + groups[0].type);
-                groupDescription.AppendText("\r\n members: " + groups[0].members_count);
-                groupDescription.AppendText("\r\n " + groups[0].description);
+                groupDescription.AppendText("\r\n type: " + groups[0].Type);
+                groupDescription.AppendText("\r\n members: " + groups[0].MembersCount);
+                groupDescription.AppendText("\r\n " + groups[0].Description);
             }
             else
             {
@@ -739,7 +744,7 @@ namespace VKGroups
                 context.Cookie = currentOffset.ToString();
 
                 // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                timeLastCall = Utils.sleepTime(timeLastCall); 
+                timeLastCall = Utils.SleepTime(timeLastCall); 
                 // call VK REST API
                 vkRestApi.CallVkFunction(VkFunction.WallGet, context);
 
@@ -795,7 +800,7 @@ namespace VKGroups
                         Debug.WriteLine("Request parameters: " + context.Parameters);
 
                         // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                        timeLastCall = Utils.sleepTime(timeLastCall);
+                        timeLastCall = Utils.SleepTime(timeLastCall);
                         // call VK REST API
                         vkRestApi.CallVkFunction(VkFunction.WallGetComments, context);
 
@@ -830,15 +835,15 @@ namespace VKGroups
                         break;
 
                     sb.Length = 0;
-                    sb.Append("type=").Append(likes[i].type).Append("&"); // group id
-                    sb.Append("owner_id=").Append(likes[i].owner_id).Append("&"); // group id
-                    sb.Append("item_id=").Append(likes[i].item_id).Append("&"); // post id
+                    sb.Append("type=").Append(likes[i].Type).Append("&"); // group id
+                    sb.Append("owner_id=").Append(likes[i].OwnerId).Append("&"); // group id
+                    sb.Append("item_id=").Append(likes[i].ItemId).Append("&"); // post id
                     sb.Append("count=").Append(LIKES_PER_REQUEST).Append("&");
                     context.Parameters = sb.ToString();
                     Debug.WriteLine("Request parameters: " + context.Parameters);
 
                     // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                    timeLastCall = Utils.sleepTime(timeLastCall);
+                    timeLastCall = Utils.SleepTime(timeLastCall);
                     // call VK REST API
                     vkRestApi.CallVkFunction(VkFunction.LikesGetList, context);
 
@@ -897,7 +902,7 @@ namespace VKGroups
                     Debug.WriteLine("Request parameters: " + context.Parameters);
 
                     // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                    timeLastCall = Utils.sleepTime(timeLastCall);
+                    timeLastCall = Utils.SleepTime(timeLastCall);
                     // call VK REST API
                     vkRestApi.CallVkFunction(VkFunction.UsersGet, context);
 
@@ -975,7 +980,6 @@ namespace VKGroups
             totalCount = 0;
             currentOffset = 0;
             step = 1;
-
             long timeLastCall = 0;
 
             // request group members
@@ -999,13 +1003,14 @@ namespace VKGroups
                 sb.Append("offset=").Append(currentOffset).Append("&");
                 sb.Append("count=").Append(MEMBERS_PER_REQUEST).Append("&");
                 sb.Append("fields=").Append(PROFILE_FIELDS).Append("&");
+                sb.Append("filter=").Append("unsure").Append("&");
                 context.Parameters = sb.ToString();
                 Debug.WriteLine("Request parameters: " + context.Parameters);
 
                 context.Cookie = currentOffset.ToString();
 
                 // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                timeLastCall = Utils.sleepTime(timeLastCall);
+                timeLastCall = Utils.SleepTime(timeLastCall);
                 // call VK REST API
                 vkRestApi.CallVkFunction(VkFunction.GroupsGetMembers, context);
 
@@ -1016,8 +1021,6 @@ namespace VKGroups
             }
 
             groupMembersWriter.Close();
-
-            //args.Result = TimeConsumingOperation(bw, arg);
 
             // If the operation was canceled by the user,  
             // set the DoWorkEventArgs.Cancel property to true. 
@@ -1065,16 +1068,6 @@ namespace VKGroups
             // Instead, use the reference provided by the sender parameter.
             var bw = sender as BackgroundWorker;
 
-            isNetworkRunning = true;
-
-            // Extract the argument. 
-            // var groupId = (decimal)args.Argument;
-
-            // gather the list of all users friends to build the group network
-            totalCount = 0;
-            currentOffset = 0;
-            step = 1;
-
             var context = new VkRestApi.VkRestContext(userId, authToken);
             var sb = new StringBuilder();
 
@@ -1094,23 +1087,39 @@ namespace VKGroups
             long l = 0;
             foreach (var mId in members)
             {
-                if (bw.CancellationPending || !isNetworkRunning)
+                if (bw.CancellationPending)
                     break;
 
+                isNetworkRunning = true;
+                step = 1;
                 bw.ReportProgress(step, "Getting friends: " + (++l) + " out of " + members.Count);
 
-                sb.Length = 0;
-                sb.Append("user_id=").Append(mId);
-                context.Parameters = sb.ToString();
-                context.Cookie = mId.ToString(); // pass member id as a cookie
-                Debug.WriteLine("Request parameters: " + context.Parameters);
+                // gather the list of all users friends to build the group network
+                totalCount = 0;
+                currentOffset = 0;
+                while (!bw.CancellationPending && isNetworkRunning)
+                {
+                    if (currentOffset > totalCount)
+                        break;
 
-                // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                timeLastCall = Utils.sleepTime(timeLastCall);
-                vkRestApi.CallVkFunction(VkFunction.FriendsGet, context);
+                    sb.Length = 0;
+                    sb.Append("user_id=").Append(mId).Append("&");
+                    context.Parameters = sb.ToString();
+                    context.Cookie = mId.ToString(); // pass member id as a cookie
+                    sb.Append("offset=").Append(currentOffset).Append("&");
+                    sb.Append("count=").Append(FRIENDS_PER_REQUEST);
 
-                // wait for the friends data
-                ReadyEvent.WaitOne();
+                    Debug.WriteLine("Request parameters: " + context.Parameters);
+
+                    // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
+                    timeLastCall = Utils.SleepTime(timeLastCall);
+                    vkRestApi.CallVkFunction(VkFunction.FriendsGet, context);
+
+                    // wait for the friends data
+                    ReadyEvent.WaitOne();
+
+                    currentOffset += FRIENDS_PER_REQUEST;
+                }
             }
 
             args.Result = groupNetworkAnalyzer.GenerateGroupNetwork();
@@ -1147,7 +1156,7 @@ namespace VKGroups
             else
             {
                 // save network document
-                XmlDocument network = args.Result as XmlDocument;
+                var network = args.Result as XmlDocument;
                 if (network != null)
                 {
                     UpdateStatus(0, "Generate Network Graph File");
@@ -1171,11 +1180,13 @@ namespace VKGroups
             // Do not access the form's BackgroundWorker reference directly. 
             // Instead, use the reference provided by the sender parameter.
             var bw = sender as BackgroundWorker;
+            if(bw == null)
+                throw new ArgumentNullException("BackgroundWorker");
 
             isEgoNetWorkRunning = true;
 
             // Extract the argument. 
-            var groupId = (decimal)args.Argument;
+            var gId = (decimal)args.Argument;
 
             // gather the list of all users friends to build the group network
             totalCount = 0;
@@ -1203,9 +1214,8 @@ namespace VKGroups
 
                 // for each member get his ego net
                 var context = new VkRestApi.VkRestContext(mId.ToString(), authToken);
-                var sb = new StringBuilder();
+                var sb = new StringBuilder {Length = 0};
 
-                sb.Length = 0;
                 sb.Append("fields=").Append(PROFILE_FIELDS);
                 context.Parameters = sb.ToString();
                 vkRestApi.CallVkFunction(VkFunction.LoadFriends, context);
@@ -1213,7 +1223,7 @@ namespace VKGroups
                 // wait for the friends data
                 ReadyEvent.WaitOne();
 
-                foreach (long targetId in friendIds)
+                foreach (var targetId in friendIds)
                 {
                     sb.Length = 0;
                     sb.Append("target_uid=").Append(targetId); // Append target friend ids
@@ -1221,7 +1231,7 @@ namespace VKGroups
                     context.Cookie = targetId.ToString(); // pass target id in the cookie context field
 
                     // play nice, sleep for 1/3 sec to stay within 3 requests/second limits
-                    timeLastCall = Utils.sleepTime(timeLastCall);
+                    timeLastCall = Utils.SleepTime(timeLastCall);
                     vkRestApi.CallVkFunction(VkFunction.FriendsGetMutual, context);
 
                     // wait for the friends data
@@ -1229,8 +1239,8 @@ namespace VKGroups
                 }
 
                 // save ego net document
-                XmlDocument egoNet = egoNetAnalyzer.GenerateEgoNetwork();
-                egoNet.Save(GenerateEgoNetworkFileName(groupId, mId));
+                var egoNet = egoNetAnalyzer.GenerateEgoNetwork();
+                egoNet.Save(GenerateEgoNetworkFileName(gId, mId));
 
             }
 
@@ -1326,7 +1336,7 @@ namespace VKGroups
                 var postObj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
 
                 // see if post is in the range
-                var dt = Utils.getDateField("date", postObj);
+                var dt = Utils.GetDateField("date", postObj);
 
                 if(dt < postsFromDate ||
                     dt > postsToDate)
@@ -1335,72 +1345,69 @@ namespace VKGroups
                 }
 
                 var post = new Post();
-                post.id = Utils.getLongField("id", postObj);
-                post.owner_id = Utils.getLongField("owner_id", postObj);
-                post.from_id = Utils.getLongField("from_id", postObj);
-                post.signer_id = Utils.getLongField("signer_id", postObj);
+                post.Id = Utils.GetLongField("id", postObj);
+                post.OwnerId = Utils.GetLongField("owner_id", postObj);
+                post.FromId = Utils.GetLongField("from_id", postObj);
+                post.SignerId = Utils.GetLongField("signer_id", postObj);
                 // post date
-                post.date = Utils.getStringDateField("date", postObj);
+                post.Date = Utils.GetStringDateField("date", postObj);
                 // post_type 
-                post.post_type = Utils.getStringField("post_type", postObj); 
+                post.PostType = Utils.GetStringField("post_type", postObj); 
                 // comments
-                post.comments = Utils.getLongField("comments", "count", postObj);
-                if (post.comments > 0)
+                post.Comments = Utils.GetLongField("comments", "count", postObj);
+                if (post.Comments > 0)
                 {
-                    postsWithComments.Add(post.id); // add post's id to the ref list for comments processing
+                    postsWithComments.Add(post.Id); // add post's id to the ref list for comments processing
                 }
 
                 // likes
-                post.likes = Utils.getLongField("likes", "count", postObj);
-                if (post.likes > 0)
+                post.Likes = Utils.GetLongField("likes", "count", postObj);
+                if (post.Likes > 0)
                 {
-                    var like = new Like();
-                    like.type = "post";
-                    like.owner_id = gId;
-                    like.item_id = post.id;
+                    var like = new Like {Type = "post", OwnerId = gId, ItemId = post.Id, Count = post.Likes};
                     likes.Add(like);
                 }
 
                 // reposts
-                post.reposts = Utils.getLongField("reposts", "count", postObj);
+                post.Reposts = Utils.GetLongField("reposts", "count", postObj);
                 
                 // attachments count
                 if(postObj["attachments"] != null)
                 {
-                    post.attachments = postObj["attachments"].ToArray().Length;
+                    post.Attachments = postObj["attachments"].ToArray().Length;
                 }
 
                 // post text
-                post.text = Utils.getTextField("text", postObj);
+                post.Text = Utils.GetTextField("text", postObj);
 
                 // update posters if different from the group
-                if (post.from_id != gId)
+                if (post.FromId != gId)
                 {
-                    if (!posters.ContainsKey(post.from_id))
+                    if (!posters.ContainsKey(post.FromId))
                     {
-                        posters[post.from_id] = new Poster();
+                        posters[post.FromId] = new Poster();
                     }
 
-                    posters[post.from_id].posts += 1; // increment number of posts
-                    posters[post.from_id].rec_likes += post.likes;
+                    posters[post.FromId].posts += 1; // increment number of posts
+                    posters[post.FromId].rec_likes += post.Likes;
                     
                     // add to the poster ids
-                    posterIds.Add(post.from_id);
+                    posterIds.Add(post.FromId);
                 }
 
                 // if post has a signer - update posters
-                if (post.signer_id > 0 && post.signer_id != post.from_id)
+                if (post.SignerId > 0 && post.SignerId != post.FromId)
                 {
-                    if (!posters.ContainsKey(post.signer_id))
+                    if (!posters.ContainsKey(post.SignerId))
                     {
-                        posters[post.signer_id] = new Poster();
+                        posters[post.SignerId] = new Poster();
                     }
 
-                    posters[post.signer_id].posts += 1; // increment number of posts
-                    posters[post.signer_id].rec_likes += post.likes;
+                    posters[post.SignerId].posts += 1; // increment number of posts
+                    posters[post.SignerId].rec_likes += post.Likes;
 
                     // add to the poster ids
-                    posterIds.Add(post.signer_id);
+                    posterIds.Add(post.SignerId);
                 }
 
                 posts.Add(post);
@@ -1439,48 +1446,45 @@ namespace VKGroups
                 var postObj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
                 
                 var comment = new Comment();
-                comment.id = Utils.getLongField("id", postObj);
-                comment.post_id = Convert.ToInt64(cookie); // passed as a cookie
-                comment.from_id = Utils.getLongField("from_id", postObj);
+                comment.Id = Utils.GetLongField("id", postObj);
+                comment.PostId = Convert.ToInt64(cookie); // passed as a cookie
+                comment.FromId = Utils.GetLongField("from_id", postObj);
                 // post date
-                comment.date = Utils.getStringDateField("date", postObj);
+                comment.Date = Utils.GetStringDateField("date", postObj);
 
-                comment.reply_to_uid = Utils.getLongField("reply_to_uid", postObj);
-                comment.reply_to_cid = Utils.getLongField("reply_to_cid", postObj);
+                comment.ReplyToUid = Utils.GetLongField("reply_to_uid", postObj);
+                comment.ReplyToCid = Utils.GetLongField("reply_to_cid", postObj);
                 
                 // likes/dislikes
-                comment.likes = Utils.getLongField("likes", "count", postObj);
-                if (comment.likes > 0)
+                comment.Likes = Utils.GetLongField("likes", "count", postObj);
+                if (comment.Likes > 0)
                 {
-                    var like = new Like();
-                    like.type = "comment";
-                    like.owner_id = gId;
-                    like.item_id = comment.id;
+                    var like = new Like {Type = "comment", OwnerId = gId, ItemId = comment.Id, Count = comment.Likes};
                     likes.Add(like);
                 }
  
                 // attachments count
                 if (postObj["attachments"] != null)
                 {
-                    comment.attachments = postObj["attachments"].ToArray().Length;
+                    comment.Attachments = postObj["attachments"].ToArray().Length;
                 }
         
                 // post text
-                comment.text = Utils.getTextField("text", postObj);
+                comment.Text = Utils.GetTextField("text", postObj);
 
                 // update posters
-                if (comment.from_id != gId)
+                if (comment.FromId != gId)
                 {
-                    if (!posters.ContainsKey(comment.from_id))
+                    if (!posters.ContainsKey(comment.FromId))
                     {
-                        posters[comment.from_id] = new Poster();
+                        posters[comment.FromId] = new Poster();
                     }
                     
-                    posters[comment.from_id].comments += 1; // increment number of comments
-                    posters[comment.from_id].rec_likes += comment.likes;
+                    posters[comment.FromId].comments += 1; // increment number of comments
+                    posters[comment.FromId].rec_likes += comment.Likes;
 
                     // add to the poster ids
-                    posterIds.Add(comment.from_id);
+                    posterIds.Add(comment.FromId);
                 }
 
                 comments.Add(comment);
@@ -1548,7 +1552,7 @@ namespace VKGroups
 
                 if (profileObj != null)
                 {
-                    var type = Utils.getStringField("type", profileObj);
+                    var type = Utils.GetStringField("type", profileObj);
 
                     if (!string.IsNullOrEmpty(type) && !type.Equals("profile")) 
                     {
@@ -1558,39 +1562,39 @@ namespace VKGroups
 
                     var profile = new Profile();
 
-                    profile.id = Utils.getLongField("id", profileObj);
+                    profile.Id = Utils.GetLongField("id", profileObj);
 
-                    if (profile.id <= 0)
+                    if (profile.Id <= 0)
                     {
                         // probably blocked or deleted account, continue
-                        Debug.WriteLine("Ignoring member with bad profile id " + profile.id);
+                        Debug.WriteLine("Ignoring member with bad profile id " + profile.Id);
                         continue;
                     }
 
-                    profile.first_name = Utils.getTextField("first_name", profileObj);
-                    profile.last_name = Utils.getTextField("last_name", profileObj);
-                    profile.screen_name = Utils.getTextField("screen_name", profileObj);
-                    profile.deactivated = Utils.getTextField("deactivated", profileObj);
-                    profile.bdate = Utils.getTextField("bdate", profileObj);
-                    profile.city = Utils.getStringField("city", "title", profileObj);
-                    profile.country = Utils.getStringField("country", "title", profileObj);
+                    profile.FirstName = Utils.GetTextField("first_name", profileObj);
+                    profile.LastName = Utils.GetTextField("last_name", profileObj);
+                    profile.ScreenName = Utils.GetTextField("screen_name", profileObj);
+                    profile.Deactivated = Utils.GetTextField("deactivated", profileObj);
+                    profile.Bdate = Utils.GetTextField("bdate", profileObj);
+                    profile.City = Utils.GetStringField("city", "title", profileObj);
+                    profile.Country = Utils.GetStringField("country", "title", profileObj);
 
-                    profile.photo = Utils.getStringField("photo_50", profileObj);
-                    profile.sex = Utils.getStringField("sex", profileObj);
-                    profile.relation = Utils.getStringField("relation", profileObj);
+                    profile.Photo = Utils.GetStringField("photo_50", profileObj);
+                    profile.Sex = Utils.GetStringField("sex", profileObj);
+                    profile.Relation = Utils.GetStringField("relation", profileObj);
           
                     // university name - text
-                    profile.education = Utils.getTextField("university_name", profileObj);
+                    profile.Education = Utils.GetTextField("university_name", profileObj);
 
                     // status text
-                    profile.status = Utils.getTextField("status", profileObj);
+                    profile.Status = Utils.GetTextField("status", profileObj);
 
                     profiles.Add(profile);
 
                     // add graph member vertex
-                    memberIds.Add(profile.id);
+                    memberIds.Add(profile.Id);
 
-                    groupNetworkAnalyzer.addVertex(profile.id, profile.first_name + " " + profile.last_name, "Member", profileObj);
+                    groupNetworkAnalyzer.addVertex(profile.Id, profile.FirstName + " " + profile.LastName, "Member", profileObj);
                 }
             }
 
@@ -1598,6 +1602,85 @@ namespace VKGroups
             {
                 // save the posts list
                 Utils.PrintFileContent(groupMembersWriter, profiles);
+            }
+        }
+
+        // process group invited users 
+        private void OnGroupsGetInvitedUsers(JObject data, String cookie)
+        {
+            if (data[VkRestApi.ResponseBody] == null)
+            {
+                isMembersRunning = false;
+                return;
+            }
+
+            if (totalCount == 0)
+            {
+                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>();
+                step = (int)(10000 * MEMBERS_PER_REQUEST / totalCount);
+            }
+
+            // now calculate items in response
+            var count = data[VkRestApi.ResponseBody]["items"].Count();
+
+            var profiles = new List<Profile>();
+
+            // process response body
+            for (var i = 0; i < count; ++i)
+            {
+                var profileObj = data[VkRestApi.ResponseBody]["items"][i].ToObject<JObject>();
+
+                if (profileObj != null)
+                {
+                    var type = Utils.GetStringField("type", profileObj);
+
+                    if (!string.IsNullOrEmpty(type) && !type.Equals("profile"))
+                    {
+                        Debug.WriteLine("Ignoring member with type " + type);
+                        continue; // must be profile
+                    }
+
+                    var profile = new Profile();
+
+                    profile.Id = Utils.GetLongField("id", profileObj);
+
+                    if (profile.Id <= 0)
+                    {
+                        // probably blocked or deleted account, continue
+                        Debug.WriteLine("Ignoring member with bad profile id " + profile.Id);
+                        continue;
+                    }
+
+                    profile.FirstName = Utils.GetTextField("first_name", profileObj);
+                    profile.LastName = Utils.GetTextField("last_name", profileObj);
+                    profile.ScreenName = Utils.GetTextField("screen_name", profileObj);
+                    profile.Deactivated = Utils.GetTextField("deactivated", profileObj);
+                    profile.Bdate = Utils.GetTextField("bdate", profileObj);
+                    profile.City = Utils.GetStringField("city", "title", profileObj);
+                    profile.Country = Utils.GetStringField("country", "title", profileObj);
+
+                    profile.Photo = Utils.GetStringField("photo_50", profileObj);
+                    profile.Sex = Utils.GetStringField("sex", profileObj);
+                    profile.Relation = Utils.GetStringField("relation", profileObj);
+
+                    // university name - text
+                    profile.Education = Utils.GetTextField("university_name", profileObj);
+
+                    // status text
+                    profile.Status = Utils.GetTextField("status", profileObj);
+
+                    profiles.Add(profile);
+
+                    // add graph member vertex
+                    // memberIds.Add(profile.id);
+                    //groupNetworkAnalyzer.addVertex(profile.id, profile.first_name + " " + profile.last_name, "Member", profileObj);
+                }
+            }
+
+            if (profiles.Count > 0)
+            {
+                // save the posts list
+                // Utils.PrintFileContent(groupMembersWriter, profiles);
             }
         }
 
@@ -1610,11 +1693,21 @@ namespace VKGroups
                 return;
             }
 
+            if (totalCount == 0)
+            {
+                totalCount = data[VkRestApi.ResponseBody]["count"].ToObject<long>();
+                if (totalCount == 0)
+                {
+                    isNetworkRunning = false;
+                    return;
+                }
+            }
+
             var memberId = cookie; // member id sent as a cooky
             var mId = Convert.ToInt64(memberId);
 
             // now calculate items in response
-            var count = data[VkRestApi.ResponseBody]["count"].ToObject<long>();
+            var count = data[VkRestApi.ResponseBody]["items"].Count();
             Debug.WriteLine("Processing " + count + " friends of user id " + memberId);
 
             // update vertex with friends count
@@ -1657,30 +1750,30 @@ namespace VKGroups
                 var userObj = data[VkRestApi.ResponseBody][i].ToObject<JObject>();
             
                 var profile = new Profile();
-                profile.id = Utils.getLongField("id", userObj);
+                profile.Id = Utils.GetLongField("id", userObj);
 
-                profile.first_name = Utils.getTextField("first_name", userObj);
-                profile.last_name = Utils.getTextField("last_name", userObj);
-                profile.screen_name = Utils.getTextField("screen_name", userObj);
-                profile.deactivated = Utils.getTextField("deactivated", userObj);
-                profile.bdate = Utils.getTextField("bdate", userObj);
-                profile.city = Utils.getStringField("city", "title", userObj);
-                profile.country = Utils.getStringField("country", "title", userObj);
+                profile.FirstName = Utils.GetTextField("first_name", userObj);
+                profile.LastName = Utils.GetTextField("last_name", userObj);
+                profile.ScreenName = Utils.GetTextField("screen_name", userObj);
+                profile.Deactivated = Utils.GetTextField("deactivated", userObj);
+                profile.Bdate = Utils.GetTextField("bdate", userObj);
+                profile.City = Utils.GetStringField("city", "title", userObj);
+                profile.Country = Utils.GetStringField("country", "title", userObj);
 
-                profile.photo = Utils.getStringField("photo_50", userObj);
-                profile.sex = Utils.getStringField("sex", userObj);
-                profile.relation = Utils.getStringField("relation", userObj);
+                profile.Photo = Utils.GetStringField("photo_50", userObj);
+                profile.Sex = Utils.GetStringField("sex", userObj);
+                profile.Relation = Utils.GetStringField("relation", userObj);
 
                 // university name - text
-                profile.education = Utils.getTextField("university_name", userObj);
+                profile.Education = Utils.GetTextField("university_name", userObj);
 
                 // status text
-                profile.status = Utils.getTextField("status", userObj);
+                profile.Status = Utils.GetTextField("status", userObj);
 
                 profiles.Add(profile);
 
                 // add graph visitor vertex
-                groupNetworkAnalyzer.addVertex(profile.id, profile.first_name + " " + profile.last_name, "Visitor", userObj);
+                groupNetworkAnalyzer.addVertex(profile.Id, profile.FirstName + " " + profile.LastName, "Visitor", userObj);
             }
 
             if (profiles.Count > 0)
@@ -1757,7 +1850,20 @@ namespace VKGroups
             for (int i = 0; i < count; ++i)
             {
                 var statsObj = data[VkRestApi.ResponseBody][i].ToObject<JObject>();
-                var date = Utils.getStringField("day", statsObj);
+                var stats = new GroupStats();
+                stats.day = Utils.GetStringField("day", statsObj);
+                stats.views = Utils.GetLongField("views", statsObj);
+                stats.visitors = Utils.GetLongField("visitors", statsObj);
+                stats.reach = Utils.GetLongField("reach", statsObj);
+                stats.reach_subscribers = Utils.GetLongField("reach_subscribers", statsObj);
+                stats.subscribed = Utils.GetLongField("subscribed", statsObj);
+                stats.unsubscribed = Utils.GetLongField("unsubscribed", statsObj);
+                var sexArr = Utils.GetArray("sex", statsObj);
+                var ageArr = Utils.GetArray("age", statsObj);
+                var sexAgeArr = Utils.GetArray("sex_age", statsObj);
+                var citiesArr = Utils.GetArray("cities", statsObj);
+                var countriesArr = Utils.GetArray("countries", statsObj);
+
             }
         }
 
@@ -1783,7 +1889,7 @@ namespace VKGroups
             foreach (var g in groups)
             {
                 writer.WriteLine("{0}\t{1}\t{2}\t\"{3}\"\t{4}\t{5}\t{6}\t{7}\t\"{8}\"\t\"{9}\"\t\"{10}\"",
-                    g.id, g.name, g.screen_name, g.is_closed, g.type, g.members_count, g.city, g.country, g.photo, g.description, g.status);
+                    g.Id, g.name, g.ScreenName, g.IsClosed, g.Type, g.MembersCount, g.City, g.Country, g.Photo, g.Description, g.Status);
             }
         }
 

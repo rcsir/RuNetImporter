@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace rcsir.net.vk.importer.api.entity
 {
@@ -10,30 +6,30 @@ namespace rcsir.net.vk.importer.api.entity
     {
         public Post()
         {
-            id = 0;
-            owner_id = 0;
-            from_id = 0;
-            signer_id = 0;
-            date = "";
-            post_type = "";
-            comments = 0;
-            likes = 0;
-            reposts = 0;
-            attachments = 0;
-            text = "";
+            Id = 0;
+            OwnerId = 0;
+            FromId = 0;
+            SignerId = 0;
+            Date = "";
+            PostType = "";
+            Comments = 0;
+            Likes = 0;
+            Reposts = 0;
+            Attachments = 0;
+            Text = "";
         }
 
-        public long id { get; set; }
-        public long owner_id { get; set; }
-        public long from_id { get; set; }
-        public long signer_id { get; set; }
-        public string date { get; set; }
-        public string post_type { get; set; }
-        public long comments { get; set; }
-        public long likes { get; set; }
-        public long reposts { get; set; }
-        public long attachments { get; set; }
-        public string text { get; set; }
+        public long Id { get; set; }
+        public long OwnerId { get; set; }
+        public long FromId { get; set; }
+        public long SignerId { get; set; }
+        public string Date { get; set; }
+        public string PostType { get; set; }
+        public long Comments { get; set; }
+        public long Likes { get; set; }
+        public long Reposts { get; set; }
+        public long Attachments { get; set; }
+        public string Text { get; set; }
         
         public string Name()
         {
@@ -49,7 +45,7 @@ namespace rcsir.net.vk.importer.api.entity
         public string ToFileLine()
         {
             return String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t\"{10}\"",
-                    id, owner_id, from_id, signer_id, date, post_type, comments, likes, reposts, attachments, text);
+                    Id, OwnerId, FromId, SignerId, Date, PostType, Comments, Likes, Reposts, Attachments, Text);
         }
     }
 
@@ -78,8 +74,8 @@ namespace rcsir.net.vk.importer.api.entity
         public string ToFileLine()
         {
             return String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t\"{11}\"",
-                    Postid, Post.id, Post.owner_id, Post.from_id, Post.signer_id, Post.date, Post.post_type,
-                    Post.comments, Post.likes, Post.reposts, Post.attachments, Post.text);
+                    Postid, Post.Id, Post.OwnerId, Post.FromId, Post.SignerId, Post.Date, Post.PostType,
+                    Post.Comments, Post.Likes, Post.Reposts, Post.Attachments, Post.Text);
         }
     }
 }

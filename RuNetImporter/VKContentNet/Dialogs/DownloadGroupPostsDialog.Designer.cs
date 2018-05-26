@@ -37,7 +37,6 @@
             this.dateTimeToPicker = new System.Windows.Forms.DateTimePicker();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
-            this.groupStatCheckBox = new System.Windows.Forms.CheckBox();
             this.groupWall = new System.Windows.Forms.CheckBox();
             this.groupTopics = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.groupIdNumeric)).BeginInit();
@@ -46,8 +45,8 @@
             // CancelSearchButton
             // 
             this.CancelSearchButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelSearchButton.Location = new System.Drawing.Point(217, 354);
-            this.CancelSearchButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.CancelSearchButton.Location = new System.Drawing.Point(209, 314);
+            this.CancelSearchButton.Margin = new System.Windows.Forms.Padding(4);
             this.CancelSearchButton.Name = "CancelSearchButton";
             this.CancelSearchButton.Size = new System.Drawing.Size(100, 28);
             this.CancelSearchButton.TabIndex = 3;
@@ -57,8 +56,8 @@
             // OKButton
             // 
             this.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.OKButton.Location = new System.Drawing.Point(325, 354);
-            this.OKButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.OKButton.Location = new System.Drawing.Point(317, 314);
+            this.OKButton.Margin = new System.Windows.Forms.Padding(4);
             this.OKButton.Name = "OKButton";
             this.OKButton.Size = new System.Drawing.Size(100, 28);
             this.OKButton.TabIndex = 2;
@@ -68,8 +67,9 @@
             // 
             // groupIdNumeric
             // 
-            this.groupIdNumeric.Location = new System.Drawing.Point(131, 64);
-            this.groupIdNumeric.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupIdNumeric.Enabled = false;
+            this.groupIdNumeric.Location = new System.Drawing.Point(131, 42);
+            this.groupIdNumeric.Margin = new System.Windows.Forms.Padding(4);
             this.groupIdNumeric.Maximum = new decimal(new int[] {
             1000000000,
             0,
@@ -83,7 +83,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(16, 66);
+            this.label1.Location = new System.Drawing.Point(16, 44);
             this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(103, 17);
@@ -96,8 +96,9 @@
             this.isGroupcheckBox.AutoSize = true;
             this.isGroupcheckBox.Checked = true;
             this.isGroupcheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.isGroupcheckBox.Location = new System.Drawing.Point(131, 96);
-            this.isGroupcheckBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.isGroupcheckBox.Enabled = false;
+            this.isGroupcheckBox.Location = new System.Drawing.Point(131, 74);
+            this.isGroupcheckBox.Margin = new System.Windows.Forms.Padding(4);
             this.isGroupcheckBox.Name = "isGroupcheckBox";
             this.isGroupcheckBox.Size = new System.Drawing.Size(84, 21);
             this.isGroupcheckBox.TabIndex = 6;
@@ -107,7 +108,7 @@
             // dateTimeFromPicker
             // 
             this.dateTimeFromPicker.Location = new System.Drawing.Point(131, 130);
-            this.dateTimeFromPicker.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.dateTimeFromPicker.Margin = new System.Windows.Forms.Padding(4);
             this.dateTimeFromPicker.Name = "dateTimeFromPicker";
             this.dateTimeFromPicker.Size = new System.Drawing.Size(291, 22);
             this.dateTimeFromPicker.TabIndex = 7;
@@ -116,7 +117,7 @@
             // dateTimeToPicker
             // 
             this.dateTimeToPicker.Location = new System.Drawing.Point(131, 174);
-            this.dateTimeToPicker.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.dateTimeToPicker.Margin = new System.Windows.Forms.Padding(4);
             this.dateTimeToPicker.Name = "dateTimeToPicker";
             this.dateTimeToPicker.Size = new System.Drawing.Size(291, 22);
             this.dateTimeToPicker.TabIndex = 8;
@@ -142,17 +143,6 @@
             this.label3.Size = new System.Drawing.Size(29, 17);
             this.label3.TabIndex = 10;
             this.label3.Text = "To:";
-            // 
-            // groupStatCheckBox
-            // 
-            this.groupStatCheckBox.AutoSize = true;
-            this.groupStatCheckBox.Location = new System.Drawing.Point(131, 288);
-            this.groupStatCheckBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.groupStatCheckBox.Name = "groupStatCheckBox";
-            this.groupStatCheckBox.Size = new System.Drawing.Size(136, 21);
-            this.groupStatCheckBox.TabIndex = 11;
-            this.groupStatCheckBox.Text = "Just Group Stats";
-            this.groupStatCheckBox.UseVisualStyleBackColor = true;
             // 
             // groupWall
             // 
@@ -184,10 +174,9 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelSearchButton;
-            this.ClientSize = new System.Drawing.Size(439, 405);
+            this.ClientSize = new System.Drawing.Size(439, 361);
             this.Controls.Add(this.groupTopics);
             this.Controls.Add(this.groupWall);
-            this.Controls.Add(this.groupStatCheckBox);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.dateTimeToPicker);
@@ -198,7 +187,7 @@
             this.Controls.Add(this.CancelSearchButton);
             this.Controls.Add(this.OKButton);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "DownloadGroupPostsDialog";
             this.Text = "Download Posts and Comments";
             this.Load += new System.EventHandler(this.DownloadGroupPostsDialog_Load);
@@ -219,7 +208,6 @@
         private System.Windows.Forms.DateTimePicker dateTimeToPicker;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.CheckBox groupStatCheckBox;
         private System.Windows.Forms.CheckBox groupWall;
         private System.Windows.Forms.CheckBox groupTopics;
     }

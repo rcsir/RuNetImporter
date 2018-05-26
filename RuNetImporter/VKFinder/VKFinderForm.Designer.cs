@@ -1,6 +1,6 @@
-﻿namespace VKFinder
+﻿namespace rcsir.net.vk.finder
 {
-    partial class VKFinderForm
+    partial class VkFinderForm
     {
         /// <summary>
         /// Required designer variable.
@@ -45,9 +45,10 @@
             // 
             // AuthorizeButton
             // 
-            this.AuthorizeButton.Location = new System.Drawing.Point(12, 12);
+            this.AuthorizeButton.Location = new System.Drawing.Point(16, 15);
+            this.AuthorizeButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.AuthorizeButton.Name = "AuthorizeButton";
-            this.AuthorizeButton.Size = new System.Drawing.Size(348, 30);
+            this.AuthorizeButton.Size = new System.Drawing.Size(464, 37);
             this.AuthorizeButton.TabIndex = 0;
             this.AuthorizeButton.Text = "Authorize...";
             this.AuthorizeButton.UseVisualStyleBackColor = true;
@@ -55,18 +56,20 @@
             // 
             // userIdTextBox
             // 
-            this.userIdTextBox.Location = new System.Drawing.Point(12, 48);
+            this.userIdTextBox.Location = new System.Drawing.Point(16, 59);
+            this.userIdTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.userIdTextBox.Name = "userIdTextBox";
             this.userIdTextBox.ReadOnly = true;
-            this.userIdTextBox.Size = new System.Drawing.Size(348, 20);
+            this.userIdTextBox.Size = new System.Drawing.Size(463, 22);
             this.userIdTextBox.TabIndex = 1;
             // 
             // FindUsersButton
             // 
             this.FindUsersButton.Enabled = false;
-            this.FindUsersButton.Location = new System.Drawing.Point(12, 145);
+            this.FindUsersButton.Location = new System.Drawing.Point(16, 178);
+            this.FindUsersButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.FindUsersButton.Name = "FindUsersButton";
-            this.FindUsersButton.Size = new System.Drawing.Size(168, 30);
+            this.FindUsersButton.Size = new System.Drawing.Size(224, 37);
             this.FindUsersButton.TabIndex = 2;
             this.FindUsersButton.Text = "Find Users...";
             this.FindUsersButton.UseVisualStyleBackColor = true;
@@ -74,9 +77,10 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(12, 83);
+            this.button1.Location = new System.Drawing.Point(16, 102);
+            this.button1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(348, 30);
+            this.button1.Size = new System.Drawing.Size(464, 37);
             this.button1.TabIndex = 3;
             this.button1.Text = "Working Folder...";
             this.button1.UseVisualStyleBackColor = true;
@@ -84,26 +88,29 @@
             // 
             // WorkingFolderTextBox
             // 
-            this.WorkingFolderTextBox.Location = new System.Drawing.Point(12, 119);
+            this.WorkingFolderTextBox.Location = new System.Drawing.Point(16, 146);
+            this.WorkingFolderTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.WorkingFolderTextBox.Name = "WorkingFolderTextBox";
             this.WorkingFolderTextBox.ReadOnly = true;
-            this.WorkingFolderTextBox.Size = new System.Drawing.Size(348, 20);
+            this.WorkingFolderTextBox.Size = new System.Drawing.Size(463, 22);
             this.WorkingFolderTextBox.TabIndex = 4;
             // 
             // statusStrip1
             // 
+            this.statusStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel1});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 238);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 295);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(371, 22);
+            this.statusStrip1.Padding = new System.Windows.Forms.Padding(1, 0, 19, 0);
+            this.statusStrip1.Size = new System.Drawing.Size(495, 25);
             this.statusStrip1.TabIndex = 5;
             this.statusStrip1.Text = "statusStrip1";
             // 
             // toolStripStatusLabel1
             // 
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(118, 17);
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(151, 20);
             this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
             // 
             // backgroundFinderWorker
@@ -114,9 +121,10 @@
             // CancelFindButton
             // 
             this.CancelFindButton.Enabled = false;
-            this.CancelFindButton.Location = new System.Drawing.Point(199, 145);
+            this.CancelFindButton.Location = new System.Drawing.Point(265, 178);
+            this.CancelFindButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.CancelFindButton.Name = "CancelFindButton";
-            this.CancelFindButton.Size = new System.Drawing.Size(161, 30);
+            this.CancelFindButton.Size = new System.Drawing.Size(215, 37);
             this.CancelFindButton.TabIndex = 6;
             this.CancelFindButton.Text = "Cancel";
             this.CancelFindButton.UseVisualStyleBackColor = true;
@@ -124,17 +132,18 @@
             // 
             // FindProgressBar
             // 
-            this.FindProgressBar.Location = new System.Drawing.Point(12, 197);
+            this.FindProgressBar.Location = new System.Drawing.Point(16, 242);
+            this.FindProgressBar.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.FindProgressBar.Name = "FindProgressBar";
-            this.FindProgressBar.Size = new System.Drawing.Size(348, 25);
+            this.FindProgressBar.Size = new System.Drawing.Size(464, 31);
             this.FindProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.FindProgressBar.TabIndex = 7;
             // 
             // VKFinderForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(371, 260);
+            this.ClientSize = new System.Drawing.Size(495, 320);
             this.Controls.Add(this.FindProgressBar);
             this.Controls.Add(this.CancelFindButton);
             this.Controls.Add(this.statusStrip1);
@@ -143,8 +152,10 @@
             this.Controls.Add(this.FindUsersButton);
             this.Controls.Add(this.userIdTextBox);
             this.Controls.Add(this.AuthorizeButton);
-            this.Name = "VKFinderForm";
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Name = "VkFinderForm";
             this.Text = "VKFinder";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.VKFinderForm_FormClosing);
             this.Load += new System.EventHandler(this.VKFinderForm_Load);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();

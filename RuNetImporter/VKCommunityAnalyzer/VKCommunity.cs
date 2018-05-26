@@ -23,7 +23,6 @@ namespace VKCommunityAnalyzer
     {
         private const int POSTS_PER_REQUEST = 100;
         private static readonly int MEMBERS_PER_REQUEST = 1000;
-        private static readonly int LIKES_PER_REQUEST = 1000;
         private static readonly string PROFILE_FIELDS = "first_name,last_name,screen_name,bdate,city,country,photo_50,sex,relation,status,education";
         private static readonly string GROUP_FIELDS = "members_count,city,country,description,status";
 

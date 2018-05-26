@@ -28,84 +28,6 @@ namespace rcsir.net.vk.importer.api
         InLove = 7 
     };
 
-    // VK Country
-    public class VkCountry
-    {
-        public int Id { get; private set; }
-        public string Title { get; private set; }
-
-        public VkCountry(int id, string title)
-        {
-            Id = id;
-            Title = title;
-        }
-
-        public override string ToString()
-        {
-            return Title;
-        }
-    };
-
-    // VK Region
-    public class VkRegion
-    {
-        public int Id { get; private set; }
-        public string Title { get; private set; }
-
-        public VkRegion(int id, string title)
-        {
-            Id = id;
-            Title = title;
-        }
-
-        public override string ToString()
-        {
-            return Title;
-        }
-    };
-
-    // VK city
-    public class VkCity
-    {
-        public int Id { get; private set; }
-        public string Title { get; private set; }
-        public bool Important { get; private set; }
-        public string RegionTitle { get; private set; }
-        public string AreaTitle { get; private set; }
-
-        public VkCity(int id, String title)
-        {
-            Title = title;
-            Id = id;
-            Important = false;
-            RegionTitle = "";
-            AreaTitle = "";
-        }
-
-        public VkCity(int id, String title, bool important)
-            : this(id, title)
-        {
-            Important = important;
-        }
-
-        public VkCity(int id, String title, bool important, string region)
-            : this(id, title, important)
-        {
-            RegionTitle = region;
-        }
-
-        public VkCity(int id, String title, bool important, string region, string area)
-            : this(id, title, important, region)
-        {
-            AreaTitle = area;
-        }
-
-        public override string ToString()
-        {
-            return String.Format("{0}, {1}, {2}",Title, AreaTitle, RegionTitle);
-        }
-    };
-
     // VK sex
     public class VkSex
     {
@@ -150,6 +72,7 @@ namespace rcsir.net.vk.importer.api
         WallGet,
         WallGetComments,
         GroupsGetMembers,
+        GroupsGetInvitedUsers,
         GroupsGetById,
         LikesGetList,
         UsersGet,
@@ -270,22 +193,23 @@ namespace rcsir.net.vk.importer.api
         // parameters: function id, name, user_id name, version, isOpen
         // if isOpen is true - method does not require an access token
         private static readonly Method GetProfiles = new Method(VkFunction.GetProfiles, "getProfiles", "uid", "5.21", false);
-        private static readonly Method LoadFriends = new Method(VkFunction.LoadFriends, "friends.get", "user_id", "5.21", true);
-        private static readonly Method FriendsGet = new Method(VkFunction.FriendsGet, "friends.get", "", "5.21", true); // w/o user id - current user 
+        private static readonly Method LoadFriends = new Method(VkFunction.LoadFriends, "friends.get", "user_id", "5.21", false);
+        private static readonly Method FriendsGet = new Method(VkFunction.FriendsGet, "friends.get", "", "5.21", false); // w/o user id - current user 
         private static readonly Method FriendsGetMutual = new Method(VkFunction.FriendsGetMutual, "friends.getMutual", "source_uid", "5.21", false);
         private static readonly Method UsersSearch = new Method(VkFunction.UsersSearch, "users.search", "", "5.21", false);
-        private static readonly Method WallGet = new Method(VkFunction.WallGet, "wall.get", "", "5.14", true);
-        private static readonly Method WallGetComments = new Method(VkFunction.WallGetComments, "wall.getComments", "", "5.14", true);
+        private static readonly Method WallGet = new Method(VkFunction.WallGet, "wall.get", "", "5.14", false);
+        private static readonly Method WallGetComments = new Method(VkFunction.WallGetComments, "wall.getComments", "", "5.14", false);
         private static readonly Method StatsGet = new Method(VkFunction.StatsGet, "stats.get", "", "5.25", false);
-        private static readonly Method GroupsGetMembers = new Method(VkFunction.GroupsGetMembers, "groups.getMembers", "", "5.21", true);
-        private static readonly Method GroupsGetById = new Method(VkFunction.GroupsGetById, "groups.getById", "", "5.21", true);
-        private static readonly Method LikesGetList = new Method(VkFunction.LikesGetList, "likes.getList", "", "5.21", true);
-        private static readonly Method UsersGet = new Method(VkFunction.UsersGet, "users.get", "", "5.21", true);
+        private static readonly Method GroupsGetMembers = new Method(VkFunction.GroupsGetMembers, "groups.getMembers", "", "5.21", false);
+        private static readonly Method GroupsGetInvitedUsers = new Method(VkFunction.GroupsGetInvitedUsers, "groups.getInvitedUsers", "", "5.58", false);
+        private static readonly Method GroupsGetById = new Method(VkFunction.GroupsGetById, "groups.getById", "", "5.21", false);
+        private static readonly Method LikesGetList = new Method(VkFunction.LikesGetList, "likes.getList", "", "5.21", false);
+        private static readonly Method UsersGet = new Method(VkFunction.UsersGet, "users.get", "", "5.21", false);
         private static readonly Method DatabaseGetCountries = new Method(VkFunction.DatabaseGetCountries, "database.getCountries", "", "5.21", true);
         private static readonly Method DatabaseGetRegions = new Method(VkFunction.DatabaseGetRegions, "database.getRegions", "", "5.21", true);
         private static readonly Method DatabaseGetCities = new Method(VkFunction.DatabaseGetCities, "database.getCities", "", "5.21", true);
-        private static readonly Method BoardGetTopics = new Method(VkFunction.BoardGetTopics, "board.getTopics", "", "5.32", true);
-        private static readonly Method BoardGetComments = new Method(VkFunction.BoardGetComments, "board.getComments", "", "5.32", true);
+        private static readonly Method BoardGetTopics = new Method(VkFunction.BoardGetTopics, "board.getTopics", "", "5.32", false);
+        private static readonly Method BoardGetComments = new Method(VkFunction.BoardGetComments, "board.getComments", "", "5.32", false);
         private static readonly Method PhotosSearch = new Method(VkFunction.PhotosSearch, "photos.search", "", "5.33", true);
 
         // define OnData delegate
@@ -351,6 +275,9 @@ namespace rcsir.net.vk.importer.api
                     break;
                 case VkFunction.GroupsGetMembers:
                     MakeVkCall(GroupsGetMembers, context);
+                    break;
+                case VkFunction.GroupsGetInvitedUsers:
+                    MakeVkCall(GroupsGetInvitedUsers, context);
                     break;
                 case VkFunction.GroupsGetById:
                     MakeVkCall(GroupsGetById, context);
