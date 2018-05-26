@@ -29,7 +29,7 @@
     <PublisherName>Center for Sociological and Internet Research, SPBu</PublisherName>
     <SuiteName>RuNet Importer</SuiteName>
     <AutorunEnabled>true</AutorunEnabled>
-    <ApplicationRevision>16</ApplicationRevision>
+    <ApplicationRevision>17</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
