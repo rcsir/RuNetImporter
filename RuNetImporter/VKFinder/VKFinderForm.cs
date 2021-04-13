@@ -253,6 +253,7 @@ namespace rcsir.net.vk.finder
             // process countries
             // right now we care only about Russia - 1
             countries.Add(new Country(1, "Россия"));
+            countries.Add(new Country(2, "Украина"));
             
             foreach (var country in countries)
             {

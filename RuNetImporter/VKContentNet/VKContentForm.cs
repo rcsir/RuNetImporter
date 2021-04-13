@@ -1669,7 +1669,18 @@ namespace VKContentNet
             if (count == 0)
             {
                 totalEmptyRetry++;
-                return !(totalEmptyRetry > MAX_EMPTY_RETRY);
+
+                if (totalEmptyRetry >= MAX_EMPTY_RETRY)
+                {
+                    // can't retrieve all items, skip the items
+                    String error = "Can't process all items - skipping! Empty response on current offset: "
+                        + currentOffset + " with total count of: " + totalCount;
+                    updateErrorLogFile(error, errorLogWriter);
+                    currentOffset = totalCount;
+                    return false;
+                }
+
+                return true;
             }
 
             currentOffset += count;
@@ -1846,6 +1857,11 @@ namespace VKContentNet
         {
             writer.WriteLine("{0}\t{1}\t{2}\t{3}",
                 error.Function, error.Code, error.Error, error.Details);
+        }
+
+        private void updateErrorLogFile(string error, StreamWriter writer)
+        {
+            writer.WriteLine(error);
         }
 
         private void backgroundLikesWorker_DoWork(object sender, DoWorkEventArgs args)

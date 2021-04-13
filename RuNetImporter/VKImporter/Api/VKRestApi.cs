@@ -192,25 +192,28 @@ namespace rcsir.net.vk.importer.api
 
         // parameters: function id, name, user_id name, version, isOpen
         // if isOpen is true - method does not require an access token
-        private static readonly Method GetProfiles = new Method(VkFunction.GetProfiles, "getProfiles", "uid", "5.21", false);
-        private static readonly Method LoadFriends = new Method(VkFunction.LoadFriends, "friends.get", "user_id", "5.21", false);
-        private static readonly Method FriendsGet = new Method(VkFunction.FriendsGet, "friends.get", "", "5.21", false); // w/o user id - current user 
-        private static readonly Method FriendsGetMutual = new Method(VkFunction.FriendsGetMutual, "friends.getMutual", "source_uid", "5.21", false);
-        private static readonly Method UsersSearch = new Method(VkFunction.UsersSearch, "users.search", "", "5.21", false);
-        private static readonly Method WallGet = new Method(VkFunction.WallGet, "wall.get", "", "5.14", false);
-        private static readonly Method WallGetComments = new Method(VkFunction.WallGetComments, "wall.getComments", "", "5.14", false);
-        private static readonly Method StatsGet = new Method(VkFunction.StatsGet, "stats.get", "", "5.25", false);
-        private static readonly Method GroupsGetMembers = new Method(VkFunction.GroupsGetMembers, "groups.getMembers", "", "5.21", false);
-        private static readonly Method GroupsGetInvitedUsers = new Method(VkFunction.GroupsGetInvitedUsers, "groups.getInvitedUsers", "", "5.58", false);
-        private static readonly Method GroupsGetById = new Method(VkFunction.GroupsGetById, "groups.getById", "", "5.21", false);
-        private static readonly Method LikesGetList = new Method(VkFunction.LikesGetList, "likes.getList", "", "5.21", false);
-        private static readonly Method UsersGet = new Method(VkFunction.UsersGet, "users.get", "", "5.21", false);
-        private static readonly Method DatabaseGetCountries = new Method(VkFunction.DatabaseGetCountries, "database.getCountries", "", "5.21", true);
-        private static readonly Method DatabaseGetRegions = new Method(VkFunction.DatabaseGetRegions, "database.getRegions", "", "5.21", true);
-        private static readonly Method DatabaseGetCities = new Method(VkFunction.DatabaseGetCities, "database.getCities", "", "5.21", true);
-        private static readonly Method BoardGetTopics = new Method(VkFunction.BoardGetTopics, "board.getTopics", "", "5.32", false);
-        private static readonly Method BoardGetComments = new Method(VkFunction.BoardGetComments, "board.getComments", "", "5.32", false);
-        private static readonly Method PhotosSearch = new Method(VkFunction.PhotosSearch, "photos.search", "", "5.33", true);
+
+        // VK API version
+        private const string ApiVersion = "5.124";
+        private static readonly Method GetProfiles = new Method(VkFunction.GetProfiles, "getProfiles", "uid", ApiVersion, false);
+        private static readonly Method LoadFriends = new Method(VkFunction.LoadFriends, "friends.get", "user_id", ApiVersion, false);
+        private static readonly Method FriendsGet = new Method(VkFunction.FriendsGet, "friends.get", "", ApiVersion, false); // w/o user id - current user 
+        private static readonly Method FriendsGetMutual = new Method(VkFunction.FriendsGetMutual, "friends.getMutual", "source_uid", ApiVersion, false);
+        private static readonly Method UsersSearch = new Method(VkFunction.UsersSearch, "users.search", "", ApiVersion, false);
+        private static readonly Method WallGet = new Method(VkFunction.WallGet, "wall.get", "", ApiVersion, false);
+        private static readonly Method WallGetComments = new Method(VkFunction.WallGetComments, "wall.getComments", "", ApiVersion, false);
+        private static readonly Method StatsGet = new Method(VkFunction.StatsGet, "stats.get", "", ApiVersion, false);
+        private static readonly Method GroupsGetMembers = new Method(VkFunction.GroupsGetMembers, "groups.getMembers", "", ApiVersion, false);
+        private static readonly Method GroupsGetInvitedUsers = new Method(VkFunction.GroupsGetInvitedUsers, "groups.getInvitedUsers", "", ApiVersion, false);
+        private static readonly Method GroupsGetById = new Method(VkFunction.GroupsGetById, "groups.getById", "", ApiVersion, false);
+        private static readonly Method LikesGetList = new Method(VkFunction.LikesGetList, "likes.getList", "", ApiVersion, false);
+        private static readonly Method UsersGet = new Method(VkFunction.UsersGet, "users.get", "", ApiVersion, false);
+        private static readonly Method DatabaseGetCountries = new Method(VkFunction.DatabaseGetCountries, "database.getCountries", "", ApiVersion, false);
+        private static readonly Method DatabaseGetRegions = new Method(VkFunction.DatabaseGetRegions, "database.getRegions", "", ApiVersion, false);
+        private static readonly Method DatabaseGetCities = new Method(VkFunction.DatabaseGetCities, "database.getCities", "", ApiVersion, false);
+        private static readonly Method BoardGetTopics = new Method(VkFunction.BoardGetTopics, "board.getTopics", "", ApiVersion, false);
+        private static readonly Method BoardGetComments = new Method(VkFunction.BoardGetComments, "board.getComments", "", ApiVersion, false);
+        private static readonly Method PhotosSearch = new Method(VkFunction.PhotosSearch, "photos.search", "", ApiVersion, false);
 
         // define OnData delegate
         public delegate void DataHandler
